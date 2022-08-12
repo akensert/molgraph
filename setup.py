@@ -29,7 +29,8 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Intended Audience :: Science/Research"
         "License :: OSI Approved :: MIT License",
-        "Operating System :: Linux",
+        "Operating System :: POSIX :: Linux",
+        "Operating System :: MacOS"
     ],
     python_requires=">=3.6",
     keywords=[

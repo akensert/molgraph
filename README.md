@@ -12,13 +12,14 @@ From terminal run `pip install git+https://github.com/akensert/molgraph.git`
 
 ### Requirements
 - **Python** (version ~= 3.8.10)
-- **TensorFlow** (version ~= 2.8.0)
+- **TensorFlow** (version ~= 2.7.0)
 - **RDKit** (rdkit-pypi) (version ~= 2021.3.4)
 - **NumPy** (version ~= 1.21.2)
 - **Pandas** (version ~=1.0.3)
 
 ### Tested with
-- **Ubuntu 20.04**
+- **Ubuntu 20.04 - Python 3.8.10**
+- **MacOS Monterey (12.3.1) - Python 3.10.3**
 
 ## Minimalistic implementation
 A complete GNN implementation for small molecular graphs in about 30 lines of code:
