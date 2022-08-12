@@ -12,7 +12,6 @@ from typing import Tuple
 from typing import Sequence
 import multiprocessing
 from functools import partial
-from tqdm import tqdm
 import logging
 import collections
 
