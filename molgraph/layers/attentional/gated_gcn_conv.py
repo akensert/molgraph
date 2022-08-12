@@ -24,8 +24,8 @@ class GatedGCNConv(_BaseLayer):
     """Gated graph convolutional layer based on Dwivedi et al. [#]_,
     Bresson et al. [#]_, Joshi et al. [#]_ and Bresson et al. [#]_.
 
-    References
-    ----------
+    References:
+    
     .. [#] Dwivedi et al. https://arxiv.org/pdf/2003.00982.pdf
     .. [#] Bresson et al. https://arxiv.org/pdf/1906.03412.pdf
     .. [#] Joshi et al.  https://arxiv.org/pdf/1906.01227.pdf

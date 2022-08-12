@@ -24,8 +24,8 @@ class GraphTransformerConv(_BaseLayer):
 
     """Graph transformer layer based on Dwivedi et al. [#]_.
 
-    References
-    ----------
+    References:
+    
     .. [#] Dwivedi et al. https://arxiv.org/pdf/2012.09699.pdf
 
     """

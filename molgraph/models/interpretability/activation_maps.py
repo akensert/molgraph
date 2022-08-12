@@ -18,8 +18,8 @@ class GradientActivationMapping(keras.Model):
     '''
     Gradient activations maps based on Pope et al. [#]_.
 
-    References
-    ----------
+    References:
+    
     .. [#] Pope et al. https://ieeexplore.ieee.org/document/8954227
     '''
 

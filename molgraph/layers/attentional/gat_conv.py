@@ -25,8 +25,8 @@ class GATConv(_BaseLayer):
     """Multi-head graph attention layer based on Velickovic et al. [#]_
     and Dwivedi et al. [#]_.
 
-    References
-    ----------
+    References:
+    
     .. [#] Velickovic et al. https://arxiv.org/pdf/1710.10903.pdf
     .. [#] Dwivedi et al. https://arxiv.org/pdf/2003.00982.pdf
 

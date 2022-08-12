@@ -23,8 +23,8 @@ class GraphSageConv(_BaseLayer):
     """Graph sage convolution layer based on Hamilton et al. [#]_
     and Dwivedi et al. [#]_.
 
-    References
-    ----------
+    References:
+    
     .. [#] Hamilton et al. https://arxiv.org/pdf/1706.02216.pdf
     .. [#] Dwivedi et al. https://arxiv.org/pdf/2003.00982.pdf
 

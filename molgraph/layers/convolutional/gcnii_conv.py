@@ -23,8 +23,8 @@ class GCNIIConv(_BaseLayer):
     """Graph convolutional \`via Initial residual and Identity mapping\` layer
     based on Chen et al. [#]_.
 
-    Note
-    ----
+    Notes:
+    
     alpha: float
         Decides how much information of the initial node state (the
         original node features) should be passed to the subsequent layers
@@ -41,8 +41,8 @@ class GCNIIConv(_BaseLayer):
     variant: str, optional
         Whether the GCNII variant should be used.
 
-    References
-    ----------
+    References:
+
     .. [#] Chen et al. https://arxiv.org/pdf/2007.02133v1.pdf
 
     """

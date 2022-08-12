@@ -23,8 +23,8 @@ class DTNNConv(_BaseLayer):
 
     """Deep Tensor Neural Network (DTNN) based on Schütt et al. [#]_.
 
-    References
-    ----------
+    References:
+    
     .. [#] Schütt et al. (b) https://www.nature.com/articles/ncomms13890
     """
 

@@ -24,8 +24,8 @@ class GINConv(_BaseLayer):
     """Graph isomorphism convolution layer based on Dwivedi et al. [#]_
     and Xu et al. [#]_.
 
-    References
-    ----------
+    References:
+    
     .. [#] Dwivedi et al. https://arxiv.org/pdf/2003.00982.pdf
     .. [#] Xu et al. https://arxiv.org/pdf/1810.00826.pdf
 

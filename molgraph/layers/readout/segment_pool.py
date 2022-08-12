@@ -11,8 +11,8 @@ class SegmentPoolingReadout(layers.Layer):
 
     """Segmentation pooling with tf.math.segment_*
 
-    Parameters
-    ----------
+    Parameters:
+    
     mode: str
         What type of pooling should be performed. Either of `avg`,
         `max` or `sum`. Defaults to `avg`.

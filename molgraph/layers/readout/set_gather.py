@@ -12,8 +12,8 @@ class SetGatherReadout(layers.Layer):
 
     """Set-to-set layer for graph readout, based on Gilmer et al. [#]_.
 
-    References
-    ----------
+    References:
+    
         .. [#] Gilmer et al. https://arxiv.org/pdf/1704.01212.pdf
         .. [#] Vinyals et al. https://arxiv.org/pdf/1511.06391.pdf
 

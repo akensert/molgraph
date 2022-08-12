@@ -23,12 +23,11 @@ class GCNConv(_BaseLayer):
     """Graph convolutional layer based on Kipf et al. [#]_ and
     Dwivedi et al. [#]_ (GCN); and Schlichtkrull et al. [#]_ (RGCN).
 
-    References
-    ----------
+    References:
+
     .. [#] Kipf et al. https://arxiv.org/pdf/1609.02907.pdf
     .. [#] Dwivedi et al. https://arxiv.org/pdf/2003.00982.pdf
     .. [#] Schlichtkrull et al. https://arxiv.org/pdf/1703.06103.pdf
-
     """
 
     def __init__(

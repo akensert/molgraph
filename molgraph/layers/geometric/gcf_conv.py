@@ -41,8 +41,8 @@ class GCFConv(_BaseLayer):
     distances). The implementation is based on Schütt et al. [#]_
     and Chang [#]_.
 
-    References
-    ----------
+    References:
+    
     .. [#] Schütt et al. https://arxiv.org/pdf/1706.08566.pdf
     .. [#] Chang https://arxiv.org/pdf/2007.03513.pdf
     """

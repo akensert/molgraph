@@ -24,8 +24,8 @@ class GMMConv(_BaseLayer):
     """Multi-head graph gaussian mixture layer (MoNet) based on
     Dwivedi et al. [#]_ and Monti et al. [#]_.
 
-    References
-    ----------
+    References:
+    
     .. [#] Dwivedi et al. https://arxiv.org/pdf/2003.00982.pdf
     .. [#] Monti et al. https://arxiv.org/pdf/1611.08402.pdf
 

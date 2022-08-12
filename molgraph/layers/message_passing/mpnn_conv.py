@@ -22,8 +22,8 @@ class MPNNConv(_BaseLayer):
 
     """Message passing (neural network) layer based on  Gilmer et al. [#]_.
 
-    References
-    ----------
+    References:
+    
     .. [#] Gilmer et al. https://arxiv.org/pdf/1704.01212.pdf
 
     """
