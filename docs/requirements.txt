@@ -1,9 +1,9 @@
-jupyter>=1.0.0
-tensorflow>=2.7.0
-numpy>=1.22.2
-pandas>=1.0.3
+jupyter==1.0.0
+tensorflow==2.8.0
+numpy==1.22.2
+pandas==1.0.3
 rdkit-pypi==2021.3.4
 matplotlib==3.2.1
-nbsphinx>==0.8.9
-sphinx-gallery>=0.10.1
-sphinx-rtd-theme>=1.0.0
+nbsphinx===0.8.9
+sphinx-gallery==0.10.1
+sphinx-rtd-theme==1.0.0
