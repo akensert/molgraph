@@ -18,7 +18,7 @@ see `docs/source/examples`
 - **Ubuntu 20.04**
 
 ### Install package
-From terminal run `pip install molgraph`
+From terminal run `pip install git+https://github.com/akensert/molgraph.git`
 
 
 ## Minimalistic implementation
