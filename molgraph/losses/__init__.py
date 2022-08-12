@@ -1,0 +1,8 @@
+from molgraph.losses.link_losses import LinkContrastiveBinaryCrossentropy
+from molgraph.losses.link_losses import LinkContrastiveMarginLoss
+from molgraph.losses.link_losses import LinkBinaryCrossentropy
+
+from molgraph.losses.masked_losses import MaskedBinaryCrossentropy
+from molgraph.losses.masked_losses import MaskedHuber
+from molgraph.losses.masked_losses import MaskedMeanSquaredError
+from molgraph.losses.masked_losses import MaskedMeanAbsoluteError

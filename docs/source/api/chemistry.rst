@@ -1,0 +1,194 @@
+Chemistry
+=========
+
+MolecularGraphEncoder
+~~~~~~~~~~~~~~~~~~~~~~
+
+
+**Code snippet:**
+
+.. code-block::
+
+  from molgraph import chemistry
+
+  atom_featurizer = chemistry.AtomFeaturizer([
+      chemistry.features.Symbol(),
+      chemistry.features.Hybridization()
+  ])
+
+  bond_featurizer = chemistry.BondFeaturizer([
+      chemistry.features.BondType(),
+  ])
+
+  encoder = chemistry.MolecularGraphEncoder(
+    atom_encoder=atom_featurizer,
+    bond_encoder=bond_featurizer,
+    positional_encoding_dim=20,
+    self_loops=False
+  )
+
+  graph_tensor = encoder(['CCC', 'CCO'])
+
+
+.. autoclass:: molgraph.chemistry.MolecularGraphEncoder(molgraph.chemistry.BaseMolecularGraphEncoder)
+  :members: __init__, __call__
+  :undoc-members: __init__, __call__
+  :special-members: __init__, __call__
+
+MolecularGraphEncoder3D
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Code snippet:**
+
+.. code-block::
+
+    from molgraph import chemistry
+
+    atom_featurizer = chemistry.AtomFeaturizer([
+        chemistry.features.Symbol(),
+        chemistry.features.Hybridization()
+    ])
+
+    conformer_generator = chemistry.ConformerGenerator()
+
+    encoder = chemistry.MolecularGraphEncoder3D(
+      atom_encoder=atom_featurizer,
+      conformer_generator=conformer_generator,
+    )
+
+    graph_tensor = encoder(['CCC'])
+
+
+.. autoclass:: molgraph.chemistry.MolecularGraphEncoder3D(molgraph.chemistry.BaseMolecularGraphEncoder)
+  :members: __init__, __call__
+  :undoc-members: __init__, __call__
+  :special-members: __init__, __call__
+
+
+Atomic featurizers
+~~~~~~~~~~~~~~~~~~
+.. autoclass:: molgraph.chemistry.AtomFeaturizer(molgraph.chemistry.AtomicFeaturizer)
+  :members: __init__, __call__, encode_atoms,
+  :undoc-members: __init__, __call__
+  :special-members: __init__, __call__
+
+.. autoclass:: molgraph.chemistry.BondFeaturizer(molgraph.chemistry.AtomicFeaturizer)
+  :members: __init__, __call__, encode_bonds,
+  :undoc-members: __init__, __call__
+  :special-members: __init__, __call__
+
+Atomic tokenizers
+~~~~~~~~~~~~~~~~~
+.. autoclass:: molgraph.chemistry.AtomTokenizer(molgraph.chemistry.AtomicTokenizer)
+  :members: __init__, __call__, encode_atoms,
+  :undoc-members: __init__, __call__
+  :special-members: __init__, __call__
+
+.. autoclass:: molgraph.chemistry.BondTokenizer(molgraph.chemistry.AtomicTokenizer)
+  :members: __init__, __call__, encode_bonds,
+  :undoc-members: __init__, __call__
+  :special-members: __init__, __call__
+
+Atomic features
+~~~~~~~~~~~~~~~
+
+Atom features
+------------------
+.. autoclass:: molgraph.chemistry.features.Symbol(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.Hybridization(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.CIPCode(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.ChiralCenter(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.FormalCharge(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.TotalNumHs(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.TotalValence(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.NumRadicalElectrons(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.Degree(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.Aromatic(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.Hetero(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.HydrogenDonor(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.HydrogenAcceptor(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.RingSize(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.Ring(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.CrippenLogPContribution(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.CrippenMolarRefractivityContribution(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.TPSAContribution(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.LabuteASAContribution(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.GasteigerCharge(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+
+Bond features
+------------------
+.. autoclass:: molgraph.chemistry.features.BondType(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.Conjugated(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.Rotatable(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
+
+.. autoclass:: molgraph.chemistry.features.Stereo(molgraph.chemistry.features.AtomicFeature)
+  :special-members: __init__
+  :undoc-members: __init__
