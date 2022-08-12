@@ -17,6 +17,7 @@ molgraph/tensors/_[a-z]*
 *variables.data*
 *.index
 *.pb
+_old*
 
 # jupyter
 MANIFEST
