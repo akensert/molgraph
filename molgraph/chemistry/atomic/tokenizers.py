@@ -41,6 +41,7 @@ class AtomicTokenizer:
 class AtomTokenizer(AtomicTokenizer):
 
     def encode_atoms(self, atoms: List[Chem.Atom]) -> np.ndarray:
+        'Tokenizes a list of RDKit bonds'
         atom_tokens = []
         for atom in atoms:
             _check_atom(atom)
@@ -51,6 +52,7 @@ class AtomTokenizer(AtomicTokenizer):
 class BondTokenizer(AtomicTokenizer):
 
     def encode_bonds(self, bonds: List[Chem.Bond]) -> np.ndarray:
+        'Tokenizes a list of RDKit bonds'
         if not len(bonds):
             return np.zeros([0]).astype(str)
         bond_tokens = []

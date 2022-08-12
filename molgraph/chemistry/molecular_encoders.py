@@ -62,8 +62,8 @@ class BaseMolecularGraphEncoder(ABC):
         device: str = '/cpu:0',
         **kwargs,
     ) -> GraphTensor:
-        """Generates molecular graphs (GraphTensor) from a list of InChI/SMILES
-        or RDKit molecule objects, with multiprocessing.
+        """Generates molecular graphs (GraphTensor) from a (list of) InChI,
+        SMILES, SDF block or RDKit molecule object(s)
         """
         if isinstance(inputs, (list, tuple, set, np.ndarray)):
 

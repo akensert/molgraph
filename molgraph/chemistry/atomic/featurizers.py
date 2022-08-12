@@ -46,6 +46,7 @@ class AtomicFeaturizer:
 class AtomFeaturizer(AtomicFeaturizer):
 
     def encode_atoms(self, atoms: List[Chem.Atom]) -> np.ndarray:
+        'Encodes a list of RDKit atoms'
         atom_features = []
         for atom in atoms:
             _check_atom(atom)
@@ -60,6 +61,7 @@ class BondFeaturizer(AtomicFeaturizer):
         bonds: List[Chem.Bond],
         self_loops: bool = False,
     ) -> np.ndarray:
+        'Encodes a list of RDKit bonds'
 
         if self_loops:
             self.ndim += 1

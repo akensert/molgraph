@@ -59,7 +59,7 @@ class AtomicFeature(ABC):
         ordinal: bool = False,
         oov_size: int = 0,
     ) -> None:
-
+        'Initializes attributes'
         self.allowable_set = allowable_set
         self.ordinal = ordinal
         self.oov_size = oov_size
@@ -73,6 +73,7 @@ class AtomicFeature(ABC):
             self.oov_size = None
 
     def __call__(self, atom_or_bond: Union[Chem.Atom, Chem.Bond]) -> str:
+        'Returns a raw feature from RDKit atom or bond'
         return self.call(atom_or_bond)
 
     def __repr__(self):
