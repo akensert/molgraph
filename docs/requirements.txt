@@ -1,5 +1,5 @@
 jupyter==1.0.0
-tensorflow==2.8.0
+tensorflow==2.7.0
 numpy==1.21.2
 pandas==1.0.3
 rdkit-pypi==2021.3.4
