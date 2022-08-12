@@ -1,6 +1,5 @@
 from rdkit import Chem
 from rdkit.Chem.Scaffolds import MurckoScaffold
-from sklearn.model_selection import train_test_split
 from typing import List
 from typing import Optional
 from typing import Union
