@@ -63,3 +63,5 @@ html_static_path = ['_static']
 html_logo = '_static/molgraph-no-bg-3.png'
 
 html_theme_options = {}
+
+nbsphinx_thumbnails = {} # .py : .png

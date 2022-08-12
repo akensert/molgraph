@@ -27,7 +27,7 @@ graph.
 
 .. toctree::
   :glob:
-  :maxdepth: 2
+  :maxdepth: 1
   :caption: API
 
   api/tensors
@@ -37,8 +37,8 @@ graph.
 
 
 .. nbgallery::
-  :glob:
-  :maxdepth: 1
   :caption: Tutorials
+  :name: tutorials
+  :glob:
 
   examples/*
