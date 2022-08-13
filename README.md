@@ -1,7 +1,8 @@
 # Graph Neural Networks for Molecular Machine Learning
 
 ## In progress/unfinished
-This is an early release. API compatibility may break in the future.
+This is an early release; things are still being changed/updated.
+Hence, API compatibility may break in the future.
 
 ## Documentation
 See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
