@@ -1,4 +1,4 @@
-# Graph Neural Networks (for small molecular graphs) with TensorFlow and Keras
+# Graph Neural Networks for Molecular Machine Learning
 
 ## In progress/unfinished
 This is an early release. API compatibility may break in the future.
