@@ -34,13 +34,15 @@ setuptools.setup(
     ],
     python_requires=">=3.6",
     keywords=[
-        'molgraph',
-        'chemistry',
-        'cheminformatics',
-        'chemoinformatics'
-        'chemometrics',
-        'bioinformatics',
+        'graph-neural-networks',
+        'deep-learning',
         'machine-learning',
         'molecular-machine-learning',
+        'molecular-graphs',
+        'chemistry',
+        'cheminformatics',
+        'chemoinformatics',
+        'chemometrics',
+        'bioinformatics',
     ]
 )
