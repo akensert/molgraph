@@ -172,10 +172,43 @@ def test_compatible_tf_function(graph_tensor) -> None:
         x = x.remove(['random_feature'])
         return x
 
+    @tf.function
+    def f5(x):
+        x[[0, 1]]
+        x[0]
+        x[1:3]
+        x[-3:-1]
+        x[5:]
+        x[:10]
+        x[:0]
+        x[0:]
+        x[::2]
+        x.separate()[[0, 1]]
+        x.separate()[0]
+        x.separate()[1:3]
+        x.separate()[-3:-1]
+        x.separate()[5:]
+        x.separate()[:10]
+        x.separate()[:0]
+        x.separate()[0:]
+        x.separate()[::2]
+        return x
+
+    @tf.function
+    def f6(x):
+        index = tf.random.uniform(shape=(6,), minval=0, maxval=3, dtype=tf.int32)
+        x[index]
+        x.separate()[index]
+        x[index[0]: index[-1]]
+        x.separate()[index[0]: index[-1]]
+        return x
+
     graph_tensor_merged = f1(graph_tensor)
     graph_tensor_separated = f2(graph_tensor_merged)
     graph_tensor = f3(graph_tensor_separated)
-    _ = f4(graph_tensor)
+    graph_tensor = f4(graph_tensor)
+    graph_tensor = f5(graph_tensor)
+    _ = f6(graph_tensor)
 
 @pytest.mark.parametrize('graph_tensor', [graph_tensor])
 def test_indexing(graph_tensor) -> None:

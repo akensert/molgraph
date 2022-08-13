@@ -568,29 +568,48 @@ def _assert_separable(data: NestedTensors):
 def _slice_to_tensor(slice_obj: slice, limit: int) -> tf.Tensor:
     '''Converts slice to a tf.range, which can subsequently be used with
     tf.gather to gather subgraphs.
+
+    Note: GraphTensor is currently irreversible (e.g., x[::-1] or x[::-2]
+    will not work).
     '''
     start = slice_obj.start
     stop = slice_obj.stop
     step = slice_obj.step
 
+    tf.Assert(
+        step is None or not (step < 0 or step == 0),
+        ['Slice step cannot be negative or zero.'])
+
+    limit = tf.convert_to_tensor(limit)
+
     if stop is None:
         stop = limit
-    elif stop < 0:
-        stop = tf.maximum(limit + stop, 0)
-    elif stop > limit:
-        stop = limit
+    else:
+        stop = tf.convert_to_tensor(stop)
+        stop = tf.cond(
+            stop < 0,
+            lambda: tf.maximum(limit + stop, 0),
+            lambda: tf.cond(
+                stop > limit,
+                lambda: limit,
+                lambda: stop
+            )
+        )
 
     if start is None:
         start = tf.constant(0)
-    elif start < 0:
-        start = tf.maximum(limit + start, 0)
+    else:
+        start = tf.convert_to_tensor(start)
+        start = tf.cond(
+            start < 0,
+            lambda: tf.maximum(limit + start, 0),
+            lambda: start
+        )
 
     if step is None:
-        step = 1
-    elif step < 0:
-        raise ValueError('Slice step cannot be negative')
-    elif step == 0:
-        raise ValueError('Slice step cannot be zero')
+        step = tf.constant(1)
+    else:
+        step = tf.convert_to_tensor(step)
 
     start = tf.cond(start > stop, lambda: stop, lambda: start)
 
