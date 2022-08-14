@@ -1,7 +1,7 @@
 # Graph Neural Networks for Molecular Machine Learning
 
 ## In progress/unfinished
-This is an early release; things are still being changed/updated.
+This is an early release; things are still being updated and added.
 Hence, API compatibility may break in the future.
 
 ## Documentation
@@ -14,9 +14,9 @@ From terminal run `pip install git+https://github.com/akensert/molgraph.git`
 ### Requirements
 - **Python** (version ~= 3.8.10)
 - **TensorFlow** (version ~= 2.7.0)
-- **RDKit** (rdkit-pypi) (version ~= 2021.3.4)
+- **RDKit** (version ~= 2022.3.3)
 - **NumPy** (version ~= 1.21.2)
-- **Pandas** (version ~=1.0.3)
+- **Pandas** (version ~= 1.0.3)
 
 ### Tested with
 - **Ubuntu 20.04 - Python 3.8.10**

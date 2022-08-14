@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 install_requires = [
     "tensorflow>=2.7.0",
     "numpy>=1.21.2",
-    "rdkit-pypi>=2021.3.4",
+    "rdkit>=2022.3.3",
     "pandas>=1.0.3"
 ]
 tests_require = [
