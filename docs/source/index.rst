@@ -1,7 +1,7 @@
 Welcome to MolGraph!
 =======================
 
-*This project is currently in progress (unfinished). API compatability may break in the future.*
+*This is an early release; things are still being updated and added. Hence, API compatibility may break in the future.*
 
 What is MolGraph?
 --------------------
