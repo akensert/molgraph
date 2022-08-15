@@ -6,6 +6,14 @@ from typing import Optional
 
 class MaskedLoss(keras.losses.Loss):
 
+    '''Masked loss for classification tasks with missing labels.
+
+    As masks cannot normally be passed as `sample_weights` in Keras,
+    a new base class (`MaskedLoss`, inherting from `keras.losses.Loss`)
+    was implemented. `MaskedLoss` simply uses `sample_weights` as masks,
+    instead of actual sample weights.
+    '''
+
     def __init__(
         self,
         reduction: str = keras.losses.Reduction.AUTO,
