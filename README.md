@@ -9,16 +9,38 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 
 ## Installation
 
-From terminal run `pip install git+https://github.com/akensert/molgraph.git`
+### `pip`
 
-### Requirements
+```
+pip install git+https://github.com/akensert/molgraph.git
+```
+
+### `docker`
+
+```
+git clone https://github.com/akensert/molgraph.git
+cd molgraph/docker
+docker build -t molgraph-tf[-gpu]-jupyter/molgraph:0.0 molgraph-tf[-gpu]-jupyter/
+docker run -it -p 8888:8888 molgraph-tf[-gpu]-jupyter/molgraph:0.0
+```
+
+or for development:
+
+```
+git clone https://github.com/akensert/molgraph.git
+cd molgraph/docker
+docker build -t molgraph-tf[-gpu]/molgraph:0.0 molgraph-tf[-gpu]/
+docker run -it molgraph-tf[-gpu]/molgraph:0.0
+```
+
+## Requirements/dependencies
 - **Python** (version ~= 3.8.10)
 - **TensorFlow** (version ~= 2.7.0)
 - **RDKit** (version ~= 2022.3.3)
 - **NumPy** (version ~= 1.21.2)
 - **Pandas** (version ~= 1.0.3)
 
-### Tested with
+## Tested with
 - **Ubuntu 20.04 - Python 3.8.10**
 - **MacOS Monterey (12.3.1) - Python 3.10.3**
 
