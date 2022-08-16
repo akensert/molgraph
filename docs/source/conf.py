@@ -34,7 +34,6 @@ release = '0.0'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    'nbsphinx',
     'sphinx_gallery.load_style',
 ]
 
