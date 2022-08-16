@@ -5,5 +5,6 @@ pandas==1.0.3
 rdkit==2022.3.3
 matplotlib==3.2.1
 sphinx==5.1.1
+nbsphinx==0.8.9
 sphinx-gallery==0.11.0
 sphinx-rtd-theme==1.0.0
