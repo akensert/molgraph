@@ -36,9 +36,9 @@ graph.
   api/models
 
 
-.. nbgallery::
-  :caption: Tutorials
-  :name: tutorials
+.. toctree::
   :glob:
+  :maxdepth: 1
+  :caption: Tutorials
 
   examples/*
