@@ -16,6 +16,40 @@ from molgraph.tensors.graph_tensor import GraphTensor
 @keras.utils.register_keras_serializable(package='molgraph')
 class LaplacianPositionalEncoding(layers.Layer):
 
+    '''Laplacian positional encoding.
+
+    Implementation based on Dwivedi et al. (2021) [#]_ and Belkin et al. (2003) [#]_.
+
+    Args:
+        dim (int):
+            The dimension of the positional encoding. Default to 8.
+        activation (tf.keras.activations.Activation, callable, str, None):
+            Activation function applied to the output of the layer. Default to None.
+        use_bias (bool):
+            Whether the layer should use biases. Default to False.
+        kernel_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the kernel. Default to
+            tf.keras.initializers.TruncatedNormal(stddev=0.005).
+        bias_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the bias. Default to
+            tf.keras.initializers.Constant(0.).
+        kernel_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the kernel. Default to None.
+        bias_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the bias. Default to None.
+        activity_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the final output of the layer.
+            Default to None.
+        kernel_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the kernel. Default to None.
+        bias_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the bias. Default to None.
+
+    References:
+        .. [#] https://arxiv.org/pdf/2012.09699.pdf
+        .. [#] https://ieeexplore.ieee.org/document/6789755
+    '''
+
     def __init__(
         self,
         dim: int = 8,
@@ -53,6 +87,16 @@ class LaplacianPositionalEncoding(layers.Layer):
         node_feature: Union[tf.Tensor, tf.TensorShape],
         positional_encoding: Optional[Union[tf.Tensor, tf.TensorShape]] = None
     ) -> None:
+        '''Custom build method for initializing additional attributes.
+
+        Args:
+            node_feature (tf.Tensor, tf.TensorShape):
+                Either the shape of the node_feature component of GraphTensor,
+                or the node_feature component itself.
+            positional_encoding (tf.Tensor, tf.TensorShape, None):
+                Either the shape of the positional_encoding component of
+                GraphTensor, or the positional_encoding component itself.
+        '''
 
         self._built_from_signature = True
 
@@ -86,6 +130,21 @@ class LaplacianPositionalEncoding(layers.Layer):
             bias_constraint=self.bias_constraint)
 
     def call(self, tensor: GraphTensor) -> GraphTensor:
+
+        '''Defines the computation from inputs to outputs.
+
+        This method should not be called directly, but indirectly
+        via ``__call__()``. Upon first call, the layer is automatically
+        built via ``_build_from_signature()``.
+
+        Args:
+            tensor (GraphTensor):
+                A graph tensor which serves as input to the layer.
+
+        Returns:
+            GraphTensor:
+                A graph tensor with updated node features.
+        '''
 
         tensor_orig = tensor
         if isinstance(tensor.node_feature, tf.RaggedTensor):

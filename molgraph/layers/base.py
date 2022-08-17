@@ -13,31 +13,38 @@ from abc import ABC, abstractmethod
 from typing import Optional
 from typing import Callable
 from typing import Union
+from typing import List
 from typing import Tuple
+from typing import Type
+from typing import TypeVar
 
 from molgraph.tensors.graph_tensor import GraphTensor
+
+
+Shape = Union[List[int], Tuple[int, ...], tf.TensorShape]
+DType = Union[str, tf.DType]
+Config = TypeVar('Config', bound=dict)
+Layer = TypeVar('Layer', bound=layers.Layer)
+Activation = Optional[Union[Callable[[tf.Tensor], tf.Tensor], str]]
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
 class _BaseLayer(layers.Layer, ABC):
 
-    """Base layer for all (existing) graph convolutional layers.
-    """
+    'Base layer for all (existing) GNN layers.'
 
     def __init__(
         self,
         units: Optional[int] = None,
         batch_norm: bool = False,
-        residual = False,
+        residual: bool = False,
         dropout: Optional[float] = None,
-        activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
+        activation: Activation = None,
         use_bias: bool = False,
-        kernel_initializer: Union[
-            str, initializers.Initializer
-        ] = initializers.TruncatedNormal(stddev=0.005),
-        bias_initializer: Union[
-            str, initializers.Initializer
-        ] = initializers.Constant(0.),
+        kernel_initializer: Union[str, initializers.Initializer
+            ] = initializers.TruncatedNormal(stddev=0.005),
+        bias_initializer: Union[str, initializers.Initializer
+            ] = initializers.Constant(0.),
         kernel_regularizer: Optional[regularizers.Regularizer] = None,
         bias_regularizer: Optional[regularizers.Regularizer] = None,
         activity_regularizer: Optional[regularizers.Regularizer] = None,
@@ -80,7 +87,22 @@ class _BaseLayer(layers.Layer, ABC):
         pass
 
     def call(self, tensor: GraphTensor) -> GraphTensor:
+        '''Defines the computation from inputs to outputs.
 
+        This method should not be called directly, but indirectly
+        via ``__call__()``. Upon first call, the layer is automatically
+        built via ``_build_from_signature()``.
+
+        Args:
+            tensor (GraphTensor):
+                A graph tensor which serves as input to the layer.
+
+        Returns:
+            GraphTensor:
+                A graph tensor with updated features. For some layers,
+                both node features and edge features are updated.
+
+        '''
         tensor_orig = tensor
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()
@@ -101,10 +123,22 @@ class _BaseLayer(layers.Layer, ABC):
 
     def _build_from_signature(
         self,
-        node_feature: Union[tf.Tensor, tf.TensorShape],
-        edge_feature: Optional[Union[tf.Tensor, tf.TensorShape]] = None
+        node_feature: Union[tf.Tensor, Shape],
+        edge_feature: Optional[Union[tf.Tensor, Shape]] = None
     ) -> None:
+        '''Custom build method for initializing additional attributes.
 
+        These attributes are mainly Keras dense layers or TensorFlow variables
+        that will later transform the node (and edge) features of the graph tensor.
+
+        Args:
+            node_feature (tf.Tensor, tf.TensorShape):
+                Either the shape of the node_feature component of GraphTensor,
+                or the node_feature component itself.
+            edge_feature (tf.Tensor, tf.TensorShape, None):
+                Either the shape of the edge_feature component of GraphTensorm,
+                the edge_feature component itself. Default to None.
+        '''
         self._built_from_signature = True
 
         if hasattr(node_feature, "shape"):
@@ -200,7 +234,12 @@ class _BaseLayer(layers.Layer, ABC):
 
         return tensor_update
 
-    def get_kernel(self, shape, dtype=tf.float32, name='kernel'):
+    def get_kernel(
+        self,
+        shape: Shape,
+        dtype: DType = tf.float32,
+        name: str = 'kernel'
+    ) -> tf.Variable:
         return self.add_weight(
             name=name,
             shape=shape,
@@ -211,7 +250,11 @@ class _BaseLayer(layers.Layer, ABC):
             trainable=True
         )
 
-    def get_bias(self, shape, dtype=tf.float32, name='bias'):
+    def get_bias(self,
+        shape: Shape,
+        dtype: DType = tf.float32,
+        name: str = 'bias'
+    ) -> tf.Variable:
         return self.add_weight(
             name=name,
             shape=shape,
@@ -223,9 +266,10 @@ class _BaseLayer(layers.Layer, ABC):
         )
 
     def get_dense(
-        self, units: int,
-        activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
-    ) -> Callable[[tf.Tensor], tf.Tensor]:
+        self,
+        units: int,
+        activation: Activation = None,
+    ) -> layers.Dense:
         return layers.Dense(
             units,
             activation=activation,
@@ -236,15 +280,14 @@ class _BaseLayer(layers.Layer, ABC):
             bias_regularizer=self._bias_regularizer,
             activity_regularizer=self._activity_regularizer,
             kernel_constraint=self._kernel_constraint,
-            bias_constraint=self._bias_constraint
-        )
+            bias_constraint=self._bias_constraint)
 
     def get_einsum_dense(
         self,
         equation: str,
-        output_shape: Tuple[int, ...],
-        activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
-    ) -> Callable[[tf.Tensor], tf.Tensor]:
+        output_shape: Shape,
+        activation: Activation = None,
+    ) -> layers.experimental.EinsumDense:
 
         if self._use_bias:
             bias_axes = equation.split('->')[-1][1:]
@@ -264,10 +307,12 @@ class _BaseLayer(layers.Layer, ABC):
             bias_regularizer=self._bias_regularizer,
             activity_regularizer=self._activity_regularizer,
             kernel_constraint=self._kernel_constraint,
-            bias_constraint=self._bias_constraint
-        )
+            bias_constraint=self._bias_constraint)
 
-    def compute_output_shape(self, input_shape):
+    def compute_output_shape(
+        self,
+        input_shape: Shape
+    ) -> tf.TensorShape:
         inner_dim = self.units
         if getattr(self, 'merge_mode', None) == 'concat':
             if hasattr(self, 'num_heads'):
@@ -277,7 +322,7 @@ class _BaseLayer(layers.Layer, ABC):
         return tf.TensorShape(input_shape[:-1]).concatenate([inner_dim])
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls: Type[Layer], config: Config) -> Layer:
         node_feature_shape = config.pop('node_feature_shape')
         edge_feature_shape = config.pop('edge_feature_shape')
         layer = cls(**config)
@@ -287,13 +332,7 @@ class _BaseLayer(layers.Layer, ABC):
             layer._build_from_signature(node_feature_shape, edge_feature_shape)
         return layer
 
-    def get_config(self):
-        """Returns the config of the layer.
-
-        Returns
-        -------
-        Python dictionary.
-        """
+    def get_config(self) -> Config:
         config = super().get_config()
         config.update({
             'units':

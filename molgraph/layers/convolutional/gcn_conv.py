@@ -20,22 +20,64 @@ from molgraph.layers.ops import propagate_node_features
 @keras.utils.register_keras_serializable(package='molgraph')
 class GCNConv(_BaseLayer):
 
-    """Graph convolutional layer based on Kipf et al. [#]_ and
-    Dwivedi et al. [#]_ (GCN); and Schlichtkrull et al. [#]_ (RGCN).
+    """Graph convolutional layer (GCN).
+
+    Implementation is based on Kipf et al. (2017) [#]_, Dwivedi et al. (2022) [#]_,
+    and, for RGCN, Schlichtkrull et al. (2017) [#]_.
+
+    Args:
+        units (int, None):
+            Number of output units.
+        use_edge_features (bool):
+            Whether or not to use edge features. Default to False.
+        degree_normalization (str, None):
+            The strategy for computing edge weights from degrees. Either of
+            'symmetric', 'row' or None. If None, 'row' is used. Default to 'symmetric'.
+        num_bases (int, None):
+            Number of bases to use for basis decomposition. Only relevant if
+            use_edge_features is True. Default to None.
+        self_projection (bool):
+            Whether to apply self projection. Default to True.
+        batch_norm: (bool):
+            Whether to apply batch normalization to the output. Default to True.
+        residual: (bool)
+            Whether to add skip connection to the output. Default to True.
+        dropout: (float, None):
+            Dropout applied to the output of the layer. Default to None.
+        activation (tf.keras.activations.Activation, callable, str, None):
+            Activation function applied to the output of the layer. Default to 'relu'.
+        use_bias (bool):
+            Whether the layer should use biases. Default to True.
+        kernel_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the kernels. Default to
+            tf.keras.initializers.TruncatedNormal(stddev=0.005).
+        bias_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the biases. Default to
+            tf.keras.initializers.Constant(0.).
+        kernel_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the kernels. Default to None.
+        bias_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the biases. Default to None.
+        activity_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the final output of the layer.
+            Default to None.
+        kernel_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the kernels. Default to None.
+        bias_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the biases. Default to None.
 
     References:
-
-    .. [#] Kipf et al. https://arxiv.org/pdf/1609.02907.pdf
-    .. [#] Dwivedi et al. https://arxiv.org/pdf/2003.00982.pdf
-    .. [#] Schlichtkrull et al. https://arxiv.org/pdf/1703.06103.pdf
+        .. [#] https://arxiv.org/pdf/1609.02907.pdf
+        .. [#] https://arxiv.org/pdf/2003.00982.pdf
+        .. [#] https://arxiv.org/pdf/1703.06103.pdf
     """
 
     def __init__(
         self,
         units: Optional[int] = None,
         use_edge_features: bool = False,
-        weight_normalization = 'symmetric',
-        num_bases=None,
+        degree_normalization: Optional[str] = 'symmetric',
+        num_bases: Optional[int] = None,
         self_projection: bool = True,
         batch_norm: bool = True,
         residual: bool = True,
@@ -73,7 +115,7 @@ class GCNConv(_BaseLayer):
             **kwargs)
 
         self.use_edge_features = use_edge_features
-        self.weight_normalization = weight_normalization
+        self.degree_normalization = degree_normalization
         self.num_bases = (
             int(num_bases) if isinstance(num_bases, (int, float)) else 0)
         self.apply_self_projection = self_projection
@@ -124,7 +166,7 @@ class GCNConv(_BaseLayer):
             tensor.edge_dst,
             tensor.edge_src,
             tensor.edge_feature if self.use_edge_features else None,
-            self.weight_normalization)
+            self.degree_normalization)
 
         # (n_edges, ndim, 1) x (n_edges, 1, edim) -> (n_edges, ndim, edim)
         node_feature = propagate_node_features(
@@ -156,7 +198,7 @@ class GCNConv(_BaseLayer):
         config = {
             'use_edge_features': self.use_edge_features,
             'self_projection': self.apply_self_projection,
-            'weight_normalization': self.weight_normalization,
+            'degree_normalization': self.degree_normalization,
             'num_bases': self.num_bases,
             'use_bias': self.use_bias,
         }

@@ -21,15 +21,48 @@ from molgraph.layers.ops import propagate_node_features
 @keras.utils.register_keras_serializable(package='molgraph')
 class GINConv(_BaseLayer):
 
-    """Graph isomorphism convolution layer based on Dwivedi et al. [#]_
-    and Xu et al. [#]_.
+    '''Graph isomorphism convolution layer (GIN).
+
+    Implementation based on Dwivedi et al. (2022) [#]_ and Xu et al. (2019) [#]_.
+
+    Args:
+        units (int, None):
+            Number of output units.
+        self_projection (bool):
+            Whether to apply self projection. Default to True.
+        batch_norm: (bool):
+            Whether to apply batch normalization to the output. Default to True.
+        residual: (bool)
+            Whether to add skip connection to the output. Default to True.
+        dropout: (float, None):
+            Dropout applied to the output of the layer. Default to None.
+        activation (tf.keras.activations.Activation, callable, str, None):
+            Activation function applied to the output of the layer. Default to 'relu'.
+        use_bias (bool):
+            Whether the layer should use biases. Default to True.
+        kernel_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the kernels. Default to
+            tf.keras.initializers.TruncatedNormal(stddev=0.005).
+        bias_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the biases. Default to
+            tf.keras.initializers.Constant(0.).
+        kernel_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the kernels. Default to None.
+        bias_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the biases. Default to None.
+        activity_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the final output of the layer.
+            Default to None.
+        kernel_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the kernels. Default to None.
+        bias_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the biases. Default to None.
 
     References:
-    
-    .. [#] Dwivedi et al. https://arxiv.org/pdf/2003.00982.pdf
-    .. [#] Xu et al. https://arxiv.org/pdf/1810.00826.pdf
+        .. [#] https://arxiv.org/pdf/2003.00982.pdf
+        .. [#] https://arxiv.org/pdf/1810.00826.pdf
 
-    """
+    '''
 
     def __init__(
         self,

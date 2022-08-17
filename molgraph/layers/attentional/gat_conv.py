@@ -18,19 +18,63 @@ from molgraph.layers.ops import propagate_node_features
 from molgraph.layers.ops import reduce_features
 
 
-
 @keras.utils.register_keras_serializable(package='molgraph')
 class GATConv(_BaseLayer):
 
-    """Multi-head graph attention layer based on Velickovic et al. [#]_
-    and Dwivedi et al. [#]_.
+    '''Multi-head graph attention layer (GAT).
+
+    The implementation is based on Velickovic et al. (2018) [#]_ and
+    Dwivedi et al. (2022) [#]_.
+
+    Args:
+        units (int, None):
+            Number of output units.
+        use_edge_features (bool):
+            Whether or not to use edge features. Default to True.
+        num_heads (int):
+            Number of attention heads. Default to 8.
+        merge_mode (str):
+            The strategy for merging the heads. Either of 'concat', 'sum',
+            'mean' or None. If set to None, 'mean' is used. Default to 'concat'.
+        self_projection (bool):
+            Whether to apply self projection. Default to True.
+        batch_norm: (bool):
+            Whether to apply batch normalization to the output. Default to True.
+        residual: (bool)
+            Whether to add skip connection to the output. Default to True.
+        dropout: (float, None):
+            Dropout applied to the output of the layer. Default to None.
+        attention_activation (tf.keras.activations.Activation, callable, str, None):
+            Activation function applied to the the attention scores.
+            Default to 'leaky_relu'.
+        activation (tf.keras.activations.Activation, callable, str, None):
+            Activation function applied to the output of the layer.
+            Default to 'relu'.
+        use_bias (bool):
+            Whether the layer should use biases. Default to True.
+        kernel_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the kernels. Default to
+            tf.keras.initializers.TruncatedNormal(stddev=0.005).
+        bias_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the biases. Default to
+            tf.keras.initializers.Constant(0.).
+        kernel_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the kernels. Default to None.
+        bias_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the biases. Default to None.
+        activity_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the final output of the layer.
+            Default to None.
+        kernel_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the kernels. Default to None.
+        bias_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the biases. Default to None.
 
     References:
-    
-    .. [#] Velickovic et al. https://arxiv.org/pdf/1710.10903.pdf
-    .. [#] Dwivedi et al. https://arxiv.org/pdf/2003.00982.pdf
+        .. [#] https://arxiv.org/pdf/1710.10903.pdf
+        .. [#] https://arxiv.org/pdf/2003.00982.pdf
 
-    """
+    '''
 
     def __init__(
         self,
@@ -94,8 +138,8 @@ class GATConv(_BaseLayer):
         if self.merge_mode == 'concat':
             if not self.units or (self.units % self.num_heads != 0):
                 raise ValueError(
-                    "`merge_mode` was set to `concat` and hence " +
-                    " need `units` to be divisble by `num_heads`")
+                    '`merge_mode` was set to `concat` and hence ' +
+                    ' need `units` to be divisble by `num_heads`')
             self.units //= self.num_heads
 
         self.use_edge_features = (

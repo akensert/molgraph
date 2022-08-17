@@ -33,6 +33,7 @@ release = '0.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
     'sphinx_gallery.load_style',
     'nbsphinx'
@@ -65,3 +66,5 @@ html_logo = '_static/molgraph-no-bg-3.png'
 html_theme_options = {}
 
 nbsphinx_thumbnails = {} # .py : .png
+
+autodoc_typehints = 'none'

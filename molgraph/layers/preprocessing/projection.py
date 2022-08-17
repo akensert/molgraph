@@ -81,10 +81,10 @@ class FeatureProjection(layers.Layer):
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class NodeProjection(FeatureProjection):
+class NodeFeatureProjection(FeatureProjection):
     feature = 'node_feature'
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class EdgeProjection(FeatureProjection):
+class EdgeFeatureProjection(FeatureProjection):
     feature = 'edge_feature'

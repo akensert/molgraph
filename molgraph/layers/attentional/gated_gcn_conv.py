@@ -21,17 +21,53 @@ from molgraph.layers.ops import propagate_node_features
 @keras.utils.register_keras_serializable(package='molgraph')
 class GatedGCNConv(_BaseLayer):
 
-    """Gated graph convolutional layer based on Dwivedi et al. [#]_,
-    Bresson et al. [#]_, Joshi et al. [#]_ and Bresson et al. [#]_.
+    '''Gated graph convolutional layer (GatedGCN).
+
+    Implementation is based on Dwivedi et al. (2022) [#]_, Bresson et al. (2019) [#]_,
+    Joshi et al. (2019) [#]_, and Bresson et al. (2018) [#]_.
+
+    Args:
+        units (int, None):
+            Number of output units.
+        use_edge_features (bool):
+            Whether or not to use edge features. Default to True.
+        self_projection (bool):
+            Whether to apply self projection. Default to True.
+        batch_norm: (bool):
+            Whether to apply batch normalization to the output. Default to True.
+        residual: (bool)
+            Whether to add skip connection to the output. Default to True.
+        dropout: (float, None):
+            Dropout applied to the output of the layer. Default to None.
+        activation (tf.keras.activations.Activation, callable, str, None):
+            Activation function applied to the output of the layer. Default to 'relu'.
+        use_bias (bool):
+            Whether the layer should use biases. Default to True.
+        kernel_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the kernels. Default to
+            tf.keras.initializers.TruncatedNormal(stddev=0.005).
+        bias_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the biases. Default to
+            tf.keras.initializers.Constant(0.).
+        kernel_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the kernels. Default to None.
+        bias_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the biases. Default to None.
+        activity_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the final output of the layer.
+            Default to None.
+        kernel_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the kernels. Default to None.
+        bias_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the biases. Default to None.
 
     References:
-    
-    .. [#] Dwivedi et al. https://arxiv.org/pdf/2003.00982.pdf
-    .. [#] Bresson et al. https://arxiv.org/pdf/1906.03412.pdf
-    .. [#] Joshi et al.  https://arxiv.org/pdf/1906.01227.pdf
-    .. [#] Bresson et al. https://arxiv.org/pdf/1711.07553.pdf
+        .. [#] https://arxiv.org/pdf/2003.00982.pdf
+        .. [#] https://arxiv.org/pdf/1906.03412.pdf
+        .. [#] https://arxiv.org/pdf/1906.01227.pdf
+        .. [#] https://arxiv.org/pdf/1711.07553.pdf
 
-    """
+    '''
 
     def __init__(
         self,

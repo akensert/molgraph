@@ -20,32 +20,65 @@ from molgraph.layers.ops import propagate_node_features
 @keras.utils.register_keras_serializable(package='molgraph')
 class GCNIIConv(_BaseLayer):
 
-    """Graph convolutional \`via Initial residual and Identity mapping\` layer
-    based on Chen et al. [#]_.
+    '''Graph convolutional 'via Initial residual and Identity mapping' layer (GCNII).
 
-    Notes:
-    
-    alpha: float
-        Decides how much information of the initial node state (the
-        original node features) should be passed to the subsequent layers
-        (alpha) vs. how much new information should be passed to the subsequent
-        layers (1 - alpha). Takes a value between 0.0 and 1.0. In the original
-        paper, alpha was set between 0.1 and 0.5, depending on the dataset.
-    beta: float
-        Decides to what extent the kernel (projection) should be ignored.
-        A value set to 0.0 means that the kernel is ignored, a value set to 1.0
-        means that the kernel is fully applied. Takes a value between 0.0 and
-        1.0. In the original paper, beta is set to log(lambda/l+1)
-        where lambda is a hyperparameter, set, in the original paper
-        between 0.5 and 1.5 depending on the dataset; l denotes the l:th layer.
-    variant: str, optional
-        Whether the GCNII variant should be used.
+    Implementation is based on Chen et al. (2020) [#]_.
+
+    Args:
+        units (int, None):
+            Number of output units.
+        alpha (float):
+            Decides how much information of the initial node state (the
+            original node features) should be passed to the next layer (alpha)
+            vs. how much new information should be passed to the subsequent
+            layer (1 - alpha). Takes a value between 0.0 and 1.0. In the original
+            paper, alpha was set between 0.1 and 0.5, depending on the dataset.
+        beta (float):
+            Decides to what extent the kernel (projection) should be ignored.
+            Takes a value between 0.0 and 1.0; a value set to 0.0 means that the
+            kernel is ignored, a value set to 1.0 means that the kernel is fully
+            applied. In the original paper, beta is set to log(lambda/l+1);
+            l denotes the l:th layer, and lambda is a hyperparameter, set,
+            in the original paper, between 0.5 and 1.5 depending on the dataset.
+        variant (bool):
+            Whether the GCNII variant should be used. Default to False.
+        degree_normalization (str, None):
+            The strategy for computing edge weights from degrees. Either of
+            'symmetric', 'row' or None. If None, 'row' is used. Default to 'symmetric'.
+        self_projection (bool):
+            Whether to apply self projection. Default to True.
+        batch_norm: (bool):
+            Whether to apply batch normalization to the output. Default to True.
+        residual: (bool)
+            Whether to add skip connection to the output. Default to True.
+        dropout: (float, None):
+            Dropout applied to the output of the layer. Default to None.
+        activation (tf.keras.activations.Activation, callable, str, None):
+            Activation function applied to the output of the layer. Default to 'relu'.
+        use_bias (bool):
+            Whether the layer should use biases. Default to True.
+        kernel_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the kernels. Default to
+            tf.keras.initializers.TruncatedNormal(stddev=0.005).
+        bias_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the biases. Default to
+            tf.keras.initializers.Constant(0.).
+        kernel_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the kernels. Default to None.
+        bias_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the biases. Default to None.
+        activity_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the final output of the layer.
+            Default to None.
+        kernel_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the kernels. Default to None.
+        bias_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the biases. Default to None.
 
     References:
+        .. [#] https://arxiv.org/pdf/2007.02133v1.pdf
 
-    .. [#] Chen et al. https://arxiv.org/pdf/2007.02133v1.pdf
-
-    """
+    '''
 
     def __init__(
         self,
@@ -53,7 +86,7 @@ class GCNIIConv(_BaseLayer):
         alpha: float = 0.5,
         beta: float = 0.5,
         variant: bool = False,
-        weight_normalization: str = 'symmetric',
+        degree_normalization: str = 'symmetric',
         self_projection: bool = True,
         batch_norm: bool = True,
         residual: bool = True,
@@ -92,7 +125,7 @@ class GCNIIConv(_BaseLayer):
         self.alpha = alpha
         self.beta = beta
         self.variant = variant
-        self.weight_normalization = weight_normalization
+        self.degree_normalization = degree_normalization
         self.apply_self_projection = self_projection
         self.residual = residual
 
@@ -123,7 +156,7 @@ class GCNIIConv(_BaseLayer):
             tensor = tensor.update({'node_feature_initial': tensor.node_feature})
 
         edge_weight = compute_edge_weights_from_degrees(
-            tensor.edge_dst, tensor.edge_src, None, self.weight_normalization)
+            tensor.edge_dst, tensor.edge_src, None, self.degree_normalization)
 
         node_feature = propagate_node_features(
             tensor.node_feature, tensor.edge_dst, tensor.edge_src, edge_weight)
@@ -155,7 +188,7 @@ class GCNIIConv(_BaseLayer):
         base_config = super().get_config()
         config = {
             'self_projection': self.apply_self_projection,
-            'weight_normalization': self.weight_normalization,
+            'degree_normalization': self.degree_normalization,
             'alpha': self.alpha,
             'beta': self.beta,
             'variant': self.variant

@@ -20,21 +20,61 @@ from molgraph.layers.ops import propagate_node_features
 @keras.utils.register_keras_serializable(package='molgraph')
 class GraphSageConv(_BaseLayer):
 
-    """Graph sage convolution layer based on Hamilton et al. [#]_
-    and Dwivedi et al. [#]_.
+    '''Graph sage convolution layer (GraphSage)
+
+    Implementation is based on Hamilton et al. (2018) [#]_ and
+    Dwivedi et al. (2022) [#]_.
+
+    Args:
+        units (int, None):
+            Number of output units.
+        aggregation_mode (str):
+            Type of neighborhood aggregation to be performed. Either of 'max',
+            'lstm', 'mean', 'sum'. Default to 'mean'.
+        normalize (bool):
+            Whether l2 normalization should be performed on the updated node
+            features. Default to True.
+        self_projection (bool):
+            Whether to apply self projection. Default to True.
+        batch_norm: (bool):
+            Whether to apply batch normalization to the output. Default to True.
+        residual: (bool)
+            Whether to add skip connection to the output. Default to True.
+        dropout: (float, None):
+            Dropout applied to the output of the layer. Default to None.
+        activation (tf.keras.activations.Activation, callable, str, None):
+            Activation function applied to the output of the layer. Default to 'relu'.
+        use_bias (bool):
+            Whether the layer should use biases. Default to True.
+        kernel_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the kernels. Default to
+            tf.keras.initializers.TruncatedNormal(stddev=0.005).
+        bias_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the biases. Default to
+            tf.keras.initializers.Constant(0.).
+        kernel_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the kernels. Default to None.
+        bias_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the biases. Default to None.
+        activity_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the final output of the layer.
+            Default to None.
+        kernel_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the kernels. Default to None.
+        bias_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the biases. Default to None.
 
     References:
-    
-    .. [#] Hamilton et al. https://arxiv.org/pdf/1706.02216.pdf
-    .. [#] Dwivedi et al. https://arxiv.org/pdf/2003.00982.pdf
+        .. [#] https://arxiv.org/pdf/1706.02216.pdf
+        .. [#] https://arxiv.org/pdf/2003.00982.pdf
 
-    """
+    '''
 
     def __init__(
         self,
         units: Optional[int] = None,
-        aggregation_mode='mean',
-        normalize=True,
+        aggregation_mode: str = 'mean',
+        normalize: bool = True,
         self_projection: bool = True,
         batch_norm: bool = True,
         residual: bool = True,

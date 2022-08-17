@@ -37,70 +37,206 @@ Layers
 
 Convolutional
 ~~~~~~~~~~~~~~
-.. autoclass:: molgraph.layers.GCNConv(molgraph.layers.BaseLayer)
-  :special-members: __init__
-  :undoc-members: __init__
 
-.. autoclass:: molgraph.layers.GINConv(molgraph.layers.BaseLayer)
-  :special-members: __init__
-  :undoc-members: __init__
+GCNConv
+-----------------------
+.. autoclass:: molgraph.layers.GCNConv(molgraph.layers._BaseLayer)
+  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
 
-.. autoclass:: molgraph.layers.GraphSageConv(molgraph.layers.BaseLayer)
-  :special-members: __init__
-  :undoc-members: __init__
+GINConv
+-----------------------
+.. autoclass:: molgraph.layers.GINConv(molgraph.layers._BaseLayer)
+  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
 
-.. autoclass:: molgraph.layers.GCNIIConv(molgraph.layers.BaseLayer)
-  :special-members: __init__
-  :undoc-members: __init__
+GraphSageConv
+-----------------------
+.. autoclass:: molgraph.layers.GraphSageConv(molgraph.layers._BaseLayer)
+  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+
+GCNIIConv
+-----------------------
+.. autoclass:: molgraph.layers.GCNIIConv(molgraph.layers._BaseLayer)
+  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
 
 
 Attentional
 ~~~~~~~~~~~~~~
-.. autoclass:: molgraph.layers.GATConv(molgraph.layers.BaseLayer)
-  :special-members: __init__
-  :undoc-members: __init__
 
-.. autoclass:: molgraph.layers.GatedGCNConv(molgraph.layers.BaseLayer)
-  :special-members: __init__
-  :undoc-members: __init__
+GATConv
+-----------------------
+.. autoclass:: molgraph.layers.GATConv(molgraph.layers._BaseLayer)
+  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
 
-.. autoclass:: molgraph.layers.GMMConv(molgraph.layers.BaseLayer)
-  :special-members: __init__
-  :undoc-members: __init__
+GatedGCNConv
+-----------------------
+.. autoclass:: molgraph.layers.GatedGCNConv(molgraph.layers._BaseLayer)
+  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
 
-.. autoclass:: molgraph.layers.GraphTransformerConv(molgraph.layers.BaseLayer)
-  :special-members: __init__
-  :undoc-members: __init__
+GMMConv
+-----------------------
+.. autoclass:: molgraph.layers.GMMConv(molgraph.layers._BaseLayer)
+  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+
+GraphTransformerConv
+-----------------------
+.. autoclass:: molgraph.layers.GraphTransformerConv(molgraph.layers._BaseLayer)
+  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
 
 
 Message-passing
 ~~~~~~~~~~~~~~~~~~~~~~~
-.. autoclass:: molgraph.layers.MPNNConv(molgraph.layers.BaseLayer)
-  :special-members: __init__
-  :undoc-members: __init__
+
+MPNNConv
+-----------------------
+  .. autoclass:: molgraph.layers.MPNNConv(molgraph.layers._BaseLayer)
+    :members: _build_from_signature, call, get_config, from_config, compute_output_shape
 
 
 Geometric
 ~~~~~~~~~~~~~
-.. autoclass:: molgraph.layers.DTNNConv(molgraph.layers.BaseLayer)
-  :special-members: __init__
-  :undoc-members: __init__
 
-.. autoclass:: molgraph.layers.GCFConv(molgraph.layers.BaseLayer)
-  :special-members: __init__
-  :undoc-members: __init__
+DTNNConv
+-----------------------
+.. autoclass:: molgraph.layers.DTNNConv(molgraph.layers._BaseLayer)
+  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+
+GCFConv
+-----------------------
+.. autoclass:: molgraph.layers.GCFConv(molgraph.layers._BaseLayer)
+  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
 
 
 Readout
 ~~~~~~~~~~~~
+
+SegmentPoolingReadout
+-----------------------
 .. autoclass:: molgraph.layers.SegmentPoolingReadout(tensorflow.keras.layers.Layer)
-  :special-members: __init__
-  :undoc-members: __init__
+  :members: call, get_config, from_config, compute_output_shape
 
+TransformerEncoderReadout
+--------------------------
 .. autoclass:: molgraph.layers.TransformerEncoderReadout(tensorflow.keras.layers.Layer)
-  :special-members: __init__
-  :undoc-members: __init__
+  :members: call, get_config, from_config, compute_output_shape, _build_from_signature
 
+SetGatherReadout
+-----------------------
 .. autoclass:: molgraph.layers.SetGatherReadout(tensorflow.keras.layers.Layer)
-  :special-members: __init__
-  :undoc-members: __init__
+  :members: call, get_config, from_config, compute_output_shape
+
+Positional encoding
+~~~~~~~~~~~~~~~~~~~
+
+LaplacianPositionalEncodig
+--------------------------
+.. autoclass:: molgraph.layers.LaplacianPositionalEncoding(tensorflow.keras.layers.Layer)
+  :members: call, get_config, from_config, compute_output_shape, _build_from_signature
+
+
+Preprocessing (doc unfinished)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+EmbeddingLookup
+--------------------------
+.. autoclass:: molgraph.layers.EmbeddingLookup(tensorflow.keras.layers.StringLookup)
+  :members: get_config, from_config,
+
+.. autoclass:: molgraph.layers.NodeEmbeddingLookup(tensorflow.keras.layers.StringLookup)
+  :members: get_config, from_config,
+
+.. autoclass:: molgraph.layers.EdgeEmbeddingLookup(tensorflow.keras.layers.StringLookup)
+  :members: get_config, from_config,
+
+
+MinMaxScaling
+--------------------------
+.. autoclass:: molgraph.layers.MinMaxScaling(layers.experimental.preprocessing.PreprocessingLayer)
+  :members: get_config, from_config,
+
+.. autoclass:: molgraph.layers.NodeMinMaxScaling(layers.experimental.preprocessing.PreprocessingLayer)
+  :members: get_config, from_config,
+
+.. autoclass:: molgraph.layers.EdgeMinMaxScaling(layers.experimental.preprocessing.PreprocessingLayer)
+  :members: get_config, from_config,
+
+StandardScaling
+--------------------------
+.. autoclass:: molgraph.layers.StandardScaling(layers.experimental.preprocessing.PreprocessingLayer)
+  :members: get_config, from_config,
+
+.. autoclass:: molgraph.layers.NodeStandardScaling(layers.experimental.preprocessing.PreprocessingLayer)
+  :members: get_config, from_config,
+
+.. autoclass:: molgraph.layers.EdgeStandardScaling(layers.experimental.preprocessing.PreprocessingLayer)
+  :members: get_config, from_config,
+
+Projection
+--------------------------
+.. autoclass:: molgraph.layers.FeatureProjection(tensorflow.keras.layers.Layer)
+  :members: get_config, from_config,
+
+.. autoclass:: molgraph.layers.NodeFeatureProjection(tensorflow.keras.layers.Layer)
+  :members: get_config, from_config,
+
+.. autoclass:: molgraph.layers.EdgeFeatureProjection(tensorflow.keras.layers.Layer)
+  :members: get_config, from_config,
+
+
+Postprocessing (doc unfinished)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+DotProductIncident
+--------------------------
+.. autoclass:: molgraph.layers.DotProductIncident(tensorflow.keras.layers.Layer)
+  :members: get_config, from_config,
+
+GatherIncident
+--------------------------
+.. autoclass:: molgraph.layers.GatherIncident(tensorflow.keras.layers.Layer)
+  :members: get_config, from_config,
+
+Gather
+--------------------------
+.. autoclass:: molgraph.layers.Gather(tensorflow.keras.layers.Layer)
+  :members: get_config, from_config,
+
+
+Layer ops
+~~~~~~~~~~~~~~~~
+
+Layer ops are helper functions which makes it easier to code up a custom
+GNN layer. For example, a basic GCN layer can be coded up as follows:
+
+.. code-block::
+
+  import tensorflow as tf
+  from molgraph.layers import ops as layer_ops
+
+  class MyGCNConv(tf.keras.layers.Layer):
+
+    def __init__(self, units):
+        super().__init__()
+        self.units = units
+
+    def build(self, input_shape):
+        self.kernel = self.add_weight(
+            name='kernel',
+            shape=(input_shape[-1], self.units),
+            dtype=tf.float32,
+            trainable=True)
+        self.built = True
+
+    def call(self, graph_tensor):
+        graph_tensor_orig = graph_tensor
+        if isinstance(graph_tensor.node_feature, tf.RaggedTensor):
+            graph_tensor = graph_tensor.merge()
+        node_feature_transformed = tf.matmul(graph_tensor.node_feature, self.kernel)
+        node_feature_aggregated = layer_ops.propagate_node_features(
+            node_feature_transformed,
+            graph_tensor.edge_src,
+            graph_tensor.edge_dst,
+            mode='mean')
+        return graph_tensor_orig.update({'node_feature': node_feature_aggregated})
+
+
+.. automodule:: molgraph.layers.ops
+  :members:

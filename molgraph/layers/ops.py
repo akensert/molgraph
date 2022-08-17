@@ -11,9 +11,26 @@ def softmax_edge_weights(
     exponentiate: bool = True,
     clip_values: Tuple[float, float] = (-5.0, 5.0),
 ) -> tf.Tensor:
+    '''Normalizes edge weights via softmax.
+
+    The sum of edge weights associated with each destination node sums to 1.
+
+    Args:
+        edge_weight (tf.Tensor):
+            A vector of edge weights
+        edge_dst (tf.Tensor):
+            A vector of destination node indices (corresponding to edge_weight)
+        exponentiate (bool):
+            Whether the edge_weights should be exponentiated. Default to True.
+        clip_values (tuple):
+            If exponentiation, clip values before it.
+
+    Returns:
+        tf.Tensor: New, normalized, edge weights.
+    '''
 
     def true_fn(edge_weight, edge_dst, exponentiate, clip_values):
-        """If edges exist, call this function"""
+        'If edges exist, call this function'
         if exponentiate:
             edge_weight = tf.clip_by_value(edge_weight, *clip_values)
             edge_weight = tf.math.exp(edge_weight)
@@ -25,7 +42,7 @@ def softmax_edge_weights(
         return edge_weight / edge_weight_sum
 
     def false_fn(edge_weight):
-        """If no edges exist, call this function"""
+        'If no edges exist, call this function'
         return edge_weight
 
     return tf.cond(
@@ -38,6 +55,20 @@ def reduce_features(
     mode: Optional[str],
     reduce_dim: int,
 ) -> tf.Tensor:
+    '''Reduces dimension of node (or edge) features.
+
+    Args:
+        feature (tf.Tensor):
+            The features to be reduced. Either node or edge features.
+        mode (str, None):
+            The type of reduction to be performed. Either of 'concat', 'sum'
+            'mean' or None. If None, 'mean' is performed.
+        reduce_dim (int):
+            The dimension to be reduced.
+
+    Returns:
+        tf.Tensor: Reduced features. If initially a rank 3 tensor, now a rank 2 tensor.
+    '''
     if mode == 'concat':
         return tf.reshape(feature, (-1, reduce_dim))
     elif mode == 'sum':
@@ -51,9 +82,24 @@ def propagate_node_features(
     edge_weight: Optional[tf.Tensor] = None,
     mode: str = 'sum'
 ) -> tf.Tensor:
-    """Aggregated neighboring node information (source nodes) to destination
-    nodes. Thus, is edge depedent.
-    """
+    '''Aggregates source node features to destination node features.
+
+    Args:
+        node_feature (tf.Tensor):
+            Node features of graph tensor.
+        edge_dst (tf.Tensor):
+            Destination node indices of graph tensor. Entry i corresponds
+            to row i in node_feature.
+        edge_src (tf.Tensor):
+            Source node indices of graph tensor. Entry i corresponds
+            to row i in node_feature.
+        edge_weight (tf.Tensor):
+            Edge weights associated with edge_dst and edge_src.
+
+    Returns:
+        tf.Tensor: Updated node features via neighborhood aggregation.
+    '''
+
     num_segments = tf.shape(node_feature)[0]
     node_feature = tf.gather(node_feature, edge_src)
     if edge_weight is not None:
@@ -75,6 +121,24 @@ def compute_edge_weights_from_degrees(
     edge_feature: Optional[tf.Tensor] = None,
     mode: Optional[str] = 'symmetric',
 ) -> tf.Tensor:
+    '''Computes edge weights based on the number of nearest neighbors.
+
+    These edge weights can subsequently be used as normalization coefficients
+    for the neighborhood aggregation (``propagate_node_features``).
+
+    Args:
+        edge_dst (tf.Tensor):
+            Destination node indices.
+        edge_src (tf.Tensor):
+            Source node indices.
+        edge_feature (tf.Tensor):
+            Edge features associated with edge_dst and edge_src.
+        mode (str):
+            Type of normalization to use. Either of 'symmetric', 'row' or None.
+            If None, 'row' is used. Default to 'symmetric'.
+    Returns:
+        tf.Tensor: Edge weights based on degrees.
+    '''
 
     if edge_feature is None:
         edge_feature = tf.ones((tf.shape(edge_dst)[0], 1), dtype=tf.float32)

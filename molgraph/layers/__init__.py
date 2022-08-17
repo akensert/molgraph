@@ -27,8 +27,8 @@ from molgraph.layers.preprocessing.embedding_lookup import EmbeddingLookup
 from molgraph.layers.preprocessing.embedding_lookup import NodeEmbeddingLookup
 from molgraph.layers.preprocessing.embedding_lookup import EdgeEmbeddingLookup
 from molgraph.layers.preprocessing.projection import FeatureProjection
-from molgraph.layers.preprocessing.projection import NodeProjection
-from molgraph.layers.preprocessing.projection import EdgeProjection
+from molgraph.layers.preprocessing.projection import NodeFeatureProjection
+from molgraph.layers.preprocessing.projection import EdgeFeatureProjection
 from molgraph.layers.preprocessing.standard_scaling import StandardScaling
 from molgraph.layers.preprocessing.standard_scaling import NodeStandardScaling
 from molgraph.layers.preprocessing.standard_scaling import EdgeStandardScaling

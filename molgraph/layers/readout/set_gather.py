@@ -10,14 +10,14 @@ from molgraph.tensors.graph_tensor import GraphTensor
 @keras.utils.register_keras_serializable(package='molgraph')
 class SetGatherReadout(layers.Layer):
 
-    """Set-to-set layer for graph readout, based on Gilmer et al. [#]_.
+    '''Set-to-set layer for graph readout.
+
+    Implementation based on Gilmer et al. (2017) [#]_ and Vinyals et al. (2016) [#]_.
 
     References:
-    
-        .. [#] Gilmer et al. https://arxiv.org/pdf/1704.01212.pdf
-        .. [#] Vinyals et al. https://arxiv.org/pdf/1511.06391.pdf
-
-    """
+        .. [#] https://arxiv.org/pdf/1704.01212.pdf
+        .. [#] https://arxiv.org/pdf/1511.06391.pdf
+    '''
 
     def __init__(self, steps=8, **kwargs):
         super().__init__(**kwargs)
@@ -25,7 +25,21 @@ class SetGatherReadout(layers.Layer):
         self.lstm_cell = NoInputLSTMCell()
 
     def call(self, tensor: GraphTensor) -> tf.Tensor:
+        '''Defines the computation from inputs to outputs.
 
+        This method should not be called directly, but indirectly
+        via ``__call__()``. Upon first call, the layer is automatically
+        built via ``build()``.
+
+        Args:
+            tensor (GraphTensor):
+                A graph tensor which serves as input to the layer.
+
+        Returns:
+            tf.Tensor:
+                A tensor based on the node_feature component of the inputted
+                graph tensor.
+        '''
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()
 
@@ -88,7 +102,7 @@ class SetGatherReadout(layers.Layer):
 @keras.utils.register_keras_serializable(package='molgraph')
 class NoInputLSTMCell(layers.Layer):
 
-    """Custom LSTM Cell that takes no input"""
+    'Custom LSTM Cell that takes no input'
 
     def build(self, input_shape):
         memory_state_dim = input_shape[0][-1]

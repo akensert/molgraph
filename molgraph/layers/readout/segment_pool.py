@@ -9,14 +9,16 @@ from molgraph.tensors.graph_tensor import GraphTensor
 @keras.utils.register_keras_serializable(package='molgraph')
 class SegmentPoolingReadout(layers.Layer):
 
-    """Segmentation pooling with tf.math.segment_*
+    '''Segmentation pooling for graph readout.
 
-    Parameters:
-    
-    mode: str
-        What type of pooling should be performed. Either of `avg`,
-        `max` or `sum`. Defaults to `avg`.
-    """
+    Args:
+        mode (str):
+            What type of pooling should be performed. Either of 'mean',
+            'max' or 'sum'. Specifically, performs a ``tf.math.segment_mean``,
+            ``tf.math.segment_max`` or ``tf.math.segment_sum`` (respectively)
+            on the node_feature component of the inputted graph tensor.
+            Defaults to 'mean'.
+    '''
 
     def __init__(self, mode: str = 'mean', **kwargs) -> None:
         super().__init__(**kwargs)
@@ -33,6 +35,21 @@ class SegmentPoolingReadout(layers.Layer):
                              '"mean"/"average"/"avg", "sum" or "max"')
 
     def call(self, tensor: GraphTensor) -> tf.Tensor:
+        '''Defines the computation from inputs to outputs.
+
+        This method should not be called directly, but indirectly
+        via ``__call__()``. Upon first call, the layer is automatically
+        built via ``build()``.
+
+        Args:
+            tensor (GraphTensor):
+                A graph tensor which serves as input to the layer.
+
+        Returns:
+            tf.Tensor:
+                A tensor based on the node_feature component of the inputted
+                graph tensor.
+        '''
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()
         node_feature = self.pooling_fn(

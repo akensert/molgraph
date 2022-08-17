@@ -22,13 +22,57 @@ from molgraph.layers.ops import reduce_features
 @keras.utils.register_keras_serializable(package='molgraph')
 class GraphTransformerConv(_BaseLayer):
 
-    """Graph transformer layer based on Dwivedi et al. [#]_.
+    '''Graph transformer layer
+
+    Implementation is based on Dwivedi et al. (2021) [#]_.
+
+    Args:
+        units (int, None):
+            Number of output units.
+        use_edge_features (bool):
+            Whether or not to use edge features. Default to True.
+        num_heads (int):
+            Number of attention heads. Default to 8.
+        merge_mode (str):
+            The strategy for merging the heads. Either of 'concat', 'sum',
+            'mean' or None. If set to None, 'mean' is used. Default to 'concat'.
+        self_projection (bool):
+            Whether to apply self projection. Default to True.
+        norm_mode (str, None):
+            The type of normalization to use for the output. Either of
+            'batch_norm', 'layer_norm' or None. Default to 'layer_norm'.
+        residual: (bool)
+            Whether to add skip connection to the output. Default to True.
+        dropout: (float, None):
+            Dropout applied to the output of the layer. Default to None.
+        attention_activation (tf.keras.activations.Activation, callable, str, None):
+            Activation function applied to the the attention scores. Default to None.
+        activation (tf.keras.activations.Activation, callable, str, None):
+            Activation function applied to the output of the layer. Default to 'relu'.
+        use_bias (bool):
+            Whether the layer should use biases. Default to True.
+        kernel_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the kernels. Default to
+            tf.keras.initializers.TruncatedNormal(stddev=0.005).
+        bias_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the biases. Default to
+            tf.keras.initializers.Constant(0.).
+        kernel_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the kernels. Default to None.
+        bias_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the biases. Default to None.
+        activity_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the final output of the layer.
+            Default to None.
+        kernel_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the kernels. Default to None.
+        bias_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the biases. Default to None.
 
     References:
-    
-    .. [#] Dwivedi et al. https://arxiv.org/pdf/2012.09699.pdf
+        .. [#] https://arxiv.org/pdf/2012.09699.pdf
 
-    """
+    '''
 
     def __init__(
         self,

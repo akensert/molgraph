@@ -15,8 +15,7 @@ from molgraph.tensors.graph_tensor import GraphTensor
 @keras.utils.register_keras_serializable(package='molgraph')
 class TransformerEncoderReadout(layers.Layer):
 
-    """Transformer encoder readout layer
-    """
+    'Transformer encoder layer for graph readout.'
 
     def __init__(
         self,
@@ -41,6 +40,13 @@ class TransformerEncoderReadout(layers.Layer):
         self,
         node_feature: Union[tf.Tensor, tf.TensorShape]
     ) -> None:
+        '''Custom build method for initializing additional attributes.
+
+        Args:
+            node_feature (tf.Tensor, tf.TensorShape):
+                Either the shape of the node_feature component of GraphTensor,
+                or the node_feature component itself.
+        '''
 
         self._built_from_signature = True
 
@@ -61,7 +67,21 @@ class TransformerEncoderReadout(layers.Layer):
                 keras.layers.Dense(node_dim)])
 
     def call(self, tensor: GraphTensor) -> tf.Tensor:
+        '''Defines the computation from inputs to outputs.
 
+        This method should not be called directly, but indirectly
+        via ``__call__()``. Upon first call, the layer is automatically
+        built via ``_build_from_signature()``.
+
+        Args:
+            tensor (GraphTensor):
+                A graph tensor which serves as input to the layer.
+
+        Returns:
+            tf.Tensor:
+                A tensor based on the node_feature component of the inputted
+                graph tensor.
+        '''
         node_feature = tensor.node_feature
 
         if isinstance(node_feature, tf.Tensor):
