@@ -24,7 +24,7 @@ class MPNNConv(_BaseLayer):
 
     Implementation is based on Gilmer et al. (2017) [#]_.
 
-    **Example:**
+    **Examples:**
 
     Inputs a ``GraphTensor`` encoding (two) subgraphs:
 

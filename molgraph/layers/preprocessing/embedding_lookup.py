@@ -20,10 +20,65 @@ class EmbeddingLookup(layers.StringLookup):
 
     Specify, as keyword argument only,
     ``EmbeddingLookup(feature='node_feature')`` to perform standard scaling
-    on the ``node_feature`` component of the ``GraphTensor``, or,
+    on the ``node_feature`` field of the ``GraphTensor``, or,
     ``EmbeddingLookup(feature='edge_feature')`` to perform standard scaling
-    on the ``edge_feature`` component of the ``GraphTensor``. If not specified,
-    the ``node_feature`` component will be considered.
+    on the ``edge_feature`` field of the ``GraphTensor``. If not specified,
+    the ``node_feature`` field will be considered.
+
+    **Examples:**
+
+    Adapt layer on ``GraphTensor`` directly:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             'Sym:C', 'Sym:C', 'Sym:C', 'Sym:O', 'Sym:N',
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...     }
+    ... )
+    >>> # Initialize layer
+    >>> embedding = molgraph.layers.EmbeddingLookup(
+    ...    feature='node_feature', output_dim=4)
+    >>> # Adapt layer to graph_tensor
+    >>> embedding.adapt(graph_tensor)
+    >>> model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     embedding,
+    ... ])
+    >>> graph_tensor = model(graph_tensor)
+    >>> graph_tensor.node_feature.shape
+    TensorShape([5, 4])
+
+    Adapt layer on dataset, constructed from ``GraphTensor``:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [[0, 1], [2, 2, 3, 3, 4, 4]],
+    ...         'edge_src': [[1, 0], [3, 4, 2, 4, 3, 2]],
+    ...         'node_feature': [
+    ...             ['Sym:C', 'Sym:C'], ['Sym:C', 'Sym:O', 'Sym:N'],
+    ...         ],
+    ...     }
+    ... )
+    >>> # Obtain dataset
+    >>> ds = tf.data.Dataset.from_tensor_slices(graph_tensor).batch(2)
+    >>> # Initialize layer
+    >>> embedding = molgraph.layers.EmbeddingLookup(
+    ...    feature='node_feature', output_dim=4)
+    >>> # Adapt layer to graph_tensor
+    >>> embedding.adapt(ds)
+    >>> # Build model
+    >>> model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     embedding,
+    ... ])
+    >>> # Predict (obtain new GraphTensor)
+    >>> output = model.predict(ds)
+    >>> output.node_feature.shape
+    TensorShape([2, None, 4])
 
     Args:
         output_dim (int):
@@ -109,7 +164,8 @@ class EmbeddingLookup(layers.StringLookup):
                 samples divided by the batch_size is used. Default to None.
         '''
         if not isinstance(data,  GraphTensor):
-            data = data.map(lambda x: getattr(x, self.feature))
+            data = data = data.map(
+                lambda x: getattr(x, self.feature))
         else:
             data = getattr(data, self.feature)
         super().adapt(data, batch_size=batch_size, steps=steps)
@@ -129,8 +185,8 @@ class EmbeddingLookup(layers.StringLookup):
         Returns:
             GraphTensor:
                 A ``GraphTensor`` with updated features. Either the
-                ``node_features`` component or the ``edge_features``
-                component (of the ``GraphTensor``) are updated.
+                ``node_features`` field or the ``edge_features``
+                field (of the ``GraphTensor``) are updated.
         '''
         if not self._built_from_vocabulary_size:
             self._build_from_vocabulary_size(self._vocabulary_size)

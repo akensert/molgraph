@@ -25,7 +25,7 @@ class GraphSageConv(_BaseLayer):
     Implementation is based on Hamilton et al. (2018) [#]_ and
     Dwivedi et al. (2022) [#]_.
 
-    **Example:**
+    **Examples:**
 
     Inputs a ``GraphTensor`` encoding (two) subgraphs:
 

@@ -23,10 +23,108 @@ class MinMaxScaling(layers.experimental.preprocessing.PreprocessingLayer):
 
     Specify, as keyword argument only,
     ``MinMaxScaling(feature='node_feature')`` to perform standard scaling
-    on the ``node_feature`` component of the ``GraphTensor``, or,
+    on the ``node_feature`` field of the ``GraphTensor``, or,
     ``MinMaxScaling(feature='edge_feature')`` to perform standard scaling
-    on the ``edge_feature`` component of the ``GraphTensor``. If not specified,
-    the ``node_feature`` component will be considered.
+    on the ``edge_feature`` field of the ``GraphTensor``. If not specified,
+    the ``node_feature`` field will be considered.
+
+    **Examples:**
+
+    Adapt layer on ``GraphTensor`` directly:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
+    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'node_feature': [
+    ...             [[2.0, 0.5], [2.0, 0.0]],
+    ...             [[2.0, 0.0], [2.0, 0.5], [0.0, 2.0]]
+    ...         ],
+    ...     }
+    ... )
+    >>> # Initialize layer
+    >>> preprocessing = molgraph.layers.MinMaxScaling(
+    ...    feature='node_feature')
+    >>> # Adapt layer to graph_tensor
+    >>> preprocessing.adapt(graph_tensor)
+    >>> model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     preprocessing,
+    ... ])
+    >>> graph_tensor = model(graph_tensor)
+    >>> graph_tensor.merge().node_feature
+    <tf.Tensor: shape=(5, 2), dtype=float32, numpy=
+    array([[1.  , 0.25],
+           [1.  , 0.  ],
+           [1.  , 0.  ],
+           [1.  , 0.25],
+           [0.  , 1.  ]], dtype=float32)>
+
+    Adapt layer on ``tf.data.Dataset`` constructed from ``GraphTensor``:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
+    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'node_feature': [
+    ...             [[2.0, 0.5], [2.0, 0.0]],
+    ...             [[2.0, 0.0], [2.0, 0.5], [0.0, 2.0]]
+    ...         ],
+    ...     }
+    ... )
+    >>> # Obtain dataset
+    >>> ds = tf.data.Dataset.from_tensor_slices(graph_tensor).batch(2)
+    >>> # Initialize layer
+    >>> preprocessing = molgraph.layers.MinMaxScaling(
+    ...    feature='node_feature')
+    >>> # Adapt layer to graph_tensor
+    >>> preprocessing.adapt(ds)
+    >>> model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     preprocessing,
+    ... ])
+    >>> output = model.predict(ds)
+    >>> output.merge().node_feature
+    <tf.Tensor: shape=(5, 2), dtype=float32, numpy=
+    array([[1.  , 0.25],
+           [1.  , 0.  ],
+           [1.  , 0.  ],
+           [1.  , 0.25],
+           [0.  , 1.  ]], dtype=float32)>
+
+    Adapt layer on merged ``GraphTensor``:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             [2.0, 0.5],
+    ...             [2.0, 0.0],
+    ...             [2.0, 0.0],
+    ...             [2.0, 0.5],
+    ...             [0.0, 2.0]
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...     }
+    ... )
+    >>> # Initialize layer
+    >>> preprocessing = molgraph.layers.MinMaxScaling(
+    ...    feature='node_feature')
+    >>> # Adapt layer to graph_tensor
+    >>> preprocessing.adapt(graph_tensor)
+    >>> model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     preprocessing,
+    ... ])
+    >>> graph_tensor = model(graph_tensor)
+    >>> graph_tensor.node_feature
+    <tf.Tensor: shape=(5, 2), dtype=float32, numpy=
+    array([[1.  , 0.25],
+           [1.  , 0.  ],
+           [1.  , 0.  ],
+           [1.  , 0.25],
+           [0.  , 1.  ]], dtype=float32)>
 
     Args:
         feature_range (tuple):
@@ -78,7 +176,8 @@ class MinMaxScaling(layers.experimental.preprocessing.PreprocessingLayer):
                 samples divided by the batch_size is used. Default to None.
         '''
         if not isinstance(data,  GraphTensor):
-            data = data.map(lambda x: getattr(x, self.feature))
+            data = data = data.map(
+                lambda x: getattr(x, self.feature))
         else:
             data = getattr(data, self.feature)
         super().adapt(data, batch_size=batch_size, steps=steps)
@@ -97,8 +196,8 @@ class MinMaxScaling(layers.experimental.preprocessing.PreprocessingLayer):
         Returns:
             GraphTensor:
                 A ``GraphTensor`` with updated features. Either the
-                ``node_features`` component or the ``edge_features``
-                component (of the ``GraphTensor``) are updated.
+                ``node_features`` field or the ``edge_features``
+                field (of the ``GraphTensor``) are updated.
         '''
         feature = getattr(data, self.feature)
 

@@ -16,10 +16,34 @@ class FeatureProjection(layers.Layer):
 
     Specify, as keyword argument only,
     ``FeatureProjection(feature='node_feature')`` to perform standard scaling
-    on the ``node_feature`` component of the ``GraphTensor``, or,
+    on the ``node_feature`` field of the ``GraphTensor``, or,
     ``FeatureProjection(feature='edge_feature')`` to perform standard scaling
-    on the ``edge_feature`` component of the ``GraphTensor``. If not specified,
-    the ``node_feature`` component will be considered.
+    on the ``edge_feature`` field of the ``GraphTensor``. If not specified,
+    the ``node_feature`` field will be considered.
+
+    **Example:**
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0]
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...     }
+    ... )
+    >>> model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     molgraph.layers.FeatureProjection(
+    ...         feature='node_feature', units=16)
+    ... ])
+    >>> model.output_shape
+    (None, 16)
 
     Args:
         units (int, None):
@@ -107,7 +131,7 @@ class FeatureProjection(layers.Layer):
 
         Returns:
             A ``tf.Tensor`` or `tf.RaggedTensor` based on the ``node_feature``
-            component of the inputted ``GraphTensor``.
+            field of the inputted ``GraphTensor``.
         '''
         tensor_orig = tensor
         if isinstance(getattr(tensor, self.feature), tf.RaggedTensor):

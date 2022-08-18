@@ -26,7 +26,7 @@ class GatedGCNConv(_BaseLayer):
     Implementation is based on Dwivedi et al. (2022) [#]_, Bresson et al. (2019) [#]_,
     Joshi et al. (2019) [#]_, and Bresson et al. (2018) [#]_.
 
-    **Example:**
+    **Examples:**
 
     Inputs a ``GraphTensor`` encoding (two) subgraphs:
 

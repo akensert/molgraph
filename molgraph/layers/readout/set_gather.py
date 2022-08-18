@@ -15,6 +15,27 @@ class SetGatherReadout(layers.Layer):
 
     Implementation based on Gilmer et al. (2017) [#]_ and Vinyals et al. (2016) [#]_.
 
+    **Example:**
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
+    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'node_feature': [
+    ...             [[1.0, 0.0], [1.0, 0.0]],
+    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
+    ...         ],
+    ...     }
+    ... )
+    >>> model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     # molgraph.layers.GCNConv(4),
+    ...     molgraph.layers.SetGatherReadout()
+    ... ])
+    >>> # Note: SetGatherReadout increases output dim (from 2 to 4)
+    >>> model.output_shape
+    (None, 4)
+
     Args:
         steps (int):
             Number of LSTM steps. Default to 8.
@@ -41,8 +62,8 @@ class SetGatherReadout(layers.Layer):
                 Input to the layer.
 
         Returns:
-            A ``tf.Tensor`` or `tf.RaggedTensor` based on the node_feature
-            component of the inputted ``GraphTensor``.
+            A ``tf.Tensor`` or `tf.RaggedTensor` based on the ``node_feature``
+            field of the inputted ``GraphTensor``.
         '''
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()
@@ -76,7 +97,7 @@ class SetGatherReadout(layers.Layer):
                 node_feature_partitioned = tf.gather(
                     node_feature_reduced, tf.where(graph_indicator == i)[:, 0])
                 attention_coef = attention_coef.write(
-                    i, tf.nn.softmax(node_feature_partitioned))
+                    tf.cast(i, tf.int32), tf.nn.softmax(node_feature_partitioned))
 
             attention_coef = tf.reshape(attention_coef.concat(), (-1, 1))
 

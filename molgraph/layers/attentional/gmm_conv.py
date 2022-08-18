@@ -25,7 +25,7 @@ class GMMConv(_BaseLayer):
 
     Implementation is based on Dwivedi et al. (2022) [#]_ and Monti et al. (2016) [#]_.
 
-    **Example:**
+    **Examples:**
 
     Inputs a ``GraphTensor`` encoding (two) subgraphs:
 

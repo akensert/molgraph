@@ -26,7 +26,7 @@ class GATConv(_BaseLayer):
     The implementation is based on Velickovic et al. (2018) [#]_ and
     Dwivedi et al. (2022) [#]_.
 
-    **Example:**
+    **Examples:**
 
     Inputs a ``GraphTensor`` encoding (two) subgraphs:
 

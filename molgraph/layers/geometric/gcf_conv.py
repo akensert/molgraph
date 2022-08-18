@@ -42,7 +42,7 @@ class GCFConv(_BaseLayer):
 
     Operates on 3D molecular graphs (encoding distance geometry).
 
-    **Example:**
+    **Examples:**
 
     Inputs a ``GraphTensor`` encoding (two) subgraphs:
 

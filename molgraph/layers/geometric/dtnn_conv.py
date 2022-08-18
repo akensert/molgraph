@@ -25,7 +25,7 @@ class DTNNConv(_BaseLayer):
 
     Implementation is based on Schütt et al. (2017a) [#]_.
 
-    **Example:**
+    **Examples:**
 
     Inputs a ``GraphTensor`` encoding (two) subgraphs:
 

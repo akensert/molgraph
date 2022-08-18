@@ -153,9 +153,9 @@ GatherIncident
   :members: call, get_config, from_config,
   :member-order: bysource
 
-Gather
+ExtractField
 --------------------------
-.. autoclass:: molgraph.layers.Gather(tensorflow.keras.layers.Layer)
+.. autoclass:: molgraph.layers.ExtractField(tensorflow.keras.layers.Layer)
   :members: call, get_config, from_config,
   :member-order: bysource
 

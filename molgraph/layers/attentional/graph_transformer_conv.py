@@ -26,7 +26,7 @@ class GraphTransformerConv(_BaseLayer):
 
     Implementation is based on Dwivedi et al. (2021) [#]_.
 
-    **Example:**
+    **Examples:**
 
     Inputs a ``GraphTensor`` encoding (two) subgraphs:
 

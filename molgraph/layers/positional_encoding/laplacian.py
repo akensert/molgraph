@@ -20,6 +20,35 @@ class LaplacianPositionalEncoding(layers.Layer):
 
     Implementation based on Dwivedi et al. (2021) [#]_ and Belkin et al. (2003) [#]_.
 
+    **Example:**
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             [1.0, 1.0],
+    ...             [1.0, 1.0],
+    ...             [1.0, 1.0],
+    ...             [1.0, 1.0],
+    ...             [1.0, 1.0]
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...     }
+    ... )
+    >>> model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     molgraph.layers.LaplacianPositionalEncoding(16)
+    ... ])
+    >>> graph_tensor = model(graph_tensor)
+    >>> graph_tensor.node_feature != 1.0
+    <tf.Tensor: shape=(5, 2), dtype=bool, numpy=
+    array([[ True,  True],
+           [ True,  True],
+           [ True,  True],
+           [ True,  True],
+           [ True,  True]])>
+
     Args:
         dim (int):
             The dimension of the positional encoding. Default to 8.

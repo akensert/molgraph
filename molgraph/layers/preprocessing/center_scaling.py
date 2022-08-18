@@ -22,10 +22,108 @@ class CenterScaling(layers.experimental.preprocessing.PreprocessingLayer):
 
     Specify, as keyword argument only,
     ``CenterScaling(feature='node_feature')`` to perform standard scaling
-    on the ``node_feature`` component of the ``GraphTensor``, or,
+    on the ``node_feature`` field of the ``GraphTensor``, or,
     ``CenterScaling(feature='edge_feature')`` to perform standard scaling
-    on the ``edge_feature`` component of the ``GraphTensor``. If not specified,
-    the ``node_feature`` component will be considered.
+    on the ``edge_feature`` field of the ``GraphTensor``. If not specified,
+    the ``node_feature`` field will be considered.
+
+    **Examples:**
+
+    Adapt layer on ``GraphTensor`` directly:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
+    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'node_feature': [
+    ...             [[1.0, 0.0], [1.0, 0.0]],
+    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
+    ...         ],
+    ...     }
+    ... )
+    >>> # Initialize layer
+    >>> preprocessing = molgraph.layers.CenterScaling(
+    ...    feature='node_feature')
+    >>> # Adapt layer to graph_tensor
+    >>> preprocessing.adapt(graph_tensor)
+    >>> model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     preprocessing,
+    ... ])
+    >>> graph_tensor = model(graph_tensor)
+    >>> graph_tensor.merge().node_feature
+    <tf.Tensor: shape=(5, 2), dtype=float32, numpy=
+    array([[ 0.19999999, -0.2       ],
+           [ 0.19999999, -0.2       ],
+           [ 0.19999999, -0.2       ],
+           [ 0.19999999, -0.2       ],
+           [-0.8       ,  0.8       ]], dtype=float32)>
+
+    Adapt layer on ``tf.data.Dataset`` constructed from ``GraphTensor``:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
+    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'node_feature': [
+    ...             [[1.0, 0.0], [1.0, 0.0]],
+    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
+    ...         ],
+    ...     }
+    ... )
+    >>> # Obtain dataset
+    >>> ds = tf.data.Dataset.from_tensor_slices(graph_tensor).batch(2)
+    >>> # Initialize layer
+    >>> preprocessing = molgraph.layers.CenterScaling(
+    ...    feature='node_feature')
+    >>> # Adapt layer to graph_tensor
+    >>> preprocessing.adapt(ds)
+    >>> model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     preprocessing,
+    ... ])
+    >>> output = model.predict(ds)
+    >>> output.merge().node_feature
+    <tf.Tensor: shape=(5, 2), dtype=float32, numpy=
+    array([[ 0.19999999, -0.2       ],
+           [ 0.19999999, -0.2       ],
+           [ 0.19999999, -0.2       ],
+           [ 0.19999999, -0.2       ],
+           [-0.8       ,  0.8       ]], dtype=float32)>
+
+    Adapt layer on merged ``GraphTensor``:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0]
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...     }
+    ... )
+    >>> # Initialize layer
+    >>> preprocessing = molgraph.layers.CenterScaling(
+    ...    feature='node_feature')
+    >>> # Adapt layer to graph_tensor
+    >>> preprocessing.adapt(graph_tensor)
+    >>> model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     preprocessing,
+    ... ])
+    >>> graph_tensor = model(graph_tensor)
+    >>> graph_tensor.node_feature
+    <tf.Tensor: shape=(5, 2), dtype=float32, numpy=
+    array([[ 0.19999999, -0.2       ],
+           [ 0.19999999, -0.2       ],
+           [ 0.19999999, -0.2       ],
+           [ 0.19999999, -0.2       ],
+           [-0.8       ,  0.8       ]], dtype=float32)>
 
     Args:
         mean (tf.Tensor, None):
@@ -66,8 +164,10 @@ class CenterScaling(layers.experimental.preprocessing.PreprocessingLayer):
                 The number of steps of adaption. If None, the number of
                 samples divided by the batch_size is used. Default to None.
         '''
+
         if not isinstance(data,  GraphTensor):
-            data = data.map(lambda x: getattr(x, self.feature))
+            data = data.map(
+                lambda x: getattr(x, self.feature))
         else:
             data = getattr(data, self.feature)
         super().adapt(data, batch_size=batch_size, steps=steps)
@@ -86,8 +186,8 @@ class CenterScaling(layers.experimental.preprocessing.PreprocessingLayer):
         Returns:
             GraphTensor:
                 A ``GraphTensor`` with updated features. Either the
-                ``node_features`` component or the ``edge_features``
-                component (of the ``GraphTensor``) are updated.
+                ``node_features`` field or the ``edge_features``
+                field (of the ``GraphTensor``) are updated.
         '''
         feature = getattr(data, self.feature)
 
@@ -112,8 +212,8 @@ class CenterScaling(layers.experimental.preprocessing.PreprocessingLayer):
         Args:
             input_shape (list, tuple, tf.TensorShape):
                 The shape of the input to the layer. Corresponds to either
-                the ``node_feature`` component or the ``edge_feature``
-                components of ``GraphTensor``.
+                the ``node_feature`` field or the ``edge_feature``
+                fields of ``GraphTensor``.
         '''
         super().build(input_shape)
 
@@ -145,7 +245,7 @@ class CenterScaling(layers.experimental.preprocessing.PreprocessingLayer):
         Args:
             feature (tf.Tensor, tf.RaggedTensor):
                 A mini-batch of inputs to the layer. Corresponds to either
-                the ``node_feature`` or ``edge_feature`` component of
+                the ``node_feature`` or ``edge_feature`` field of
                 ``GraphTensor``.
         '''
 
@@ -157,7 +257,8 @@ class CenterScaling(layers.experimental.preprocessing.PreprocessingLayer):
             axis = [0]
         else:
             batch_count = tf.shape(feature.to_tensor())[0]
-            batch_count += tf.reduce_sum(feature.row_lengths())
+            batch_count += tf.cast(
+                tf.reduce_sum(feature.row_lengths()), dtype=batch_count.dtype)
             axis = [0, 1]
 
         batch_count = tf.cast(batch_count, tf.int64)

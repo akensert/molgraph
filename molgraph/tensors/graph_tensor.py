@@ -52,7 +52,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
 
     Args:
         data (dict):
-            Nested components of the graph tensor. A dictionary of tensors
+            Nested fields of the graph tensor. A dictionary of tensors
             (tf.Tensor or tf.RaggedTensor), numpy arrays, lists or tuples.
             Internally, values (of dict) will be converted to tensors.
         spec: (dict):
@@ -145,7 +145,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
     >>> graph_tensor.shape
     TensorShape([2, None, 2])
 
-    Add, update and remove nested components of ``GraphTensor``:
+    Add, update and remove nested fields of ``GraphTensor``:
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
@@ -165,13 +165,13 @@ class GraphTensor(composite_tensor.CompositeTensor):
     ...     graph_tensor['node_feature'].shape)
     >>> random_feature_2 = tf.random.uniform(
     ...    graph_tensor['node_feature'].shape)
-    >>> # Add new component
+    >>> # Add new field
     >>> graph_tensor = graph_tensor.update({
     ...     'random_feature': random_feature_1})
-    >>> # Update exisiting component
+    >>> # Update exisiting field
     >>> graph_tensor = graph_tensor.update({
     ...     'node_feature': random_feature_2})
-    >>> # Remove component
+    >>> # Remove field
     >>> graph_tensor = graph_tensor.remove(['random_feature'])
     >>> graph_tensor
     GraphTensor(
@@ -260,14 +260,14 @@ class GraphTensor(composite_tensor.CompositeTensor):
         self._data = data
 
     def update(self, new_data: NestedArrays) -> 'GraphTensor':
-        '''Updates existing data components or adds new data components.
+        '''Updates existing data fields or adds new data fields.
 
         Constraints are put on the update method: new data needs to
         match the size of existing data (e.g., same number of nodes or edges).
 
         Args:
             new_data (dict):
-                Nested components. A dictionary of tensors (``tf.Tensor`` or
+                Nested fields. A dictionary of tensors (``tf.Tensor`` or
                 ``tf.RaggedTensor``), numpy arrays, lists or tuples.
 
         Returns:
@@ -324,15 +324,15 @@ class GraphTensor(composite_tensor.CompositeTensor):
         self,
         fields: Union[str, List[str]]
     ) -> 'GraphTensor':
-        '''Removes data components based on 'fields'.
+        '''Removes data fields based on 'fields'.
 
         Args:
             fields (str, list[str]):
-                Data components to be removed from the ``GraphTensor``.
+                Data fields to be removed from the ``GraphTensor``.
                 Cannot remove 'edge_dst', 'edge_src' or 'graph_indicator'.
 
         Returns:
-            GraphTensor: An updated graph tensor without components specified
+            GraphTensor: An updated graph tensor without fields specified
             by 'fields'.
         '''
         data = self._data.copy()
@@ -478,14 +478,14 @@ class GraphTensor(composite_tensor.CompositeTensor):
         return self._data['node_feature'].nrows()
 
     def __getattr__(self, name: str) -> Union[tf.Tensor, tf.RaggedTensor, Any]:
-        '''Extract data component as an attribute.
+        '''Extract data fields as an attribute.
 
         Args:
             name (str):
-                The data component to be extracted.
+                The data fields to be extracted.
 
         Returns:
-            Data component based on 'name'.
+            Data fields based on 'name'.
             Either a ``tf.Tensor`` or ``tf.RaggedTensor``.
         '''
         if name in object.__getattribute__(self, '_data'):
@@ -496,11 +496,11 @@ class GraphTensor(composite_tensor.CompositeTensor):
         self,
         index: Union[str, int, List[int]]
     ) -> Union[tf.RaggedTensor, tf.Tensor, 'GraphTensor']:
-        '''Extract a data component or subgraphs via indexing.
+        '''Extract a data field or subgraphs via indexing.
 
         Args:
             index (str, int, list[int]):
-                If str, extracts a data component of ``GraphTensor``; if int or
+                If str, extracts a data field of ``GraphTensor``; if int or
                 list[int], extracts specific subgraph(s) of ``GraphTensor``.
 
         Returns:
@@ -729,7 +729,7 @@ def _check_tensor_types(data: NestedTensors):
 def _check_ragged_rank(x: tf.RaggedTensor):
     return tf.Assert(
         tf.math.equal(x.ragged_rank, 1),
-        ['Ragged rank of component needs to be 1.']
+        ['Ragged rank of field needs to be 1.']
     )
 
 def _compatible_sizes(
@@ -854,7 +854,7 @@ def graph_tensor_gather(
     batch_dims=0,
     name=None
 ) -> GraphTensor:
-    'Gathers components (subgraphs) from graph.'
+    'Gathers subgraphs from graph.'
 
     if axis is not None and axis != 0:
         raise ValueError(
@@ -865,12 +865,12 @@ def graph_tensor_gather(
     if not ragged:
         params = params.separate()
 
-    components = tf.nest.map_structure(
+    data = tf.nest.map_structure(
         lambda x: tf.gather(
             x, indices, validate_indices, axis, batch_dims, name),
         params._data.copy())
 
-    params = GraphTensor(components)
+    params = GraphTensor(data)
 
     if not ragged and isinstance(params._data['node_feature'], tf.RaggedTensor):
         params = params.merge()
@@ -949,8 +949,8 @@ def graph_tensor_concat(
 
 @tf.experimental.dispatch_for_api(tf.matmul)
 def graph_tensor_matmul(
-    a: Union[GraphTensor, tf.Tensor],
-    b: Union[GraphTensor, tf.Tensor],
+    a: GraphTensor,
+    b,
     transpose_a=False,
     transpose_b=False,
     adjoint_a=False,
@@ -974,10 +974,7 @@ def graph_tensor_matmul(
         adjoint_b, a_is_sparse, b_is_sparse, output_type)
 
 @tf.experimental.dispatch_for_unary_elementwise_apis(GraphTensor)
-def graph_tensor_unary_elementwise_op_handler(
-    api_func,
-    x: GraphTensor
-) -> GraphTensor:
+def graph_tensor_unary_elementwise_op_handler(api_func, x):
     '''Allows all unary elementwise operations (such as `tf.math.abs`)
     to handle graph tensors.
     '''
@@ -986,11 +983,7 @@ def graph_tensor_unary_elementwise_op_handler(
 @tf.experimental.dispatch_for_binary_elementwise_apis(
     Union[GraphTensor, tf.Tensor],
     Union[GraphTensor, tf.Tensor])
-def graph_tensor_binary_elementwise_op_handler(
-    api_func,
-    x: Union[GraphTensor, tf.Tensor],
-    y: Union[GraphTensor, tf.Tensor],
-) -> GraphTensor:
+def graph_tensor_binary_elementwise_op_handler(api_func, x, y):
     '''Allows all binary elementwise operations (such as `tf.math.add`)
     to handle graph tensors.
     '''

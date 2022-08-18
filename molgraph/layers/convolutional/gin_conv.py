@@ -25,7 +25,7 @@ class GINConv(_BaseLayer):
 
     Implementation based on Dwivedi et al. (2022) [#]_ and Xu et al. (2019) [#]_.
 
-    **Example:**
+    **Examples:**
 
     Inputs a ``GraphTensor`` encoding (two) subgraphs:
 

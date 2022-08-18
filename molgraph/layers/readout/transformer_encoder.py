@@ -17,6 +17,26 @@ class TransformerEncoderReadout(layers.Layer):
 
     '''Transformer encoder layer for graph readout.
 
+    **Example:**
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
+    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'node_feature': [
+    ...             [[1.0, 0.0], [1.0, 0.0]],
+    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
+    ...         ],
+    ...     }
+    ... )
+    >>> model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     # molgraph.layers.GCNConv(4),
+    ...     molgraph.layers.TransformerEncoderReadout()
+    ... ])
+    >>> model.output_shape
+    (None, 2)
+
     Args:
         units (int):
             Number of output units. Default to 256.
@@ -53,8 +73,8 @@ class TransformerEncoderReadout(layers.Layer):
 
         Args:
             node_feature (tf.Tensor, tf.TensorShape):
-                Either the shape of the node_feature component of GraphTensor,
-                or the node_feature component itself.
+                Either the shape of the ``node_feature`` field of
+                GraphTensor, or the node_feature field itself.
         '''
 
         self._built_from_signature = True
@@ -88,7 +108,7 @@ class TransformerEncoderReadout(layers.Layer):
 
         Returns:
             A ``tf.Tensor`` or `tf.RaggedTensor` based on the node_feature
-            component of the inputted ``GraphTensor``.
+            field of the inputted ``GraphTensor``.
         '''
         node_feature = tensor.node_feature
 

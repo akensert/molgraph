@@ -24,7 +24,7 @@ class GCNIIConv(_BaseLayer):
 
     Implementation is based on Chen et al. (2020) [#]_.
 
-    **Example:**
+    **Examples:**
 
     Inputs a ``GraphTensor`` encoding (two) subgraphs:
 

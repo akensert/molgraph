@@ -21,7 +21,7 @@ class GraphKerasTensor(keras_tensor.KerasTensor):
 
 
 tensor_graph_operators = [
-    '__getitem__',
+    '__getitem__', 
 ]
 for o in tensor_graph_operators:
     GraphKerasTensor._overload_operator(GraphTensor, o)

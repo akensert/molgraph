@@ -25,7 +25,7 @@ class GCNConv(_BaseLayer):
     Implementation is based on Kipf et al. (2017) [#]_, Dwivedi et al. (2022) [#]_,
     and, for RGCN, Schlichtkrull et al. (2017) [#]_.
 
-    **Example:**
+    **Examples:**
 
     Inputs a ``GraphTensor`` encoding (two) subgraphs:
 

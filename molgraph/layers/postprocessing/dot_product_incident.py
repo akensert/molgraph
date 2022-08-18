@@ -10,16 +10,25 @@ class DotProductIncident(keras.layers.Layer):
 
     Useful for e.g., edge and link classification.
 
-    Args:
-        partition (bool):
-            Whether to partition the output. I.e., whether the output should
-            correspond to a single (disjoint) graph (nested tensors) or
-            subgraphs (nested ragged tensors).
-    '''
+    **Example:**
 
-    def __init__(self, partition: bool = True) -> None:
-        super().__init__()
-        self.partition = partition
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
+    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'node_feature': [
+    ...             [[2.0, 0.0], [2.0, 0.0]],
+    ...             [[3.0, 0.0], [3.0, 0.0], [0.0, 3.0]]
+    ...         ],
+    ...     }
+    ... )
+    >>> model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     molgraph.layers.DotProductIncident()
+    ... ])
+    >>> model(graph_tensor)
+    <tf.RaggedTensor [[4.0, 4.0], [9.0, 0.0, 9.0, 0.0, 0.0, 0.0]]>
+    '''
 
     def call(self, tensor: GraphTensor) -> GraphTensor:
         '''Defines the computation from inputs to outputs.
@@ -34,30 +43,15 @@ class DotProductIncident(keras.layers.Layer):
 
         Returns:
             A ``tf.Tensor`` or `tf.RaggedTensor` based on the node_feature
-            component of the inputted ``GraphTensor``.
+            field of the inputted ``GraphTensor``.
         '''
+        tensor_orig = tensor
+        if isinstance(tensor.node_feature, tf.RaggedTensor):
+            tensor = tensor.merge()
         adjacency = tf.stack([
             tensor.edge_dst, tensor.edge_src], axis=1)
         node_feature_incident = tf.gather(
             tensor.node_feature, adjacency)
-        tensor = tensor.update({'edge_score': tf.reduce_sum(
+        tensor_orig = tensor_orig.update({'edge_score': tf.reduce_sum(
             tf.reduce_prod(node_feature_incident, axis=1), axis=1)})
-        if self.partition:
-            return partition_edges(tensor)
-        return tensor
-
-    def get_config(self):
-        base_config = super().get_config()
-        config = {
-            'partition': self.partition,
-        }
-        base_config.update(config)
-        return base_config
-
-def partition_edges(tensor, output_type='tensor'):
-    graph_indicator_edges = tf.gather(
-        tensor.graph_indicator, tensor.edge_dst)
-    return tf.RaggedTensor.from_value_rowids(
-        tensor.edge_score,
-        graph_indicator_edges,
-        nrows=tf.reduce_max(tensor.graph_indicator) + 1)
+        return tensor_orig.edge_score

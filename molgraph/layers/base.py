@@ -100,8 +100,8 @@ class _BaseLayer(layers.Layer, ABC):
         Returns:
             GraphTensor:
                 A ``GraphTensor`` with updated features. For some layers,
-                both the ``node_features`` component and the ``edge_features``
-                component (of the ``GraphTensor``) are updated.
+                both the ``node_features`` field and the ``edge_features``
+                field (of the ``GraphTensor``) are updated.
         '''
         tensor_orig = tensor
         if isinstance(tensor.node_feature, tf.RaggedTensor):

@@ -25,7 +25,7 @@ from molgraph.layers.positional_encoding.laplacian import LaplacianPositionalEnc
 # postprocessing
 from molgraph.layers.postprocessing.dot_product_incident import DotProductIncident
 from molgraph.layers.postprocessing.gather_incident import GatherIncident
-from molgraph.layers.postprocessing.gather_nodes import Gather
+from molgraph.layers.postprocessing.extract_field import ExtractField
 
 # preprocessing
 from molgraph.layers.preprocessing.embedding_lookup import EmbeddingLookup
@@ -62,7 +62,4 @@ del _filter_warnings
 Readout = PoolReadout = SegmentPoolReadout = SegmentPoolingReadout
 Set2SetReadout = SetToSetReadout = SetGatherReadout
 TransformerReadout = TransformerEncoderReadout
-GatherNodes = Gather
-GatherIncidentNodes = GatherIncident
-DotProductIncidentNodes = DotProductIncident
 PositionalEncoding = LaplacianPositionalEncoding
