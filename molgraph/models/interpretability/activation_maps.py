@@ -19,7 +19,7 @@ class GradientActivationMapping(keras.Model):
     Gradient activations maps based on Pope et al. [#]_.
 
     References:
-    
+
     .. [#] Pope et al. https://ieeexplore.ieee.org/document/8954227
     '''
 
@@ -74,7 +74,7 @@ class GradientActivationMapping(keras.Model):
                             tf.argmax(y, axis=-1)
                         ], axis=1)
                     ),
-                    lambda: predictions + 10000
+                    lambda: predictions
                 )
 
         gradients = tape.gradient(predictions, features)

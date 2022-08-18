@@ -55,7 +55,7 @@ class SaliencyMapping(keras.Model):
                             tf.argmax(y, axis=-1)
                         ], axis=1)
                     ),
-                    lambda: predictions + 10000
+                    lambda: predictions
                 )
 
         return tape.gradient(predictions, _maybe_flat_values(x.node_feature))
