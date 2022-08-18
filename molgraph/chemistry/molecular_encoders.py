@@ -143,12 +143,12 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     >>> # Merge subgraphs into a single disjoint graph
     >>> graph_tensor.merge()
     GraphTensor(
-    node_feature=<tf.Tensor: shape=(6, 119), dtype=float32>,
-    edge_feature=<tf.Tensor: shape=(8, 4), dtype=float32>,
-    positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
-    edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
-    edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
-    graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
+      node_feature=<tf.Tensor: shape=(6, 119), dtype=float32>,
+      edge_feature=<tf.Tensor: shape=(8, 4), dtype=float32>,
+      positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
+      edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
+      edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
+      graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
 
     Generate a molecular graph with tokenizers:
 
@@ -175,12 +175,12 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     >>> # Merge subgraphs into a single disjoint graph
     >>> graph_tensor.merge()
     GraphTensor(
-    node_feature=<tf.Tensor: shape=(6,), dtype=string>,
-    edge_feature=<tf.Tensor: shape=(8,), dtype=string>,
-    positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
-    edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
-    edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
-    graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
+      node_feature=<tf.Tensor: shape=(6,), dtype=string>,
+      edge_feature=<tf.Tensor: shape=(8,), dtype=string>,
+      positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
+      edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
+      edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
+      graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
 
     Obtain numerical encodings of atoms (``node_feature``) and bonds
     (``bond_feature``) with the EmbeddingLookup layer. This is only necessary
@@ -224,12 +224,12 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     >>> graph_tensor = model(graph_tensor)
     >>> graph_tensor
     GraphTensor(
-    node_feature=<tf.Tensor: shape=(6, 16), dtype=float32>,
-    edge_feature=<tf.Tensor: shape=(8, 8), dtype=float32>,
-    positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
-    edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
-    edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
-    graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
+      node_feature=<tf.Tensor: shape=(6, 16), dtype=float32>,
+      edge_feature=<tf.Tensor: shape=(8, 8), dtype=float32>,
+      positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
+      edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
+      edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
+      graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
 
     '''
 

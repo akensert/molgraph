@@ -175,10 +175,10 @@ class GraphTensor(composite_tensor.CompositeTensor):
     >>> graph_tensor = graph_tensor.remove(['random_feature'])
     >>> graph_tensor
     GraphTensor(
-    edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
-    edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
-    node_feature=<tf.Tensor: shape=(5, 2), dtype=float32>,
-    graph_indicator=<tf.Tensor: shape=(5,), dtype=int32>)
+      edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
+      edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
+      node_feature=<tf.Tensor: shape=(5, 2), dtype=float32>,
+      graph_indicator=<tf.Tensor: shape=(5,), dtype=int32>)
 
     Use spec of ``GraphTensor`` in model:
 
@@ -524,22 +524,23 @@ class GraphTensor(composite_tensor.CompositeTensor):
         fields = []
         for key, value in self._spec._data_spec.items():
             if isinstance(self._data[key], tf.RaggedTensor):
+                # Include value.ragged_rank and value.row_splits_dtype.name?
                 fields.append(
-                    "{}=<tf.RaggedTensor: ".format(key) +
-                    "shape={}, ".format(value.shape) +
-                    "dtype={}, ".format(value.dtype.name) +
-                    "ragged_rank={}, ".format(value.ragged_rank) +
-                    "row_splits_dtype={}>".format(value.row_splits_dtype.name)
+                    '{}=<tf.RaggedTensor: '.format(key) +
+                    'shape={}, '.format(value.shape) +
+                    'dtype={}>'.format(value.dtype.name)
                 )
             elif isinstance(self._data[key], tf.Tensor):
                 fields.append(
-                    "{}=<tf.Tensor: ".format(key) +
-                    "shape={}, ".format(value.shape) +
-                    "dtype={}>".format(value.dtype.name)
+                    '{}=<tf.Tensor: '.format(key) +
+                    'shape={}, '.format(value.shape) +
+                    'dtype={}>'.format(value.dtype.name)
                 )
             else:
-                fields.append("{}=<unknown>".format(key))
-        return f"{self.__class__.__name__}({', '.join(fields)})"
+                # Should not happen, but just in case.
+                fields.append('{}=<unknown>'.format(key))
+
+        return f'GraphTensor(\n  ' + ',\n  '.join(fields) + ')'
 
 
 @type_spec.register('molgraph.tensors.graph_tensor.GraphTensorSpec')
@@ -1008,7 +1009,7 @@ def graph_tensor_binary_elementwise_op_handler(api_func, x, y):
 class _Iterator:
     'Iterator for the graph tensors'
 
-    __slots__ = ["_iterable", "_index", "_limit"]
+    __slots__ = ['_iterable', '_index', '_limit']
 
     def __init__(self, iterable: GraphTensor, limit: int) -> None:
         self._iterable = iterable
