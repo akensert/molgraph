@@ -1,96 +1,48 @@
+####################
 Chemistry
-=========
+####################
+
+********************
+Molecular
+********************
 
 MolecularGraphEncoder
-~~~~~~~~~~~~~~~~~~~~~~
-
-
-**Code snippet:**
-
-.. code-block::
-
-  from molgraph import chemistry
-
-  atom_featurizer = chemistry.AtomFeaturizer([
-      chemistry.features.Symbol(),
-      chemistry.features.Hybridization()
-  ])
-
-  bond_featurizer = chemistry.BondFeaturizer([
-      chemistry.features.BondType(),
-  ])
-
-  encoder = chemistry.MolecularGraphEncoder(
-    atom_encoder=atom_featurizer,
-    bond_encoder=bond_featurizer,
-    positional_encoding_dim=20,
-    self_loops=False
-  )
-
-  graph_tensor = encoder(['CCC', 'CCO'])
-
-
+===========================
 .. autoclass:: molgraph.chemistry.MolecularGraphEncoder(molgraph.chemistry.BaseMolecularGraphEncoder)
-  :members: __init__, __call__
-  :undoc-members: __init__, __call__
-  :special-members: __init__, __call__
+  :special-members: __call__
 
 MolecularGraphEncoder3D
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Code snippet:**
-
-.. code-block::
-
-    from molgraph import chemistry
-
-    atom_featurizer = chemistry.AtomFeaturizer([
-        chemistry.features.Symbol(),
-        chemistry.features.Hybridization()
-    ])
-
-    conformer_generator = chemistry.ConformerGenerator()
-
-    encoder = chemistry.MolecularGraphEncoder3D(
-      atom_encoder=atom_featurizer,
-      conformer_generator=conformer_generator,
-    )
-
-    graph_tensor = encoder(['CCC'])
-
-
+===========================
 .. autoclass:: molgraph.chemistry.MolecularGraphEncoder3D(molgraph.chemistry.BaseMolecularGraphEncoder)
-  :members: __init__, __call__
-  :undoc-members: __init__, __call__
-  :special-members: __init__, __call__
+  :special-members: __call__
 
+ConformerGenerator
+===========================
+.. autoclass:: molgraph.chemistry.ConformerGenerator()
+  :members: available_embedding_methods, available_force_field_methods, __call__
 
-Atomic featurizers
-~~~~~~~~~~~~~~~~~~
+********************
+Atomic
+********************
+
+Featurizers
+==================
 .. autoclass:: molgraph.chemistry.AtomFeaturizer(molgraph.chemistry.AtomicFeaturizer)
-  :members: __init__, __call__, encode_atoms,
-  :undoc-members: __init__, __call__
-  :special-members: __init__, __call__
+  :members:  __call__, encode_atoms,
 
 .. autoclass:: molgraph.chemistry.BondFeaturizer(molgraph.chemistry.AtomicFeaturizer)
-  :members: __init__, __call__, encode_bonds,
-  :undoc-members: __init__, __call__
-  :special-members: __init__, __call__
+  :members: __call__, encode_bonds,
 
-Atomic tokenizers
-~~~~~~~~~~~~~~~~~
+Tokenizers
+==================
 .. autoclass:: molgraph.chemistry.AtomTokenizer(molgraph.chemistry.AtomicTokenizer)
-  :members: __init__, __call__, encode_atoms,
-  :undoc-members: __init__, __call__
-  :special-members: __init__, __call__
+  :members: __call__, encode_atoms,
 
 .. autoclass:: molgraph.chemistry.BondTokenizer(molgraph.chemistry.AtomicTokenizer)
-  :members: __init__, __call__, encode_bonds,
-  :undoc-members: __init__, __call__
-  :special-members: __init__, __call__
+  :members: __call__, encode_bonds,
 
-Atomic features
-~~~~~~~~~~~~~~~
+Features
+==================
 
 Atom features
 ------------------

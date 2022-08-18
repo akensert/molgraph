@@ -18,8 +18,8 @@ from molgraph.chemistry.atomic import features
 class AtomicEncoding(ABC):
 
     '''
-    Wraps around an `AtomicFeature`, allowing the `AtomicFeature` to be
-    appropriately encoded in the molecular graph.
+    Wraps around an instance of `AtomicFeature`, allowing the the instance
+    of `AtomicFeature` to be appropriately encoded in the molecular graph.
     '''
 
     @abstractmethod
@@ -40,6 +40,7 @@ class NominalEncoding(AtomicEncoding):
         _check_attributes(feature)
         self.feature = feature
         keys = list(self.feature.allowable_set)
+        self.feature.allowable_set = keys
         keys.sort(key=lambda x: x if x is not None else "")
         dim = len(keys) + self.feature.oov_size
 

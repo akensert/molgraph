@@ -30,19 +30,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BaseMolecularGraphEncoder(ABC):
 
-    """This class takes as input an atom encoder and [optionally] bond encoder,
-    as well as parameters specifying if positional encodings of the atoms should
-    be computed; if self loops should be included (namely, if an atom should
-    have a connection (bond) to itself); and what molecule_from_string_fn that should
-    be used to convert SMILES/InChI to an RDKit molecule object.
-
-    The resulting instance of the class can then be called (via its `__call__`,
-    method or `encode` method) to convert a SMILES/InChI/RDKit mol to a
-    molecular graph (namely, a `GraphTensor`). The `GraphTensor` is a custom
-    tensor class (which inherits from `CompositeTensor`) and can be seamlessly
-    used with TensorFlow/Keras.
-    """
-
+    'Base class for the (existing) molecular graph encoders.'
 
     atom_encoder: Union[AtomFeaturizer, Callable]
 
@@ -62,9 +50,33 @@ class BaseMolecularGraphEncoder(ABC):
         device: str = '/cpu:0',
         **kwargs,
     ) -> GraphTensor:
-        """Generates molecular graphs (GraphTensor) from a (list of) InChI,
-        SMILES, SDF block or RDKit molecule object(s)
-        """
+        '''Generates a molecular graph (``GraphTensor``) from a string,
+        list of strings, ``Chem.Mol``, or list of ``Chem.Mol``.
+
+        'String' refers to SMILES, InChI or SDF block.
+
+        Args:
+            inputs (str, list[str], Chem.Mol, list[Chem.Mol]):
+                Molecules to be encoded as molecular graphs. Can either be
+                a single molecule, or a list of molecules. In either case,
+                a single ``GraphTensor`` will be obtained. The ``GraphTensor``
+                has the flexibility to encode either a single molecule or
+                multiple molecules.
+            processes (int, None):
+                The number of worker processes to use.
+                If None ``os.cpu_count()`` is used. Default to None.
+            device (str):
+                Which device to use for generating the molecular graph.
+                Default to '/cpu:0'.
+            **kwargs:
+                Any extra (keyword) arguments that may be used by the derived
+                class. E.g., ``MolecularGraphEncoder`` passes ``index_dtype``
+                to specify the dtype of node (atom) indices.
+
+        Returns:
+            GraphTensor: A single ``GraphTensor`` representing the
+            molecule(s) inputted.
+        '''
         if isinstance(inputs, (list, tuple, set, np.ndarray)):
 
             # Convert a list of inputs to a list of `GraphTensor`s.
@@ -90,6 +102,137 @@ class BaseMolecularGraphEncoder(ABC):
 @dataclass
 class MolecularGraphEncoder(BaseMolecularGraphEncoder):
 
+    '''Molecular graph encoder, encoding molecular graphs as ``GraphTensor``.
+
+    Args:
+        atom_encoder (AtomFeaturizer, AtomTokenizer):
+            <placeholder>
+        bond_encoder (AtomFeaturizer, AtomTokenizer, None):
+            <placeholder>
+        positional_encoding_dim (int, None):
+            <placeholder>
+        self_loops (bool):
+            <placeholder>
+        auxiliary_encoders: (dict[str, callable]):
+            <placeholder>
+
+    **Examples:**
+
+    Generate a molecular graph with featurizers:
+
+    >>> # Define bond featurizer (to produce numerical encoding of atoms)
+    >>> atom_featurizer = molgraph.chemistry.AtomFeaturizer([
+    ...     molgraph.chemistry.features.Symbol(),
+    ...     molgraph.chemistry.features.Hybridization()
+    ...     # ...
+    ... ])
+    >>> # Define bond featurizer (to produce numerical encoding of bonds)
+    >>> bond_featurizer = molgraph.chemistry.BondFeaturizer([
+    ...     molgraph.chemistry.features.BondType(),
+    ...     # ...
+    ... ])
+    >>> # Define molecular graph encoder
+    >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
+    ...     atom_encoder=atom_featurizer,
+    ...     bond_encoder=bond_featurizer,
+    ...     positional_encoding_dim=10,
+    ...     self_loops=False
+    ... )
+    >>> # Encode two molecules as a GraphTensor
+    >>> graph_tensor = encoder(['CCC', 'CCO'])
+    >>> # Merge subgraphs into a single disjoint graph
+    >>> graph_tensor.merge()
+    GraphTensor(
+    node_feature=<tf.Tensor: shape=(6, 119), dtype=float32>,
+    edge_feature=<tf.Tensor: shape=(8, 4), dtype=float32>,
+    positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
+    edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
+    edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
+    graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
+
+    Generate a molecular graph with tokenizers:
+
+    >>> # Define bond featurizer (to produce numerical encoding of atoms)
+    >>> atom_tokenizer = molgraph.chemistry.AtomTokenizer([
+    ...     molgraph.chemistry.features.Symbol(),
+    ...     molgraph.chemistry.features.Hybridization()
+    ...     # ...
+    ... ])
+    >>> # Define bond featurizer (to produce numerical encoding of bonds)
+    >>> bond_tokenizer = molgraph.chemistry.BondTokenizer([
+    ...     molgraph.chemistry.features.BondType(),
+    ...     # ...
+    ... ])
+    >>> # Define molecular graph encoder
+    >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
+    ...     atom_encoder=atom_tokenizer,
+    ...     bond_encoder=bond_tokenizer,
+    ...     positional_encoding_dim=10,
+    ...     self_loops=False
+    ... )
+    >>> # Encode two molecules as a GraphTensor
+    >>> graph_tensor = encoder(['CCC', 'CCO'])
+    >>> # Merge subgraphs into a single disjoint graph
+    >>> graph_tensor.merge()
+    GraphTensor(
+    node_feature=<tf.Tensor: shape=(6,), dtype=string>,
+    edge_feature=<tf.Tensor: shape=(8,), dtype=string>,
+    positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
+    edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
+    edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
+    graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
+
+    Obtain numerical encodings of atoms (``node_feature``) and bonds
+    (``bond_feature``) with the EmbeddingLookup layer. This is only necessary
+    when tokenizers are used to compute ``node_feature`` and ``edge_feature``:
+
+    >>> # Define bond featurizer (to produce numerical encoding of atoms)
+    >>> atom_tokenizer = molgraph.chemistry.AtomTokenizer([
+    ...    molgraph.chemistry.features.Symbol(),
+    ...    molgraph.chemistry.features.Hybridization()
+    ... ])
+    >>> # Define bond featurizer (to produce numerical encoding of bonds)
+    >>> bond_tokenizer = molgraph.chemistry.BondTokenizer([
+    ...    molgraph.chemistry.features.BondType(),
+    ... ])
+    >>> # Define molecular graph encoder
+    >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
+    ...    atom_encoder=atom_tokenizer,
+    ...    bond_encoder=bond_tokenizer,
+    ...    positional_encoding_dim=10,
+    ...    self_loops=False
+    ... )
+    >>> # Encode two molecules as a GraphTensor
+    >>> graph_tensor = encoder(['CCC', 'CCO'])
+    >>> # Merge subgraphs into a single disjoint graph
+    >>> graph_tensor = graph_tensor.merge()
+    >>> # Define embedding layers
+    >>> node_embedding = molgraph.layers.EmbeddingLookup(
+    ...    feature='node_feature', output_dim=16)
+    >>> edge_embedding = molgraph.layers.EmbeddingLookup(
+    ...    feature='edge_feature', output_dim=8)
+    >>> # Adapt embedding layers
+    >>> node_embedding.adapt(graph_tensor)
+    >>> edge_embedding.adapt(graph_tensor)
+    >>> # Build model
+    >>> model = tf.keras.Sequential([
+    ...    tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...    node_embedding,
+    ...    edge_embedding,
+    ... ])
+    >>> # Pass GraphTensor to model
+    >>> graph_tensor = model(graph_tensor)
+    >>> graph_tensor
+    GraphTensor(
+    node_feature=<tf.Tensor: shape=(6, 16), dtype=float32>,
+    edge_feature=<tf.Tensor: shape=(8, 8), dtype=float32>,
+    positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
+    edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
+    edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
+    graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
+
+    '''
+
     bond_encoder: Optional[Union[BondFeaturizer, Callable]] = None
     molecule_from_string_fn: Callable[[str], Chem.Mol] = field(
         default_factory=lambda: partial(molecule_from_string, catch_errors=True),
@@ -106,10 +249,6 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
         device: str = '/cpu:0',
         index_dtype: str = 'int32'
     ) -> GraphTensor:
-
-        """Generates a molecular graph (`GraphTensor`) from a given InChI
-        string, SMILES string, or molecule object.
-        """
 
         with tf.device(device):
 
@@ -162,7 +301,59 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
 @dataclass
 class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
 
-    """Distance geometric molecular graph encoder."""
+    '''Distance geometric molecular graph encoder, encoding molecular graphs
+    as ``GraphTensor``.
+
+    Args:
+        atom_encoder (AtomFeaturizer, AtomTokenizer):
+            <placeholder>
+        conformer_generator (ConformerGenerator, callable):
+            <placeholder>
+        edge_radius (int, None):
+            <placeholder>
+        coloumb (bool):
+            <placeholder>
+
+    **Examples:**
+
+    >>> # Define bond featurizer (to produce numerical encoding of atoms)
+    >>> atom_featurizer = molgraph.chemistry.AtomFeaturizer([
+    ...     molgraph.chemistry.features.Symbol(),
+    ...     molgraph.chemistry.features.Hybridization()
+    ...     # ...
+    ... ])
+    >>> # Define conformer generator.
+    >>> conformer_generator = chemistry.ConformerGenerator()
+    >>> # Define molecular graph encoder
+    >>> encoder = molgraph.chemistry.MolecularGraphEncoder3D(
+    ...     atom_encoder=atom_featurizer,
+    ...     conformer_generator=conformer_generator,
+    ...     edge_radius=None,
+    ...     coloumb=True,
+    ... )
+    >>> # Encode two molecules as a GraphTensor
+    >>> graph_tensor = encoder(['CCC', 'CCO'])
+    >>> # Merge subgraphs into a single disjoint graph.
+    >>> graph_tensor = graph_tensor.merge()
+    >>> # The main difference between the 2d and 3d encoder is
+    >>> # the edge_feature field. Here, in contains coloumb values,
+    >>> # which mimics electrostatic interactions between nuclei
+    >>> graph_tensor.edge_feature
+    <tf.Tensor: shape=(12, 1), dtype=float32, numpy=
+    array([[23.596718 ],
+           [14.2900505],
+           [23.596718 ],
+           [23.596714 ],
+           [23.596714 ],
+           [14.2900505],
+           [23.671337 ],
+           [20.101519 ],
+           [23.671337 ],
+           [34.28639  ],
+           [34.28639  ],
+           [20.101519 ]], dtype=float32)>
+
+    '''
 
     conformer_generator: Optional[Callable] = None
     edge_radius: Optional[int] = None
@@ -174,10 +365,6 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
         device: str = '/cpu:0',
         index_dtype: str = 'int32'
     ) -> GraphTensor:
-
-        """Generates a 3D molecular graph (`GraphTensor`) from a given InChI,
-        SMILES, SDF block, or RDKit molecule object.
-        """
 
         with tf.device(device):
 

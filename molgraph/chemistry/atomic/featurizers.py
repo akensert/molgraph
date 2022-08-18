@@ -34,9 +34,17 @@ class AtomicFeaturizer:
 
         self.ndim = _get_atom_or_bond_dim(self)
 
-    def __call__(self, x: Union[Chem.Atom, Chem.Bond]) -> np.ndarray:
-        """Encodes a single rdkit Atom or Bond."""
-        return np.concatenate([feature(x) for feature in self.features])
+    def __call__(self, inputs: Union[Chem.Atom, Chem.Bond]) -> np.ndarray:
+        '''Featurizes a single rdkit Atom or Bond.
+
+        Args:
+            inputs (rdkit.Chem.Atom, rdkit.Chem.Bond):
+                <placeholder>
+
+        Returns:
+            np.ndarray: A numberical encoding of an atom or a bond.
+        '''
+        return np.concatenate([feature(inputs) for feature in self.features])
 
     @property
     def feature_names(self) -> List[str]:
@@ -44,33 +52,102 @@ class AtomicFeaturizer:
 
 
 class AtomFeaturizer(AtomicFeaturizer):
+    '''Atom featurizer.
 
-    def encode_atoms(self, atoms: List[Chem.Atom]) -> np.ndarray:
-        'Encodes a list of RDKit atoms'
+    Args:
+        features (list[AtomicFeature]):
+            <placeholder>
+        dtype (str, np.dtype):
+            <placeholder>
+
+    **Example:**
+
+    >>> atom_featurizer = molgraph.chemistry.AtomFeaturizer([
+    ...     molgraph.chemistry.features.Symbol(
+    ...         allowable_set={'C', 'N'},           # will get sorted internally
+    ...         ordinal=False,
+    ...         oov_size=1                          # OOVs are preprended
+    ...     ),
+    ...     molgraph.chemistry.features.Hybridization(
+    ...         allowable_set={'SP', 'SP2', 'SP3'},
+    ...         ordinal=False,
+    ...         oov_size=1
+    ...     )
+    ... ])
+    >>> # Obtain an Atom
+    >>> rdkit_mol = rdkit.Chem.MolFromSmiles('CC')
+    >>> rdkit_atom = rdkit_mol.GetAtomWithIdx(0)
+    >>> # Encode Atom as a numerical vector
+    >>> atom_featurizer(rdkit_atom)
+    array([0., 1., 0., 0., 0., 0., 1.], dtype=float32)
+    '''
+
+    def encode_atoms(self, inputs: List[Chem.Atom]) -> np.ndarray:
+        '''Featurizes a list of RDKit atoms (rdkit.Chem.Atom).
+
+        Args:
+            inputs (list[rdkit.Chem.Atom]):
+                <placeholder>
+
+        Returns:
+            np.ndarray: Numerical encodings of multiple atoms.
+        '''
         atom_features = []
-        for atom in atoms:
+        for atom in inputs:
             _check_atom(atom)
             atom_features.append(self(atom))
         return np.asarray(atom_features, dtype=self.dtype)
 
 
 class BondFeaturizer(AtomicFeaturizer):
+    '''Bond featurizer.
+
+    Args:
+        features (list[AtomicFeature]):
+            <placeholder>
+        dtype (str, np.dtype):
+            <placeholder>
+
+    **Example:**
+
+    >>> bond_featurizer = molgraph.chemistry.BondFeaturizer([
+    ...     molgraph.chemistry.features.BondType(
+    ...         allowable_set={'SINGLE', 'DOUBLE'}, # will get sorted internally
+    ...         ordinal=False,
+    ...         oov_size=1                          # OOVs are prepended
+    ...     ),
+    ... ])
+    >>> # Obtain a Bond
+    >>> rdkit_mol = rdkit.Chem.MolFromSmiles('CC')
+    >>> rdkit_bond = rdkit_mol.GetBondWithIdx(0)
+    >>> # Encode Bond as a numerical vector
+    >>> bond_featurizer(rdkit_bond)
+    array([0., 0., 1.], dtype=float32)
+    '''
 
     def encode_bonds(
         self,
-        bonds: List[Chem.Bond],
+        inputs: List[Chem.Bond],
         self_loops: bool = False,
     ) -> np.ndarray:
-        'Encodes a list of RDKit bonds'
+        '''Featurizes a list of RDKit bonds (rdkit.Chem.Bond).
+
+        Args:
+            inputs (list[rdkit.Chem.Bond]):
+                <placeholder>
+
+        Returns:
+            np.ndarray: Numerical encodings of multiple bonds.
+        '''
 
         if self_loops:
             self.ndim += 1
 
-        if not len(bonds):
+        if not len(inputs):
             return np.zeros([0, self.ndim]).astype(self.dtype)
 
         bond_features = []
-        for bond in bonds:
+        for bond in inputs:
             _check_bond(bond)
             if bond is None:
                 # `None` indicates that bond is a self loop
@@ -106,8 +183,8 @@ def _get_atom_or_bond_dim(atomic_encoder: Union[AtomFeaturizer, BondFeaturizer])
 
 def _check_bond(bond: Any) -> None:
     if not isinstance(bond, Chem.Bond) and bond is not None:
-        raise ValueError('bond needs to be either a `Chem.Bond` or None')
+        raise ValueError('bond needs to be either a `rdkit.Chem.Bond` or None')
 
 def _check_atom(atom: Any) -> None:
     if not isinstance(atom, Chem.Atom):
-        raise ValueError('atom needs to be a `Chem.Atom`')
+        raise ValueError('atom needs to be a `rdkit.Chem.Atom`')

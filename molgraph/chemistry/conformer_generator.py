@@ -11,6 +11,22 @@ from molgraph.chemistry import transform_ops
 @dataclass
 class ConformerGenerator:
 
+    '''Conformer generator to generate molecular conformers.
+
+    Args:
+        num_conformer_candidates (int, str, None):
+            <placeholder>
+        embedding_method (str):
+            <placeholder>
+        force_field_method (str):
+            <placeholder>
+        max_iter (int, str, None):
+            <placeholder>
+        keep_hydrogens (bool):
+            <placeholder>
+    
+    '''
+
     num_conformer_candidates: Optional[Union[str, int]] = 'auto'
     embedding_method: str = 'ETKDGv2'
     force_field_method: Optional[str] = 'UFF'
@@ -42,8 +58,10 @@ class ConformerGenerator:
 
     @property
     def available_embedding_methods(self) -> List[str]:
+        'Available embedding methods for conformer generation.'
         return list(conformer_utils._embedding_method.keys())
 
     @property
     def available_force_field_methods(self) -> List[str]:
+        'Available force field methods for conformer optimization.'
         return conformer_utils._available_ff_methods
