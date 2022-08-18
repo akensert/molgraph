@@ -17,6 +17,29 @@ from molgraph.tensors.graph_tensor import GraphTensor
 @keras.utils.register_keras_serializable(package='molgraph')
 class StandardScaling(layers.experimental.preprocessing.PreprocessingLayer):
 
+    '''Standard scaling, via centering and standardization.
+
+    Specify, as keyword argument only,
+    ``StandardScaling(feature='node_feature')`` to perform standard scaling
+    on the ``node_feature`` component of the ``GraphTensor``, or,
+    ``StandardScaling(feature='edge_feature')`` to perform standard scaling
+    on the ``edge_feature`` component of the ``GraphTensor``. If not specified,
+    the ``node_feature`` component will be considered.
+
+    Args:
+        mean (tf.Tensor, None):
+            The mean of the features. Default to None.
+        variance (tf.Tensor, None):
+            The variance of the features. Default to None.
+        variance_threshold (int, float, None):
+            The threshold for removing features, based on the variance of the
+            features over the graph. If None, variance thresholding will not
+            be performed. Default to None.
+        **kwargs:
+            Specify the relevant ``feature``. Default to ``node_feature``.
+            The reminaing kwargs are passed to the parent class.
+    '''
+
     def __init__(
         self,
         mean: Optional[tf.Tensor] = None,
@@ -24,7 +47,7 @@ class StandardScaling(layers.experimental.preprocessing.PreprocessingLayer):
         variance_threshold: Optional[Union[float, int]] = None,
         **kwargs
     ):
-
+        # TODO(akensert): assert mean and  variance
         if 'feature' in kwargs:
             self.feature = kwargs.pop('feature')
         elif not hasattr(self, 'feature'):
@@ -35,7 +58,82 @@ class StandardScaling(layers.experimental.preprocessing.PreprocessingLayer):
         self.input_variance = variance
         self.variance_threshold = variance_threshold
 
+    def adapt(self, data, batch_size=None, steps=None):
+        '''Adapts the layer to data.
+
+        When adapting the layer to the data, ``build()`` will be called
+        automatically (to initialize the relevant attributes). After adaption,
+        the layer is finalized and ready to be used.
+
+        Args:
+            data (GraphTensor, tf.data.Dataset):
+                Data to be used to adapt the layer. Can be either a
+                ``GraphTensor`` directly or a ``tf.data.Dataset`` constructed
+                from a ``GraphTensor``.
+            batch_size (int, None):
+                The batch size to be used during adaption. Default to None.
+            steps (int, None):
+                The number of steps of adaption. If None, the number of
+                samples divided by the batch_size is used. Default to None.
+        '''
+        if not isinstance(data,  GraphTensor):
+            data = data.map(lambda x: getattr(x, self.feature))
+        else:
+            data = getattr(data, self.feature)
+        super().adapt(data, batch_size=batch_size, steps=steps)
+
+    def call(self, data):
+        '''Defines the computation from inputs to outputs.
+
+        This method should not be called directly, but indirectly
+        via ``__call__()``. Upon first call, the layer is automatically
+        built via ``build()``.
+
+        Args:
+            data (GraphTensor):
+                Input to the layer.
+
+        Returns:
+            GraphTensor:
+                A ``GraphTensor`` with updated features. Either the
+                ``node_features`` component or the ``edge_features``
+                component (of the ``GraphTensor``) are updated.
+        '''
+        feature = getattr(data, self.feature)
+
+        if isinstance(feature, tf.RaggedTensor):
+            gather_axis = 2
+            broadcast_shape = (1, 1) + self.mean.shape # unnecessary?
+        else:
+            gather_axis = 1
+            broadcast_shape = (1,) + self.mean.shape # unnecessary?
+
+        mean = tf.reshape(self.mean, broadcast_shape)
+        variance = tf.reshape(self.variance, broadcast_shape)
+
+        feature = (
+            (feature - mean) /
+            tf.maximum(tf.sqrt(variance), keras.backend.epsilon())
+        )
+        if self.variance_threshold is not None:
+            feature = tf.gather(feature, self.keep, axis=gather_axis)
+
+        return data.update({self.feature: feature})
+
     def build(self, input_shape):
+        '''Builds the layer.
+
+        Specifically, it initializes the ``mean``, ``variance`` and ``keep``
+        to be adapted via ``adapt()``. ``keep`` is based on ``variance_threshold``.
+        Or if a ``mean`` and ``variance`` were supplied directly to the layer,
+        ``adapt()`` can be ignored.
+
+        Args:
+            input_shape (list, tuple, tf.TensorShape):
+                The shape of the input to the layer. Corresponds to either
+                the ``node_feature`` component or the ``edge_feature``
+                components of ``GraphTensor``.
+        '''
         super().build(input_shape)
 
         self.adapt_mean = self.add_weight(
@@ -85,14 +183,15 @@ class StandardScaling(layers.experimental.preprocessing.PreprocessingLayer):
 
                 self.keep = tf.where(self.adapt_keep == True)[:, 0]
 
-    def adapt(self, data, batch_size=None, steps=None):
-        if not isinstance(data,  GraphTensor):
-            data = data.map(lambda x: getattr(x, self.feature))
-        else:
-            data = getattr(data, self.feature)
-        super().adapt(data, batch_size=batch_size, steps=steps)
-
     def update_state(self, feature):
+        '''Accumulates statistics for the preprocessing layer.
+
+        Args:
+            feature (tf.Tensor, tf.RaggedTensor):
+                A mini-batch of inputs to the layer. Corresponds to either
+                the ``node_feature`` or ``edge_feature`` component of
+                ``GraphTensor``.
+        '''
 
         if self.input_mean is not None:
             raise ValueError("Cannot adapt")
@@ -140,6 +239,8 @@ class StandardScaling(layers.experimental.preprocessing.PreprocessingLayer):
                 tf.where(self.adapt_variance > self.variance_threshold, True, False))
 
     def reset_state(self):
+        '''Resets the statistics of the preprocessing layer.
+        '''
         if self.input_mean is not None or not self.built:
             return
         self.adapt_mean.assign(tf.zeros_like(self.adapt_mean))
@@ -149,6 +250,11 @@ class StandardScaling(layers.experimental.preprocessing.PreprocessingLayer):
             self.adapt_keep.assign(tf.ones_like(self.adapt_keep))
 
     def finalize_state(self):
+        '''Finalize the statistics for the preprocessing layer.
+
+        This method is called at the end of adapt or after restoring a
+        serialized preprocessing layer’s state.
+        '''
         if self.input_mean is not None or not self.built:
             return
         self.mean = self.adapt_mean
@@ -156,28 +262,17 @@ class StandardScaling(layers.experimental.preprocessing.PreprocessingLayer):
         if self.variance_threshold is not None:
             self.keep = tf.where(self.adapt_keep == True)[:, 0]
 
-    def call(self, data):
-
-        feature = getattr(data, self.feature)
-
-        if isinstance(feature, tf.RaggedTensor):
-            gather_axis = 2
-            broadcast_shape = (1, 1) + self.mean.shape # unnecessary?
-        else:
-            gather_axis = 1
-            broadcast_shape = (1,) + self.mean.shape # unnecessary?
-
-        mean = tf.reshape(self.mean, broadcast_shape)
-        variance = tf.reshape(self.variance, broadcast_shape)
-
-        feature = (
-            (feature - mean) /
-            tf.maximum(tf.sqrt(variance), keras.backend.epsilon())
-        )
+    def compute_output_shape(self, input_shape):
         if self.variance_threshold is not None:
-            feature = tf.gather(feature, self.keep, axis=gather_axis)
+            return input_shape[:-1] + (len(self.keep),)
+        return input_shape
 
-        return data.update({self.feature: feature})
+    def compute_output_signature(self, input_spec):
+        if self.variance_threshold is not None:
+            shape = input_spec.shape[:-1]
+            shape += (len(self.keep),)
+            return tf.TensorSpec(shape, dtype=self._dtype)
+        return input_spec
 
     @classmethod
     def from_config(cls, config):
@@ -192,26 +287,41 @@ class StandardScaling(layers.experimental.preprocessing.PreprocessingLayer):
         base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
-    def compute_output_shape(self, input_shape):
-        if self.variance_threshold is not None:
-            return input_shape[:-1] + (len(self.keep),)
-        return input_shape
-
-    def compute_output_signature(self, input_spec):
-        if self.variance_threshold is not None:
-            shape = input_spec.shape[:-1]
-            shape += (len(self.keep),)
-            return tf.TensorSpec(shape, dtype=self._dtype)
-        return input_spec
-
 
 @keras.utils.register_keras_serializable(package='molgraph')
 class VarianceThreshold(StandardScaling):
 
+    '''Variance thresholding.
+
+    Uses the ``StandardScaling`` layer but ignores the normalization when
+    calling the layer.
+
+    Specify, as keyword argument only,
+    ``VarianceThreshold(feature='node_feature')`` to perform standard scaling
+    on the ``node_feature`` component of the ``GraphTensor``, or,
+    ``VarianceThreshold(feature='edge_feature')`` to perform standard scaling
+    on the ``edge_feature`` component of the ``GraphTensor``. If not specified,
+    the ``node_feature`` component will be considered.
+
+    Args:
+        variance_threshold (int, float, None):
+            The threshold for removing features, based on the variance of the
+            features over the graph. If None, variance thresholding will not
+            be performed. Default to 0.001.
+        mean (tf.Tensor, None):
+            The mean of the features. Default to None.
+        variance (tf.Tensor, None):
+            The variance of the features. Default to None.
+        **kwargs:
+            Specify the relevant ``feature``. Default to ``node_feature``.
+            The reminaing kwargs are passed to the parent class.
+    '''
+
+
     # Solely defined to swap the position of arguments
     def __init__(
         self,
-        variance_threshold: Optional[Union[float, int]] = 0.0,
+        variance_threshold: Optional[Union[float, int]] = 0.001,
         mean: Optional[tf.Tensor] = None,
         variance: Optional[tf.Tensor] = None,
         **kwargs
@@ -223,7 +333,22 @@ class VarianceThreshold(StandardScaling):
             **kwargs)
 
     def call(self, data):
+        '''Defines the computation from inputs to outputs.
 
+        This method should not be called directly, but indirectly
+        via ``__call__()``. Upon first call, the layer is automatically
+        built via ``build()``.
+
+        Args:
+            data (GraphTensor):
+                Input to the layer.
+
+        Returns:
+            GraphTensor:
+                A ``GraphTensor`` with updated features. Either the
+                ``node_features`` component or the ``edge_features``
+                component (of the ``GraphTensor``) are updated.
+        '''
         feature = getattr(data, self.feature)
 
         if isinstance(feature, tf.Tensor):

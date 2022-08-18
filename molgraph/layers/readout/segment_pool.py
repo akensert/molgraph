@@ -43,12 +43,11 @@ class SegmentPoolingReadout(layers.Layer):
 
         Args:
             tensor (GraphTensor):
-                A graph tensor which serves as input to the layer.
+                Input to the layer.
 
         Returns:
-            tf.Tensor:
-                A tensor based on the node_feature component of the inputted
-                graph tensor.
+            A ``tf.Tensor`` or `tf.RaggedTensor` based on the node_feature
+            component of the inputted ``GraphTensor``.
         '''
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()

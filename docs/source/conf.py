@@ -68,3 +68,7 @@ html_theme_options = {}
 nbsphinx_thumbnails = {} # .py : .png
 
 autodoc_typehints = 'none'
+
+autodoc_default_options = {
+    'member-order': 'groupwise',
+}

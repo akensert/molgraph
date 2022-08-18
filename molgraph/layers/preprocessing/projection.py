@@ -12,6 +12,44 @@ from keras.utils import tf_utils
 @keras.utils.register_keras_serializable(package='molgraph')
 class FeatureProjection(layers.Layer):
 
+    '''Feature projection via dense layer.
+
+    Specify, as keyword argument only,
+    ``FeatureProjection(feature='node_feature')`` to perform standard scaling
+    on the ``node_feature`` component of the ``GraphTensor``, or,
+    ``FeatureProjection(feature='edge_feature')`` to perform standard scaling
+    on the ``edge_feature`` component of the ``GraphTensor``. If not specified,
+    the ``node_feature`` component will be considered.
+
+    Args:
+        units (int, None):
+            Number of output units.
+        activation (tf.keras.activations.Activation, callable, str, None):
+            Activation function applied to the output of the layer. Default to None.
+        use_bias (bool):
+            Whether the layer should use biases. Default to False.
+        kernel_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the kernel. Default to
+            tf.keras.initializers.TruncatedNormal(stddev=0.005).
+        bias_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the bias. Default to
+            tf.keras.initializers.Constant(0.).
+        kernel_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the kernel. Default to None.
+        bias_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the bias. Default to None.
+        activity_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the final output of the layer.
+            Default to None.
+        kernel_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the kernel. Default to None.
+        bias_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the bias. Default to None.
+        **kwargs:
+            Specify the relevant ``feature``. Default to ``node_feature``.
+            The reminaing kwargs are passed to the parent class.
+    '''
+
     def __init__(
         self,
         units,
@@ -57,6 +95,20 @@ class FeatureProjection(layers.Layer):
             bias_constraint=self.bias_constraint)
 
     def call(self, tensor):
+        '''Defines the computation from inputs to outputs.
+
+        This method should not be called directly, but indirectly
+        via ``__call__()``. Upon first call, the layer is automatically
+        built via ``build()``.
+
+        Args:
+            tensor (GraphTensor):
+                Input to the layer.
+
+        Returns:
+            A ``tf.Tensor`` or `tf.RaggedTensor` based on the ``node_feature``
+            component of the inputted ``GraphTensor``.
+        '''
         tensor_orig = tensor
         if isinstance(getattr(tensor, self.feature), tf.RaggedTensor):
             tensor = tensor.merge()

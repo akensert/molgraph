@@ -15,7 +15,16 @@ from molgraph.tensors.graph_tensor import GraphTensor
 @keras.utils.register_keras_serializable(package='molgraph')
 class TransformerEncoderReadout(layers.Layer):
 
-    'Transformer encoder layer for graph readout.'
+    '''Transformer encoder layer for graph readout.
+
+    Args:
+        units (int):
+            Number of output units. Default to 256.
+        num_heads (int):
+            Number of attention heads. Default to 8.
+        activation (str, tf.keras.activations.Activation, None):
+            The activation function applied to the output. Default to 'relu'.
+    '''
 
     def __init__(
         self,
@@ -75,12 +84,11 @@ class TransformerEncoderReadout(layers.Layer):
 
         Args:
             tensor (GraphTensor):
-                A graph tensor which serves as input to the layer.
+                Input to the layer.
 
         Returns:
-            tf.Tensor:
-                A tensor based on the node_feature component of the inputted
-                graph tensor.
+            A ``tf.Tensor`` or `tf.RaggedTensor` based on the node_feature
+            component of the inputted ``GraphTensor``.
         '''
         node_feature = tensor.node_feature
 

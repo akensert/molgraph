@@ -58,6 +58,6 @@ Graph Tensor
   graph_tensor = graph_tensor.separate()
 
 .. autoclass:: molgraph.tensors.GraphTensor(tensorflow.python.framework.composite_tensor.CompositeTensor)
-  :undoc-members:
-  :members:
-  :special-members: __init__, __getitem__, __getattr__
+  :members: merge, separate, update, remove, spec, unspecific_spec, shape, dtype, rank
+  :special-members: __getitem__, __getattr__
+  :member-order: bysource

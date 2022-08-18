@@ -95,13 +95,13 @@ class _BaseLayer(layers.Layer, ABC):
 
         Args:
             tensor (GraphTensor):
-                A graph tensor which serves as input to the layer.
+                Input to the layer.
 
         Returns:
             GraphTensor:
-                A graph tensor with updated features. For some layers,
-                both node features and edge features are updated.
-
+                A ``GraphTensor`` with updated features. For some layers,
+                both the ``node_features`` component and the ``edge_features``
+                component (of the ``GraphTensor``) are updated.
         '''
         tensor_orig = tensor
         if isinstance(tensor.node_feature, tf.RaggedTensor):
@@ -126,19 +126,7 @@ class _BaseLayer(layers.Layer, ABC):
         node_feature: Union[tf.Tensor, Shape],
         edge_feature: Optional[Union[tf.Tensor, Shape]] = None
     ) -> None:
-        '''Custom build method for initializing additional attributes.
-
-        These attributes are mainly Keras dense layers or TensorFlow variables
-        that will later transform the node (and edge) features of the graph tensor.
-
-        Args:
-            node_feature (tf.Tensor, tf.TensorShape):
-                Either the shape of the node_feature component of GraphTensor,
-                or the node_feature component itself.
-            edge_feature (tf.Tensor, tf.TensorShape, None):
-                Either the shape of the edge_feature component of GraphTensorm,
-                the edge_feature component itself. Default to None.
-        '''
+        'Custom build method for building the layer.'
         self._built_from_signature = True
 
         if hasattr(node_feature, "shape"):

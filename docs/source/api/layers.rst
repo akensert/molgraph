@@ -41,22 +41,22 @@ Convolutional
 GCNConv
 -----------------------
 .. autoclass:: molgraph.layers.GCNConv(molgraph.layers._BaseLayer)
-  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+  :members: call, get_config, from_config, compute_output_shape
 
 GINConv
 -----------------------
 .. autoclass:: molgraph.layers.GINConv(molgraph.layers._BaseLayer)
-  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+  :members: call, get_config, from_config, compute_output_shape
 
 GraphSageConv
 -----------------------
 .. autoclass:: molgraph.layers.GraphSageConv(molgraph.layers._BaseLayer)
-  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+  :members: call, get_config, from_config, compute_output_shape
 
 GCNIIConv
 -----------------------
 .. autoclass:: molgraph.layers.GCNIIConv(molgraph.layers._BaseLayer)
-  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+  :members: call, get_config, from_config, compute_output_shape
 
 
 Attentional
@@ -65,22 +65,22 @@ Attentional
 GATConv
 -----------------------
 .. autoclass:: molgraph.layers.GATConv(molgraph.layers._BaseLayer)
-  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+  :members: call, get_config, from_config, compute_output_shape
 
 GatedGCNConv
 -----------------------
 .. autoclass:: molgraph.layers.GatedGCNConv(molgraph.layers._BaseLayer)
-  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+  :members: call, get_config, from_config, compute_output_shape
 
 GMMConv
 -----------------------
 .. autoclass:: molgraph.layers.GMMConv(molgraph.layers._BaseLayer)
-  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+  :members: call, get_config, from_config, compute_output_shape
 
 GraphTransformerConv
 -----------------------
 .. autoclass:: molgraph.layers.GraphTransformerConv(molgraph.layers._BaseLayer)
-  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+  :members: call, get_config, from_config, compute_output_shape
 
 
 Message-passing
@@ -89,7 +89,7 @@ Message-passing
 MPNNConv
 -----------------------
   .. autoclass:: molgraph.layers.MPNNConv(molgraph.layers._BaseLayer)
-    :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+    :members: call, get_config, from_config, compute_output_shape
 
 
 Geometric
@@ -98,12 +98,12 @@ Geometric
 DTNNConv
 -----------------------
 .. autoclass:: molgraph.layers.DTNNConv(molgraph.layers._BaseLayer)
-  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+  :members: call, get_config, from_config, compute_output_shape
 
 GCFConv
 -----------------------
 .. autoclass:: molgraph.layers.GCFConv(molgraph.layers._BaseLayer)
-  :members: _build_from_signature, call, get_config, from_config, compute_output_shape
+  :members: call, get_config, from_config, compute_output_shape
 
 
 Readout
@@ -117,7 +117,7 @@ SegmentPoolingReadout
 TransformerEncoderReadout
 --------------------------
 .. autoclass:: molgraph.layers.TransformerEncoderReadout(tensorflow.keras.layers.Layer)
-  :members: call, get_config, from_config, compute_output_shape, _build_from_signature
+  :members: call, get_config, from_config, compute_output_shape
 
 SetGatherReadout
 -----------------------
@@ -130,75 +130,68 @@ Positional encoding
 LaplacianPositionalEncodig
 --------------------------
 .. autoclass:: molgraph.layers.LaplacianPositionalEncoding(tensorflow.keras.layers.Layer)
-  :members: call, get_config, from_config, compute_output_shape, _build_from_signature
+  :members: call, get_config, from_config, compute_output_shape
 
 
-Preprocessing (doc unfinished)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-EmbeddingLookup
---------------------------
-.. autoclass:: molgraph.layers.EmbeddingLookup(tensorflow.keras.layers.StringLookup)
-  :members: get_config, from_config,
-
-.. autoclass:: molgraph.layers.NodeEmbeddingLookup(tensorflow.keras.layers.StringLookup)
-  :members: get_config, from_config,
-
-.. autoclass:: molgraph.layers.EdgeEmbeddingLookup(tensorflow.keras.layers.StringLookup)
-  :members: get_config, from_config,
-
+Preprocessing
+~~~~~~~~~~~~~~~
 
 MinMaxScaling
 --------------------------
 .. autoclass:: molgraph.layers.MinMaxScaling(layers.experimental.preprocessing.PreprocessingLayer)
-  :members: get_config, from_config,
-
-.. autoclass:: molgraph.layers.NodeMinMaxScaling(layers.experimental.preprocessing.PreprocessingLayer)
-  :members: get_config, from_config,
-
-.. autoclass:: molgraph.layers.EdgeMinMaxScaling(layers.experimental.preprocessing.PreprocessingLayer)
-  :members: get_config, from_config,
+  :members: call, adapt, get_config, from_config
+  :member-order: bysource
 
 StandardScaling
 --------------------------
 .. autoclass:: molgraph.layers.StandardScaling(layers.experimental.preprocessing.PreprocessingLayer)
-  :members: get_config, from_config,
+  :members: call, adapt, get_config, from_config
+  :member-order: bysource
 
-.. autoclass:: molgraph.layers.NodeStandardScaling(layers.experimental.preprocessing.PreprocessingLayer)
-  :members: get_config, from_config,
+VarianceThreshold
+--------------------------
+.. autoclass:: molgraph.layers.VarianceThreshold(molgraph.layers.StandardScaling)
+  :members: call, adapt, get_config, from_config
+  :member-order: bysource
 
-.. autoclass:: molgraph.layers.EdgeStandardScaling(layers.experimental.preprocessing.PreprocessingLayer)
-  :members: get_config, from_config,
+CenterScaling
+--------------------------
+.. autoclass:: molgraph.layers.CenterScaling(layers.experimental.preprocessing.PreprocessingLayer)
+  :members: call, adapt, get_config, from_config
+  :member-order: bysource
 
-Projection
+EmbeddingLookup
+--------------------------
+.. autoclass:: molgraph.layers.EmbeddingLookup(tensorflow.keras.layers.StringLookup)
+  :members: call, adapt, get_config, from_config
+  :member-order: bysource
+
+FeatureProjection
 --------------------------
 .. autoclass:: molgraph.layers.FeatureProjection(tensorflow.keras.layers.Layer)
-  :members: get_config, from_config,
-
-.. autoclass:: molgraph.layers.NodeFeatureProjection(tensorflow.keras.layers.Layer)
-  :members: get_config, from_config,
-
-.. autoclass:: molgraph.layers.EdgeFeatureProjection(tensorflow.keras.layers.Layer)
-  :members: get_config, from_config,
+  :members: get_config, from_config, call
+  :member-order: bysource
 
 
-Postprocessing (doc unfinished)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Postprocessing
+~~~~~~~~~~~~~~~
 DotProductIncident
 --------------------------
 .. autoclass:: molgraph.layers.DotProductIncident(tensorflow.keras.layers.Layer)
-  :members: get_config, from_config,
+  :members: call, get_config, from_config,
+  :member-order: bysource
 
 GatherIncident
 --------------------------
 .. autoclass:: molgraph.layers.GatherIncident(tensorflow.keras.layers.Layer)
-  :members: get_config, from_config,
+  :members: call, get_config, from_config,
+  :member-order: bysource
 
 Gather
 --------------------------
 .. autoclass:: molgraph.layers.Gather(tensorflow.keras.layers.Layer)
-  :members: get_config, from_config,
-
+  :members: call, get_config, from_config,
+  :member-order: bysource
 
 Layer ops
 ~~~~~~~~~~~~~~~~

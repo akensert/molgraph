@@ -87,17 +87,7 @@ class LaplacianPositionalEncoding(layers.Layer):
         node_feature: Union[tf.Tensor, tf.TensorShape],
         positional_encoding: Optional[Union[tf.Tensor, tf.TensorShape]] = None
     ) -> None:
-        '''Custom build method for initializing additional attributes.
-
-        Args:
-            node_feature (tf.Tensor, tf.TensorShape):
-                Either the shape of the node_feature component of GraphTensor,
-                or the node_feature component itself.
-            positional_encoding (tf.Tensor, tf.TensorShape, None):
-                Either the shape of the positional_encoding component of
-                GraphTensor, or the positional_encoding component itself.
-        '''
-
+        'Custom build method for building the layer.'
         self._built_from_signature = True
 
         if hasattr(node_feature, "shape"):
@@ -130,7 +120,6 @@ class LaplacianPositionalEncoding(layers.Layer):
             bias_constraint=self.bias_constraint)
 
     def call(self, tensor: GraphTensor) -> GraphTensor:
-
         '''Defines the computation from inputs to outputs.
 
         This method should not be called directly, but indirectly
@@ -145,7 +134,6 @@ class LaplacianPositionalEncoding(layers.Layer):
             GraphTensor:
                 A graph tensor with updated node features.
         '''
-
         tensor_orig = tensor
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()
@@ -202,6 +190,7 @@ class LaplacianPositionalEncoding(layers.Layer):
         }
         base_config.update(config)
         return base_config
+
 
 def compute_normalized_laplacian(adjacency, num_nodes):
     degree = tf.math.bincount(adjacency[:, 0])

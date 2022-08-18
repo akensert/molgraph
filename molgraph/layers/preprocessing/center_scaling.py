@@ -62,6 +62,9 @@ class CenterScaling(layers.experimental.preprocessing.PreprocessingLayer):
                 from a ``GraphTensor``.
             batch_size (int, None):
                 The batch size to be used during adaption. Default to None.
+            steps (int, None):
+                The number of steps of adaption. If None, the number of
+                samples divided by the batch_size is used. Default to None.
         '''
         if not isinstance(data,  GraphTensor):
             data = data.map(lambda x: getattr(x, self.feature))

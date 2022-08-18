@@ -7,6 +7,7 @@ from typing import Tuple
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
+
 @keras.utils.register_keras_serializable(package='molgraph')
 class SetGatherReadout(layers.Layer):
 
@@ -14,12 +15,16 @@ class SetGatherReadout(layers.Layer):
 
     Implementation based on Gilmer et al. (2017) [#]_ and Vinyals et al. (2016) [#]_.
 
+    Args:
+        steps (int):
+            Number of LSTM steps. Default to 8.
+
     References:
         .. [#] https://arxiv.org/pdf/1704.01212.pdf
         .. [#] https://arxiv.org/pdf/1511.06391.pdf
     '''
 
-    def __init__(self, steps=8, **kwargs):
+    def __init__(self, steps: int = 8, **kwargs):
         super().__init__(**kwargs)
         self.steps = steps
         self.lstm_cell = NoInputLSTMCell()
@@ -33,12 +38,11 @@ class SetGatherReadout(layers.Layer):
 
         Args:
             tensor (GraphTensor):
-                A graph tensor which serves as input to the layer.
+                Input to the layer.
 
         Returns:
-            tf.Tensor:
-                A tensor based on the node_feature component of the inputted
-                graph tensor.
+            A ``tf.Tensor`` or `tf.RaggedTensor` based on the node_feature
+            component of the inputted ``GraphTensor``.
         '''
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()

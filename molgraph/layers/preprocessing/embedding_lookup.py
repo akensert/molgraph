@@ -5,7 +5,10 @@ from tensorflow.keras import initializers
 from tensorflow.keras import regularizers
 from tensorflow.keras import constraints
 from tensorflow.keras import activations
+
 from typing import Optional
+from typing import Union
+from typing import List
 
 from molgraph.tensors.graph_tensor import GraphTensor
 
@@ -13,18 +16,56 @@ from molgraph.tensors.graph_tensor import GraphTensor
 @keras.utils.register_keras_serializable(package='molgraph')
 class EmbeddingLookup(layers.StringLookup):
 
+    '''A loookup layer and embedding layer in combination.
+
+    Specify, as keyword argument only,
+    ``EmbeddingLookup(feature='node_feature')`` to perform standard scaling
+    on the ``node_feature`` component of the ``GraphTensor``, or,
+    ``EmbeddingLookup(feature='edge_feature')`` to perform standard scaling
+    on the ``edge_feature`` component of the ``GraphTensor``. If not specified,
+    the ``node_feature`` component will be considered.
+
+    Args:
+        output_dim (int):
+            The output dimension of the embedding layer.
+        input_dim (int, None):
+            The input dimension to the embedding layer. If None, the input
+            dimension is determined by the vocabulary size (obtained from
+            adapting the StringLookup layer to the data). Default to None.
+        embedding_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the embedding. Default to ``'uniform'``.
+        embedding_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the embedding. Default to None.
+        embedding_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the embedding. Default to None.
+        max_tokens (int, None):
+            Maximum number of tokens to use. Default to None.
+        num_oov_indices (int):
+            Number of out-of-vocabulary indices to use. Default to 1.
+        mask_token (str):
+            The token that represents masked input. Default to ``'[MASK]'``.
+        oov_token (str):
+            The token that represents out-of-vocabulary input. Default to ``'[UNK]'``.
+        vocabulary (list, None):
+            Optional vocabulary. If None, obtain a vocabulary via the ``adapt()``
+            method. Default to None.
+        **kwargs:
+            Specify the relevant ``feature``. Default to ``node_feature``.
+            The reminaing kwargs are passed to the parent class.
+    '''
+
     def __init__(
         self,
         output_dim,
         input_dim: Optional[int] = None,
-        embeddings_initializer='uniform',
-        embeddings_regularizer=None,
-        embeddings_constraint=None,
-        max_tokens=None,
-        num_oov_indices=1,
-        mask_token='[MASK]',
-        oov_token='[UNK]',
-        vocabulary=None,
+        embeddings_initializer: Union[str, initializers.Initializer] = 'uniform',
+        embeddings_regularizer: Optional[regularizers.Regularizer] = None,
+        embeddings_constraint: Optional[constraints.Constraint] = None,
+        max_tokens: Optional[int] = None,
+        num_oov_indices: int = 1,
+        mask_token: str = '[MASK]',
+        oov_token: str = '[UNK]',
+        vocabulary: Optional[List[str]] = None,
         **kwargs
     ):
         if 'feature' in kwargs:
@@ -50,12 +91,57 @@ class EmbeddingLookup(layers.StringLookup):
         self._built_from_vocabulary_size = False
 
     def adapt(self, data, batch_size=None, steps=None):
+        '''Adapts the layer to data.
+
+        When adapting the layer to the data, ``build()`` will be called
+        automatically (to initialize the relevant attributes). After adaption,
+        the layer is finalized and ready to be used.
+
+        Args:
+            data (GraphTensor, tf.data.Dataset):
+                Data to be used to adapt the layer. Can be either a
+                ``GraphTensor`` directly or a ``tf.data.Dataset`` constructed
+                from a ``GraphTensor``.
+            batch_size (int, None):
+                The batch size to be used during adaption. Default to None.
+            steps (int, None):
+                The number of steps of adaption. If None, the number of
+                samples divided by the batch_size is used. Default to None.
+        '''
         if not isinstance(data,  GraphTensor):
             data = data.map(lambda x: getattr(x, self.feature))
         else:
             data = getattr(data, self.feature)
         super().adapt(data, batch_size=batch_size, steps=steps)
         self._vocabulary_size = self.vocabulary_size()
+
+    def call(self, tensor: GraphTensor) -> GraphTensor:
+        '''Defines the computation from inputs to outputs.
+
+        This method should not be called directly, but indirectly
+        via ``__call__()``. Upon first call, the layer is automatically
+        built via ``build()``.
+
+        Args:
+            data (GraphTensor):
+                Input to the layer.
+
+        Returns:
+            GraphTensor:
+                A ``GraphTensor`` with updated features. Either the
+                ``node_features`` component or the ``edge_features``
+                component (of the ``GraphTensor``) are updated.
+        '''
+        if not self._built_from_vocabulary_size:
+            self._build_from_vocabulary_size(self._vocabulary_size)
+
+        tensor = tensor.update({
+            self.feature: super().call(getattr(tensor, self.feature))
+        })
+        return tensor.update({
+            self.feature: tf.nn.embedding_lookup(
+                self.embeddings, getattr(tensor, self.feature))
+        })
 
     def _build_from_vocabulary_size(self, vocabulary_size):
         self._built_from_vocabulary_size = True
@@ -69,18 +155,6 @@ class EmbeddingLookup(layers.StringLookup):
             constraint=self.embeddings_constraint,
             experimental_autocast=False
         )
-
-    def call(self, tensor: GraphTensor) -> GraphTensor:
-        if not self._built_from_vocabulary_size:
-            self._build_from_vocabulary_size(self._vocabulary_size)
-
-        tensor = tensor.update({
-            self.feature: super().call(getattr(tensor, self.feature))
-        })
-        return tensor.update({
-            self.feature: tf.nn.embedding_lookup(
-                self.embeddings, getattr(tensor, self.feature))
-        })
 
     @classmethod
     def from_config(cls, config):
