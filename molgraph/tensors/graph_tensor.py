@@ -61,6 +61,175 @@ class GraphTensor(composite_tensor.CompositeTensor):
             Nested structure of spec should be match nested structure of data.
         **data_kwargs (tf.Tensor, tf.RaggedTensor, np.array, list, tuple):
             Components passed as keyword arguments. Can be combined with data.
+
+    **Examples:**
+
+    Initialize ``GraphTensor`` with dict of ragged arrays:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
+    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'node_feature': [
+    ...             [[1.0, 0.0], [1.0, 0.0]],
+    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
+    ...         ],
+    ...     }
+    ... )
+    >>> graph_tensor.shape
+    TensorShape([2, None, 2])
+
+    Initialize ``GraphTensor`` with dict of arrays:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0]
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...     }
+    ... )
+    >>> graph_tensor.shape
+    TensorShape([5, 2])
+
+    Initialize ``GraphTensor`` with keyword arguments:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     edge_dst=[[0, 1], [0, 0, 1, 1, 2, 2]],
+    ...     edge_src=[[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...     node_feature=[
+    ...         [[1.0, 0.0], [1.0, 0.0]],
+    ...         [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
+    ...     ]
+    ... )
+    >>> graph_tensor.shape
+    TensorShape([2, None, 2])
+
+    Merge subgraphs of ``GraphTensor``:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     edge_dst=[[0, 1], [0, 0, 1, 1, 2, 2]],
+    ...     edge_src=[[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...     node_feature=[
+    ...         [[1.0, 0.0], [1.0, 0.0]],
+    ...         [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
+    ...     ]
+    ... )
+    >>> graph_tensor = graph_tensor.merge()
+    >>> graph_tensor.shape
+    TensorShape([5, 2])
+
+    Separate (merged) subgraphs of ``GraphTensor``:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0]
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...     }
+    ... )
+    >>> graph_tensor = graph_tensor.separate()
+    >>> graph_tensor.shape
+    TensorShape([2, None, 2])
+
+    Add, update and remove nested components of ``GraphTensor``:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0]
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...     }
+    ... )
+    >>> random_feature_1 = tf.random.uniform(
+    ...     graph_tensor['node_feature'].shape)
+    >>> random_feature_2 = tf.random.uniform(
+    ...    graph_tensor['node_feature'].shape)
+    >>> # Add new component
+    >>> graph_tensor = graph_tensor.update({
+    ...     'random_feature': random_feature_1})
+    >>> # Update exisiting component
+    >>> graph_tensor = graph_tensor.update({
+    ...     'node_feature': random_feature_2})
+    >>> # Remove component
+    >>> graph_tensor = graph_tensor.remove(['random_feature'])
+    >>> graph_tensor
+    GraphTensor(
+    edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
+    edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
+    node_feature=<tf.Tensor: shape=(5, 2), dtype=float32>,
+    graph_indicator=<tf.Tensor: shape=(5,), dtype=int32>)
+
+    Use spec of ``GraphTensor`` in model:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0]
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...     }
+    ... )
+    >>> # Build a model with .spec (not recommended)
+    >>> gnn_model = tf.keras.Sequential([
+    ...     tf.keras.Input(type_spec=graph_tensor.spec),
+    ...     molgraph.layers.GCNConv(16, activation='relu'),
+    ...     molgraph.layers.GCNConv(16, activation='relu')
+    ... ])
+    >>> gnn_model.output_shape
+    (5, 16)
+
+    Use unspecific spec of ``GraphTensor`` instead (recommended):
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0]
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...     }
+    ... )
+    >>> # Build a model with .unspecific_spec (recommended)
+    >>> gnn_model = tf.keras.Sequential([
+    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     molgraph.layers.GCNConv(16, activation='relu'),
+    ...     molgraph.layers.GCNConv(16, activation='relu')
+    ... ])
+    >>> gnn_model.output_shape
+    (None, 16)
+
     '''
 
     __slots__ = ['_data', '_spec']

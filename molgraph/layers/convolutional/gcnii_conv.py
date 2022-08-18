@@ -24,6 +24,54 @@ class GCNIIConv(_BaseLayer):
 
     Implementation is based on Chen et al. (2020) [#]_.
 
+    **Example:**
+
+    Inputs a ``GraphTensor`` encoding (two) subgraphs:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
+    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'node_feature': [
+    ...             [[1.0, 0.0], [1.0, 0.0]],
+    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
+    ...         ],
+    ...     }
+    ... )
+    >>> # Build a model with GCNIIConv
+    >>> gnn_model = tf.keras.Sequential([
+    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     molgraph.layers.GCNIIConv(16, activation='relu'),
+    ...     molgraph.layers.GCNIIConv(16, activation='relu')
+    ... ])
+    >>> gnn_model.output_shape
+    (None, None, 16)
+
+    Inputs a ``GraphTensor`` encoding a single disjoint graph:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0]
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...     }
+    ... )
+    >>> # Build a model with GCNIIConv
+    >>> gnn_model = tf.keras.Sequential([
+    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     molgraph.layers.GCNIIConv(16, activation='relu'),
+    ...     molgraph.layers.GCNIIConv(16, activation='relu')
+    ... ])
+    >>> gnn_model.output_shape
+    (None, 16)
+
     Args:
         units (int, None):
             Number of output units.

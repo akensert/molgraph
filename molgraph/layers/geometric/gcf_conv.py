@@ -36,15 +36,107 @@ def cosine_weight_from_distance(
 @keras.utils.register_keras_serializable(package='molgraph')
 class GCFConv(_BaseLayer):
 
-    """(Graph) continuous filter convolutions which is aimed to operate on
-    3D molecular graphs (namely, bond distances, angle distances and dihedral
-    distances). The implementation is based on Schütt et al. [#]_
-    and Chang [#]_.
+    """(Graph) continuous filter convolution layer ((G)CFConv).
+
+    Implementation is based on Schütt et al. (2017b) [#]_.
+
+    Operates on 3D molecular graphs (encoding distance geometry).
+
+    **Example:**
+
+    Inputs a ``GraphTensor`` encoding (two) subgraphs:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
+    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'node_feature': [
+    ...             [[1.0, 0.0], [1.0, 0.0]],
+    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
+    ...         ],
+    ...         # edge_feature encodes distances between edge_dst and edge_src
+    ...         'edge_feature': [[0.3, 0.3], [0.1, 0.2, 0.1, 0.4, 0.4, 0.2]],
+    ...     }
+    ... )
+    >>> # Build a model with GCFConv
+    >>> gnn_model = tf.keras.Sequential([
+    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     molgraph.layers.GCFConv(16, activation='relu'),
+    ...     molgraph.layers.GCFConv(16, activation='relu')
+    ... ])
+    >>> gnn_model.output_shape
+    (None, None, 16)
+
+    Inputs a ``GraphTensor`` encoding a single disjoint graph:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0]
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...         # edge_feature encodes distances between edge_dst and edge_src
+    ...         'edge_feature': [0.3, 0.3, 0.1, 0.2, 0.1, 0.4, 0.4, 0.2],
+    ...     }
+    ... )
+    >>> # Build a model with GCFConv
+    >>> gnn_model = tf.keras.Sequential([
+    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     molgraph.layers.GCFConv(16, activation='relu'),
+    ...     molgraph.layers.GCFConv(16, activation='relu')
+    ... ])
+    >>> gnn_model.output_shape
+    (None, 16)
+
+    Args:
+        units (int, None):
+            <placeholder>
+        distance_min (float):
+            <placeholder>
+        distance_max (float):
+            <placeholder>
+        distance_granularity (float):
+            <placeholder>
+        rbf_stddev (float, str):
+            <placeholder>
+        self_projection (bool):
+            Whether to apply self projection. Default to True.
+        batch_norm: (bool):
+            Whether to apply batch normalization to the output. Default to True.
+        residual: (bool)
+            Whether to add skip connection to the output. Default to True.
+        dropout: (float, None):
+            Dropout applied to the output of the layer. Default to None.
+        activation (tf.keras.activations.Activation, callable, str, None):
+            Activation function applied to the output of the layer. Default to None.
+        use_bias (bool):
+            Whether the layer should use biases. Default to True.
+        kernel_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the kernels. Default to
+            tf.keras.initializers.GlorotUniform().
+        bias_initializer (tf.keras.initializers.Initializer, str):
+            Initializer function for the biases. Default to
+            tf.keras.initializers.Constant(0.).
+        kernel_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the kernels. Default to None.
+        bias_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the biases. Default to None.
+        activity_regularizer (tf.keras.regularizers.Regularizer, None):
+            Regularizer function applied to the final output of the layer.
+            Default to None.
+        kernel_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the kernels. Default to None.
+        bias_constraint (tf.keras.constraints.Constraint, None):
+            Constraint function applied to the biases. Default to None.
 
     References:
-    
-    .. [#] Schütt et al. https://arxiv.org/pdf/1706.08566.pdf
-    .. [#] Chang https://arxiv.org/pdf/2007.03513.pdf
+        .. [#] https://arxiv.org/pdf/1706.08566.pdf
     """
 
 

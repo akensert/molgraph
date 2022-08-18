@@ -5,4 +5,7 @@ from molgraph import metrics
 from molgraph import models
 from molgraph import chemistry
 
-__version__ = "0.0"
+from molgraph.tensors import GraphTensor
+from molgraph.tensors import GraphTensorSpec
+
+__version__ = '0.0'
