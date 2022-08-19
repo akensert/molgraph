@@ -12,14 +12,14 @@ from typing import Union
 from typing import Tuple
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import _BaseLayer
+from molgraph.layers.base import BaseLayer
 from molgraph.layers.ops import softmax_edge_weights
 from molgraph.layers.ops import propagate_node_features
 
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class GatedGCNConv(_BaseLayer):
+class GatedGCNConv(BaseLayer):
 
     '''Gated graph convolutional layer (GatedGCN).
 

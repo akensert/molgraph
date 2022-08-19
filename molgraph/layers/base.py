@@ -24,14 +24,13 @@ from molgraph.tensors.graph_tensor import GraphTensor
 Shape = Union[List[int], Tuple[int, ...], tf.TensorShape]
 DType = Union[str, tf.DType]
 Config = TypeVar('Config', bound=dict)
-Layer = TypeVar('Layer', bound=layers.Layer)
 Activation = Optional[Union[Callable[[tf.Tensor], tf.Tensor], str]]
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class _BaseLayer(layers.Layer, ABC):
+class BaseLayer(layers.Layer, ABC):
 
-    'Base layer for all (existing) GNN layers.'
+    'Only meant to be a base layer for the built-in GNN layers.'
 
     def __init__(
         self,
@@ -310,7 +309,7 @@ class _BaseLayer(layers.Layer, ABC):
         return tf.TensorShape(input_shape[:-1]).concatenate([inner_dim])
 
     @classmethod
-    def from_config(cls: Type[Layer], config: Config) -> Layer:
+    def from_config(cls: Type['BaseLayer'], config: Config) -> 'BaseLayer':
         node_feature_shape = config.pop('node_feature_shape')
         edge_feature_shape = config.pop('edge_feature_shape')
         layer = cls(**config)

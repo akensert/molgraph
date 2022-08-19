@@ -13,28 +13,14 @@ from typing import Union
 from typing import Tuple
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import _BaseLayer
+from molgraph.layers.base import BaseLayer
 from molgraph.layers.ops import propagate_node_features
 from molgraph.layers.geometric import _radial_basis
 
 
-def shifted_softplus(x):
-    return tf.math.log(0.5 * tf.math.exp(x) + 0.5)
-
-def cosine_weight_from_distance(
-    distance: tf.Tensor,
-    distance_cutoff: float = 10.,
-    dtype: tf.DType = tf.float32,
-) -> tf.Tensor:
-    """Passes distances (floating point values) to a cosine function to obtain
-    weights for associated source nodes. Outputted values (also floating point
-    values) are in range [0, 1].
-    """
-    return (0.5 * (tf.math.cos((distance / distance_cutoff) * np.pi) + 1))
-
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class GCFConv(_BaseLayer):
+class GCFConv(BaseLayer):
 
     """(Graph) continuous filter convolution layer ((G)CFConv).
 
@@ -244,3 +230,18 @@ class GCFConv(_BaseLayer):
             'rbf_stddev': self.rbf_stddev
         })
         return base_config
+
+
+def shifted_softplus(x):
+    return tf.math.log(0.5 * tf.math.exp(x) + 0.5)
+
+def cosine_weight_from_distance(
+    distance: tf.Tensor,
+    distance_cutoff: float = 10.,
+    dtype: tf.DType = tf.float32,
+) -> tf.Tensor:
+    """Passes distances (floating point values) to a cosine function to obtain
+    weights for associated source nodes. Outputted values (also floating point
+    values) are in range [0, 1].
+    """
+    return (0.5 * (tf.math.cos((distance / distance_cutoff) * np.pi) + 1))

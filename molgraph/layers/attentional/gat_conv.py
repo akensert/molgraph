@@ -12,14 +12,15 @@ from typing import Union
 from typing import Tuple
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import _BaseLayer
+from molgraph.layers.base import BaseLayer
 from molgraph.layers.ops import softmax_edge_weights
 from molgraph.layers.ops import propagate_node_features
 from molgraph.layers.ops import reduce_features
 
 
+
 @keras.utils.register_keras_serializable(package='molgraph')
-class GATConv(_BaseLayer):
+class GATConv(BaseLayer):
 
     '''Multi-head graph attention layer (GAT).
 

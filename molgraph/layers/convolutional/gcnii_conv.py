@@ -11,14 +11,14 @@ from typing import Union
 from typing import Tuple
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import _BaseLayer
+from molgraph.layers.base import BaseLayer
 from molgraph.layers.ops import compute_edge_weights_from_degrees
 from molgraph.layers.ops import propagate_node_features
 
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class GCNIIConv(_BaseLayer):
+class GCNIIConv(BaseLayer):
 
     '''Graph convolutional 'via Initial residual and Identity mapping' layer (GCNII).
 

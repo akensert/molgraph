@@ -13,13 +13,14 @@ from typing import Union
 from typing import Tuple
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import _BaseLayer
+from molgraph.layers.base import BaseLayer
 from molgraph.layers.ops import propagate_node_features
 from molgraph.layers.geometric import _radial_basis
 
 
+
 @keras.utils.register_keras_serializable(package='molgraph')
-class DTNNConv(_BaseLayer):
+class DTNNConv(BaseLayer):
 
     """Deep Tensor Neural Network (DTNN).
 

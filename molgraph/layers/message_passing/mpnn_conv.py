@@ -12,13 +12,14 @@ from typing import Union
 from typing import Tuple
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import _BaseLayer
+from molgraph.layers.base import BaseLayer
 from molgraph.layers.ops import compute_edge_weights_from_degrees
 from molgraph.layers.ops import propagate_node_features
 
 
+
 @keras.utils.register_keras_serializable(package='molgraph')
-class MPNNConv(_BaseLayer):
+class MPNNConv(BaseLayer):
 
     """Message passing neural network layer (MPNN)
 
