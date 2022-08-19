@@ -13,6 +13,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
+import inspect
 
 import molgraph
 
@@ -36,6 +37,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
     'sphinx_gallery.load_style',
+    'sphinx.ext.linkcode',
     'nbsphinx'
 ]
 
@@ -72,3 +74,42 @@ autodoc_typehints = 'none'
 autodoc_default_options = {
     'member-order': 'groupwise',
 }
+
+def linkcode_resolve(domain, info):
+
+    if domain != 'py':
+        return None
+
+    modulename = info['module']
+    fullname = info['fullname']
+
+    module = sys.modules.get(modulename)
+
+    if module is None:
+        return None
+
+    for part in fullname.split('.'):
+        try:
+            module = getattr(module, part)
+        except Exception:
+            return None
+    try:
+        filepath = inspect.getsourcefile(module)
+    except Exception:
+        filepath = None
+    if not filepath:
+        return None
+
+    try:
+        source_code, line_number = inspect.getsourcelines(module)
+    except Exception:
+        line_number = None
+
+    filepath = os.path.relpath(
+        filepath, start=os.path.dirname(molgraph.__file__))
+
+    url = 'https://github.com/akensert/molgraph/tree/main/molgraph/'
+    url += filepath
+    if line_number:
+        return url + f'#L{line_number}-L{line_number + len(source_code)- 1}'
+    return url
