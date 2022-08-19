@@ -18,8 +18,8 @@ from molgraph.chemistry.atomic import features
 class AtomicEncoding(ABC):
 
     '''
-    Wraps around an instance of `AtomicFeature`, allowing the the instance
-    of `AtomicFeature` to be appropriately encoded in the molecular graph.
+    Wraps around an instance of a derived class of `AtomicFeature`, allowing
+    it to be appropriately encoded in the molecular graph.
     '''
 
     @abstractmethod
