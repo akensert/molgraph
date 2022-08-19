@@ -47,3 +47,19 @@ Features
 .. automodule:: molgraph.chemistry.atomic.features
   :members:
   :member-order: bysource
+  :special-members: __call__
+
+**********************
+TF records
+**********************
+
+.. automodule:: molgraph.chemistry.benchmark.tf_records
+  :members: write, load,
+  :member-order: bysource
+
+**********************
+Benchmarks (datasets)
+**********************
+.. autoclass:: molgraph.chemistry.benchmark.datasets.DatasetFactory
+  :members: get, get_config, registered_datasets,
+  :member-order: bysource

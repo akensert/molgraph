@@ -17,12 +17,149 @@ from typing import Tuple
 from typing import Sequence
 from typing import Any
 
-from molgraph.tensors import GraphTensor
-from molgraph.tensors import GraphTensorSpec
-from molgraph.chemistry import MolecularGraphEncoder
-from molgraph.chemistry import MolecularGraphEncoder3D
+from molgraph.tensors.graph_tensor import GraphTensor
+from molgraph.tensors.graph_tensor import GraphTensorSpec
+from molgraph.chemistry.molecular_encoders import MolecularGraphEncoder
+from molgraph.chemistry.molecular_encoders import MolecularGraphEncoder3D
 from molgraph.chemistry.benchmark.datasets import Dataset
 
+
+
+def write(
+    path: str,
+    inputs: dict,
+    encoder: Union[MolecularGraphEncoder, MolecularGraphEncoder3D],
+    num_files: Optional[int] = None,
+    processes: Optional[int] = None,
+    device: str = '/cpu:0'
+) -> None:
+
+    '''Writes TF records.
+
+    Args:
+        path (str):
+            The path to write TF records to (save path). Should not include
+            file name. File names are automatically determined.
+        inputs (dict):
+            The data to be written as TF records. The keys of the inputs (dict),
+            are the name of the data fields, while the values are the actual
+            values (of the fields). E.g., ``{'x': ['CC', 'CCO'], 'y': [4.1, 2.4]}``.
+            The ``encoder`` will be applied to the mandatory ``inputs['x']`` field.
+        encoder (MolecularGraphEncoder, MolecularGraphEncoder3D):
+            The encoder to be applied to ``inputs['x']``. The encoder transforms
+            the string (or rdkit.Chem.Mol) representations of molecules into
+            a ``GraphTensor``.
+        num_files (int, None):
+            The number of TF record files to write to. If None, num_files will
+            be set to ``processes``. Default to None.
+        processes (int, None):
+            The number of worker processes to use. If None, ``multiprocessing.cpu_count()``
+            will be used. Using multiple worker processes significantly speeds up
+            writing of TF records. If ``num_files`` < ``processes``, only ``num_files``
+            processes will be used. Default to None.
+        device (str):
+            The device to use. Default to `/cpu:0`.
+
+    Returns:
+        ``None``
+    '''
+    if processes is None:
+        processes = multiprocessing.cpu_count()
+
+    if num_files is None:
+        num_files = processes
+
+    chunk_size = math.ceil(len(inputs['x']) / num_files)
+
+    spec = {}
+    for key, value in inputs.items():
+        if key == 'x':
+            graph_tensor_spec = encoder(value[0]).unspecific_spec._data_spec
+            graph_tensor_spec.pop('graph_indicator')
+            spec[key] = GraphTensorSpec(graph_tensor_spec)
+        else:
+            spec[key] = tf.type_spec_from_value(value[0])
+
+        inputs[key] = [
+            value[i * chunk_size: (i + 1) * chunk_size]
+            for i in range(num_files)
+        ]
+
+    input_keys = list(inputs.keys())
+    inputs = list(inputs.values())
+
+    directory = os.path.dirname(path)
+
+    os.makedirs(directory, exist_ok=True)
+
+    _specs_to_json(spec, os.path.join(directory, 'spec.json'))
+
+    path = [
+        os.path.join(directory, f'tfrecord-{i:04d}.tfrecord')
+        for i in range(num_files)
+    ]
+
+    inputs.insert(0, path)
+
+    with multiprocessing.Pool(processes) as pool:
+        pool.map(
+            func=partial(
+                _write_tfrecords_to_file,
+                input_keys=input_keys,
+                encoder=encoder,
+                device=device
+            ),
+            iterable=zip(*inputs)
+        )
+
+def load(
+    path: str,
+    extract_tuple: Optional[Union[List[str], Tuple[str]]] = None,
+    shuffle_tfrecords: bool = False,
+) -> tf.data.Dataset:
+    '''Loads TF records.
+
+    Args:
+        path (str):
+            Path to TF record files (excluding file names).
+        extract_tuple (list[str], tuple[str], None):
+            Optionally specify what fields to extract. If None, returned TF
+            dataset will produce dictionaries (corresponding to ``inputs``
+            passed to ``write``). If not None, tuples will be produced.
+            Default to None.
+        shuffle_tfrecords (bool):
+            Whether tf record files should be shuffled. Default to False.
+            Recommended to be set to True when loading training dataet.
+
+    Returns:
+        ``tf.data.Dataset``: A TF dataset ready to be used for modeling (GNNs).
+    '''
+    specs = _specs_from_json(os.path.join(path, 'spec.json'))
+    filenames = glob(os.path.join(path, '*.tfrecord'))
+    # SORT?
+    print(filenames)
+    num_files = len(filenames)
+    dataset = tf.data.Dataset.from_tensor_slices(filenames)
+    if shuffle_tfrecords:
+        dataset = dataset.shuffle(num_files)
+    dataset = dataset.interleave(
+        tf.data.TFRecordDataset, num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.map(
+        partial(_parse_features, specs=specs, extract_tuple=extract_tuple),
+        num_parallel_calls=tf.data.AUTOTUNE)
+    return dataset
+
+def write_from_dataset(
+    path: str,
+    dataset: Dataset,
+    encoder: MolecularGraphEncoder,
+    num_files: Optional[int] = None,
+    processes: Optional[int] = None,
+    device: str = '/cpu:0'
+) -> None:
+    for key, value in dataset.items():
+        path_subset = os.path.join(path, key, '')
+        write(path_subset, value, encoder, num_files, processes, device)
 
 def _serialize_example(feature: Dict[str, tf.train.Feature]) -> bytes:
     """Converts a dictionary of str:feature pairs to a bytes string."""
@@ -98,77 +235,6 @@ def _write_tfrecords_to_file(
             serialized = _serialize_example(example)
             writer.write(serialized)
 
-def write(
-    path: str,
-    inputs: dict,
-    encoder: Union[MolecularGraphEncoder, MolecularGraphEncoder3D],
-    num_files: Optional[int] = None,
-    processes: Optional[int] = None,
-    device: str = '/cpu:0'
-) -> None:
-
-    if processes is None:
-        processes = multiprocessing.cpu_count()
-
-    if num_files is None:
-        num_files = processes
-
-    chunk_size = math.ceil(len(inputs['x']) / num_files)
-
-    spec = {}
-    for key, value in inputs.items():
-        if key == 'x':
-            graph_tensor_spec = encoder(value[0]).unspecific_spec._data_spec
-            graph_tensor_spec.pop('graph_indicator')
-            spec[key] = GraphTensorSpec(graph_tensor_spec)
-        else:
-            # tf.convert_to_tensor?
-            spec[key] = tf.type_spec_from_value(value[0])
-
-        inputs[key] = [
-            value[i * chunk_size: (i + 1) * chunk_size]
-            for i in range(num_files)
-        ]
-
-    input_keys = list(inputs.keys())
-    inputs = list(inputs.values())
-
-    directory = os.path.dirname(path)
-
-    os.makedirs(directory, exist_ok=True)
-
-    _specs_to_json(spec, os.path.join(directory, 'spec.json'))
-
-    path = [
-        os.path.join(directory, f'tfrecord-{i:04d}.tfrecord')
-        for i in range(num_files)
-    ]
-
-    inputs.insert(0, path)
-
-    with multiprocessing.Pool(processes) as pool:
-        pool.map(
-            func=partial(
-                _write_tfrecords_to_file,
-                input_keys=input_keys,
-                encoder=encoder,
-                device=device
-            ),
-            iterable=zip(*inputs)
-        )
-
-def write_from_dataset(
-    path: str,
-    dataset: Dataset,
-    encoder: MolecularGraphEncoder,
-    num_files: Optional[int] = None,
-    processes: Optional[int] = None,
-    device: str = '/cpu:0'
-) -> None:
-    for key, value in dataset.items():
-        path_subset = os.path.join(path, key, '')
-        write(path_subset, value, encoder, num_files, processes, device)
-
 def _parse_features(
     example_proto: tf.Tensor,
     specs: Dict[str, Union[GraphTensorSpec, tf.TensorSpec]],
@@ -203,21 +269,3 @@ def _parse_features(
     if extract_tuple is not None:
         data = tuple(data[key] for key in extract_tuple if key in data)
     return data
-
-def load(
-    path: str,
-    extract_tuple: Optional[Union[List[str], Tuple[str]]] = None,
-    shuffle_tfrecords: bool = True,
-) -> tf.data.Dataset:
-    specs = _specs_from_json(os.path.join(path, 'spec.json'))
-    filenames = glob(os.path.join(path, '*.tfrecord'))
-    num_files = len(filenames)
-    dataset = tf.data.Dataset.from_tensor_slices(filenames)
-    if shuffle_tfrecords:
-        dataset = dataset.shuffle(num_files)
-    dataset = dataset.interleave(
-        tf.data.TFRecordDataset, num_parallel_calls=tf.data.AUTOTUNE)
-    dataset = dataset.map(
-        partial(_parse_features, specs=specs, extract_tuple=extract_tuple),
-        num_parallel_calls=tf.data.AUTOTUNE)
-    return dataset
