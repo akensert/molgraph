@@ -36,6 +36,22 @@ def write(
 
     '''Writes TF records.
 
+    **Example:**
+
+    >>> x = ['CC', 'CCC', 'CCCC']
+    >>> y = [ 5.2,  7.4,   8.1]
+    >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
+    ...     atom_encoder=molgraph.chemistry.AtomFeaturizer([
+    ...         molgraph.chemistry.features.Symbol(),
+    ...         molgraph.chemistry.features.Hybridization(),
+    ...     ])
+    ... )
+    >>> # molgraph.chemistry.tf_records.write(
+    ... #     path='/tmp/dummy_records/',
+    ... #     inputs={'x': x, 'y': y},
+    ... #     encoder=encoder
+    ... # )
+
     Args:
         path (str):
             The path to write TF records to (save path). Should not include
@@ -119,6 +135,17 @@ def load(
 ) -> tf.data.Dataset:
     '''Loads TF records.
 
+    **Example:**
+
+    >>> # ds = molgraph.chemistry.tf_records.load(
+    ... #     path='/tmp/dummy_records/', # extract_tuple=(x, y)
+    ... # )
+    >>> # ds = ds.shuffle(3)
+    >>> # ds = ds.batch(2)
+    >>> # ds = ds.prefetch(-1)
+    >>> # for batch in ds.take(1):
+    >>> #     print(batch['x'])
+
     Args:
         path (str):
             Path to TF record files (excluding file names).
@@ -136,8 +163,7 @@ def load(
     '''
     specs = _specs_from_json(os.path.join(path, 'spec.json'))
     filenames = glob(os.path.join(path, '*.tfrecord'))
-    # SORT?
-    print(filenames)
+    filenames = sorted(filenames)
     num_files = len(filenames)
     dataset = tf.data.Dataset.from_tensor_slices(filenames)
     if shuffle_tfrecords:

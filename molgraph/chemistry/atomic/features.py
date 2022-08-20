@@ -45,6 +45,7 @@ _defaults = {
 }
 
 
+
 class AtomicFeature(ABC):
 
     '''Base class for atom and bond features.
@@ -82,33 +83,34 @@ class AtomicFeature(ABC):
     Args:
         allowable_set (set, list, tuple):
             A set of features which should be considered.
-        ordinal (bool):
-            Whether the feature should be encoded as an ordinal vector. Will
-            only take effect when the feature is used in a featurizer. If
-            feature is to be tokenized, this parameter will be ignored. Default
-            to False.
+        encoding (str):
+            How to encode the feature. Either of 'float', 'nominal', 'ordinal'
+            or 'token'. If encoding is set to 'nominal' or 'token', ``oov_size``
+            will be considered, otherwise not.
         oov_size (int):
-            The number of slots for an OOV feature. If feature is to be
-            tokenized, this parameter will be ignored. Default to 0.
+            The number of slots for an OOV feature. If ordinal is set to True,
+            or if feature is to be tokenized, this parameter will be ignored.
+            Default to 0.
     '''
 
     def __init__(
         self,
         allowable_set: Optional[Sequence[Any]] = None,
-        ordinal: bool = False,
-        oov_size: int = 0,
+        ordinal: Optional[str] = None,
+        oov_size: Optional[int] = None,
     ) -> None:
-        self.allowable_set = allowable_set
-        self.ordinal = ordinal
-        self.oov_size = oov_size
 
-        if self.allowable_set is None:
-            self.allowable_set = _defaults.get(self.name, None)
-            if self.allowable_set is None:
-                self.ordinal = None
-                self.oov_size = None
-        if self.ordinal:
-            self.oov_size = None
+        if allowable_set is None:
+            allowable_set = _defaults.get(self.name, None)
+
+        if allowable_set is not None:
+            self.allowable_set = allowable_set
+            if ordinal is not None:
+                self.ordinal = ordinal
+            if ordinal or oov_size is None:
+                self.oov_size = 0
+            else:
+                self.oov_size = oov_size
 
     @abstractmethod
     def __call__(self, inputs: Union[Chem.Atom, Chem.Bond]) -> str:
@@ -116,14 +118,8 @@ class AtomicFeature(ABC):
         pass
 
     def __repr__(self):
-        fields = []
-        if self.allowable_set is not None:
-            fields.append(f"allowable_set={self.allowable_set}")
-        if self.ordinal is not None:
-            fields.append(f"ordinal={self.ordinal}")
-        if self.oov_size is not None:
-            fields.append(f"oov_size={self.oov_size}")
-        return self.__class__.__name__ + '(' + ', '.join(fields) + ')'
+        fields = [f'{k}={v}' for k, v in self.__dict__.items()]
+        return self.name + '(' + ', '.join(fields) + ')'
 
     @property
     def name(self) -> str:
@@ -212,6 +208,25 @@ class AtomicFeatureFactory:
             return feature
         return wrapper
 
+    def get(self, name, *args, **kwargs):
+        'Get feature by name (see ``registered_features``).'
+        return self._features[name](*args, **kwargs)
+
+    def get_all(
+        self,
+        exclude: Optional[Sequence[str]] = None
+    ) -> List[AtomicFeature]:
+        '''Instatiates and returns all available features in a list.
+        '''
+        if exclude is None or isinstance(exclude, str):
+            exclude = [exclude]
+        return [v() for (k, v) in self._features.items() if k not in exclude]
+
+    @property
+    def registered_features(self) -> List[str]:
+        'Lists all registered features.'
+        return list(self._features.keys())
+
     def _inject_docstring(self, feature: AtomicFeature) -> None:
         s = self._feature_type.capitalize()
         feature.__doc__ = f'{s} feature.'
@@ -222,29 +237,12 @@ class AtomicFeatureFactory:
                 The input to be transformed to a feature.
         '''
 
-    def get(self, name, *args, **kwargs):
-        'Get feature by name (see ``registered_features``).'
-        return self._features[name](*args, **kwargs)
-
-    @property
-    def registered_features(self) -> List[str]:
-        'Lists all registered features.'
-        return list(self._features.keys())
-
     def __repr__(self):
         class_name = self.__class__.__name__
         return (
             class_name + '(registered_features=' +
             f'{list(self._features.keys())}' + ')'
         )
-
-    def unpack(
-        self,
-        exclude: Optional[Sequence[str]] = None
-    ) -> List[AtomicFeature]:
-        if exclude is None or isinstance(exclude, str):
-            exclude = [exclude]
-        return [v() for (k, v) in self._features.items() if k not in exclude]
 
 
 atom_features = AtomicFeatureFactory('atom')

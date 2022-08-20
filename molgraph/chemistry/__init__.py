@@ -13,6 +13,7 @@ from molgraph.chemistry.atomic.features import AtomicFeature
 from molgraph.chemistry.atomic.features import atom_features
 from molgraph.chemistry.atomic.features import bond_features
 from molgraph.chemistry.benchmark.datasets import datasets
+from molgraph.chemistry.benchmark import tf_records
 
 from molgraph.chemistry import _set_logging
 

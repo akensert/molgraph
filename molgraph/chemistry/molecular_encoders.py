@@ -120,7 +120,7 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
 
     Generate a molecular graph with featurizers:
 
-    >>> # Define bond featurizer (to produce numerical encoding of atoms)
+    >>> # Define atom featurizer (to produce numerical encoding of atoms)
     >>> atom_featurizer = molgraph.chemistry.AtomFeaturizer([
     ...     molgraph.chemistry.features.Symbol(),
     ...     molgraph.chemistry.features.Hybridization()

@@ -9,29 +9,23 @@ from rdkit import Chem
 from abc import abstractmethod
 from abc import ABC
 
-from molgraph.chemistry.atomic import features
-from molgraph.chemistry.atomic import encodings
+from molgraph.chemistry.atomic.features import AtomicFeature
+from molgraph.chemistry.atomic.encoders import AtomicEncoder
+from molgraph.chemistry.atomic.encoders import FloatEncoder
+from molgraph.chemistry.atomic.encoders import OrdinalEncoder
+from molgraph.chemistry.atomic.encoders import NominalEncoder
 
 
 
 @dataclass
 class AtomicFeaturizer:
 
-    features: List[features.AtomicFeature]
+    features: List[AtomicFeature]
     dtype: Union[str, np.dtype] = 'float32'
     ndim: int = field(init=False)
 
     def __post_init__(self) -> None:
-        self._feature_names = []
-        for i, feature in enumerate(self.features):
-            self._feature_names.append(feature.name)
-            if not getattr(feature, 'allowable_set', None):
-                self.features[i] = encodings.FloatEncoding(feature)
-            elif not feature.ordinal:
-                self.features[i] = encodings.NominalEncoding(feature)
-            else:
-                self.features[i] = encodings.OrdinalEncoding(feature)
-
+        self.features = [_encoder_from_feature(f) for f in self.features]
         self.ndim = _get_atom_or_bond_dim(self)
 
     def __call__(self, inputs: Union[Chem.Atom, Chem.Bond]) -> np.ndarray:
@@ -45,10 +39,6 @@ class AtomicFeaturizer:
             np.ndarray: A numberical encoding of an atom or a bond.
         '''
         return np.concatenate([feature(inputs) for feature in self.features])
-
-    @property
-    def feature_names(self) -> List[str]:
-        return self._feature_names
 
 
 class AtomFeaturizer(AtomicFeaturizer):
@@ -163,6 +153,14 @@ class BondFeaturizer(AtomicFeaturizer):
 
         return np.asarray(bond_features, dtype=self.dtype)
 
+
+def _encoder_from_feature(inputs: AtomicFeature) -> AtomicEncoder:
+    if not hasattr(inputs, 'allowable_set'):
+        return FloatEncoder(inputs)
+    elif getattr(inputs, 'ordinal', False):
+        return OrdinalEncoder(inputs)
+    else:
+        return NominalEncoder(inputs)
 
 def _get_atom_dim(atom_encoder: AtomFeaturizer) -> Union[int, None]:
     if atom_encoder is not None:

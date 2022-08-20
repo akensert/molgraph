@@ -8,21 +8,18 @@ from typing import Any
 from typing import Dict
 from rdkit import Chem
 
-from molgraph.chemistry.atomic import features
-from molgraph.chemistry.atomic import encodings
+from molgraph.chemistry.atomic.features import AtomicFeature
+from molgraph.chemistry.atomic.encoders import TokenEncoder
 
 
 
 @dataclass
 class AtomicTokenizer:
 
-    features: List[features.AtomicFeature]
+    features: List[AtomicFeature]
 
     def __post_init__(self) -> None:
-        self._feature_names = []
-        for i, feature in enumerate(self.features):
-            self._feature_names.append(feature.name)
-            self.features[i] = encodings.TokenEncoding(feature)
+        self.features = [TokenEncoder(f) for f in self.features]
 
     def __call__(
         self,
@@ -39,10 +36,6 @@ class AtomicTokenizer:
         '''
         return np.array(
             '|'.join([feature(inputs) for feature in self.features]), dtype=str)
-
-    @property
-    def feature_names(self) -> List[str]:
-        return self._feature_names
 
 
 class AtomTokenizer(AtomicTokenizer):
