@@ -1,7 +1,6 @@
 import math
 import os
 import multiprocessing
-from tqdm import tqdm
 from functools import partial
 import json
 from glob import glob
