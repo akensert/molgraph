@@ -1,36 +1,31 @@
 # Graph Neural Networks for Molecular Machine Learning
 
-*This is an early release; things are still being updated and added.*
-*Hence, API compatibility may break in the future.*
+*This is an early release; things are still being updated and added. Hence, API compatibility may break in the future.*
+
+*Any feedback is welcomed!*
+
+## Manuscript
+See [pre-print](https://arxiv.org/abs/2208.09944). Feedback on the manuscript is also welcomed!
 
 ## Documentation
 See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 
 ## Installation
 
-### `pip`
+Install via **pip**:
 
-```
+<pre>
 pip install git+https://github.com/akensert/molgraph.git
-```
+</pre>
 
-### `docker`
+Install via **docker**:
 
-```
+<pre>
 git clone https://github.com/akensert/molgraph.git
 cd molgraph/docker
-docker build -t molgraph-tf[-gpu]/molgraph:0.0 molgraph-tf[-gpu]/
-docker run -it molgraph-tf[-gpu]/molgraph:0.0
-```
-
-or start a Jupyter Notebook server (with docker):
-
-```
-git clone https://github.com/akensert/molgraph.git
-cd molgraph/docker
-docker build -t molgraph-tf[-gpu]-jupyter/molgraph:0.0 molgraph-tf[-gpu]-jupyter/
-docker run -it -p 8888:8888 molgraph-tf[-gpu]-jupyter/molgraph:0.0
-```
+docker build -t molgraph-tf[-gpu][-jupyter]/molgraph:0.0 molgraph-tf[-gpu][-jupyter]/
+docker run -it <b>[-p 8888:8888]</b> molgraph-tf[-gpu]<b>[-jupyter]</b>/molgraph:0.0
+</pre>
 
 ## Requirements/dependencies
 - **Python** (version ~= 3.8.10)
@@ -52,8 +47,8 @@ from molgraph import chemistry
 from molgraph import layers
 from molgraph import models
 
-# Obtain dataset, specifically QM7
-qm7 = chemistry.datasets.get('qm7')
+# Obtain dataset, specifically ESOL
+qm7 = chemistry.datasets.get('esol')
 
 # Define molecular graph encoder
 atom_encoder = chemistry.AtomFeaturizer([

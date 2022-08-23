@@ -58,7 +58,7 @@ TF records
   :member-order: bysource
 
 **********************
-Benchmarks (datasets)
+Datasets
 **********************
 .. autoclass:: molgraph.chemistry.benchmark.datasets.DatasetFactory
   :members: get, get_config, registered_datasets,
