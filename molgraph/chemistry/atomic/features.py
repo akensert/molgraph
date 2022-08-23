@@ -216,8 +216,7 @@ class AtomicFeatureFactory:
         self,
         exclude: Optional[Sequence[str]] = None
     ) -> List[AtomicFeature]:
-        '''Instatiates and returns all available features in a list.
-        '''
+        'Instantiates and returns all available features.'
         if exclude is None or isinstance(exclude, str):
             exclude = [exclude]
         return [v() for (k, v) in self._features.items() if k not in exclude]
@@ -230,7 +229,7 @@ class AtomicFeatureFactory:
     def _inject_docstring(self, feature: AtomicFeature) -> None:
         s = self._feature_type.capitalize()
         feature.__doc__ = f'{s} feature.'
-        feature.__call__.__doc__ = f'''Transforms a ``rdkit.Chem.{s}`` to a feature.
+        feature.__call__.__doc__ = f'''Transforms an ``rdkit.Chem.{s}`` to a feature.
 
         Args:
             {s.lower()} (rdkit.Chem.{s}):

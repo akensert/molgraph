@@ -107,7 +107,7 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     Args:
         atom_encoder (AtomFeaturizer, AtomTokenizer):
             <placeholder>
-        bond_encoder (AtomFeaturizer, AtomTokenizer, None):
+        bond_encoder (BondFeaturizer, BondTokenizer, None):
             <placeholder>
         positional_encoding_dim (int, None):
             <placeholder>
