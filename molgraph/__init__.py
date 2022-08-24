@@ -8,4 +8,6 @@ from molgraph import chemistry
 from molgraph.tensors import GraphTensor
 from molgraph.tensors import GraphTensorSpec
 
-__version__ = '0.0'
+from . import _version
+
+__version__ = _version.__version__

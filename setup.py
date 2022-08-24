@@ -1,4 +1,12 @@
 import setuptools
+import os
+import sys
+
+def get_version():
+  version_path = os.path.join(os.path.dirname(__file__), 'molgraph')
+  sys.path.insert(0, version_path)
+  from _version import __version__ as version
+  return version
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -14,7 +22,7 @@ tests_require = [
 ]
 setuptools.setup(
     name='molgraph',
-    version="0.0",
+    version=get_version(),
     author="Alexander Kensert",
     author_email="alexander.kensert@gmail.com",
     description="Implementations of graph neural networks for molecular machine learning",
