@@ -138,6 +138,22 @@ def test_gat_conv(parameters) -> None:
     {'units': None, 'use_edge_features': True, 'residual': True, 'self_projection': True, 'num_heads': 8, 'merge_mode': 'mean'},
     {'units': 33, 'use_edge_features': True, 'residual': True, 'self_projection': True, 'num_heads': 8, 'merge_mode': 'mean'},
 ])
+def test_gatv2_conv(parameters) -> None:
+    list(map(partial(map_fn, layer=layers.GATv2Conv, parameters=parameters), inputs))
+
+@pytest.mark.parametrize("parameters", [
+    {'units': None, 'residual': False, 'self_projection': False, 'merge_mode': 'mean'},
+    {'units': 128, 'residual': False, 'self_projection': False},
+    {'units': None, 'residual': True, 'self_projection': True, 'merge_mode': 'mean'},
+    {'units': 128, 'residual': True, 'self_projection': True},
+    {'units': 128, 'use_edge_features': True, 'residual': True, 'self_projection': True},
+    {'units': None, 'use_edge_features': True, 'residual': True, 'self_projection': True, 'merge_mode': 'mean'},
+    {'units': 128, 'use_edge_features': True, 'residual': True, 'self_projection': True, 'num_heads': 1, 'merge_mode': 'concat'},
+    {'units': 128, 'use_edge_features': True, 'residual': True, 'self_projection': True, 'num_heads': 16, 'merge_mode': 'concat'},
+    {'units': 128, 'use_edge_features': True, 'residual': True, 'self_projection': True, 'num_heads': 8, 'merge_mode': 'mean'},
+    {'units': None, 'use_edge_features': True, 'residual': True, 'self_projection': True, 'num_heads': 8, 'merge_mode': 'mean'},
+    {'units': 33, 'use_edge_features': True, 'residual': True, 'self_projection': True, 'num_heads': 8, 'merge_mode': 'mean'},
+])
 def test_graph_transformer_conv(parameters) -> None:
     list(map(partial(map_fn, layer=layers.GraphTransformerConv, parameters=parameters), inputs))
 

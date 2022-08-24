@@ -1,4 +1,5 @@
 # graph neural network layers
+from molgraph.layers.attentional.gatv2_conv import GATv2Conv
 from molgraph.layers.attentional.gat_conv import GATConv
 from molgraph.layers.attentional.gated_gcn_conv import GatedGCNConv
 from molgraph.layers.attentional.graph_transformer_conv import GraphTransformerConv
