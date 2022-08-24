@@ -35,7 +35,7 @@ setuptools.setup(
     tests_require=tests_require,
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Intended Audience :: Science/Research"
+        "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS"
