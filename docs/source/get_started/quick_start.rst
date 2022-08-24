@@ -11,8 +11,8 @@ Quick start
     from molgraph import layers
     from molgraph import models
 
-    # Obtain dataset, specifically QM7
-    qm7 = chemistry.datasets.get('qm7')
+    # Obtain dataset, specifically ESOL
+    esol = chemistry.datasets.get('esol')
 
     # Define molecular graph encoder
     atom_encoder = chemistry.AtomFeaturizer([
@@ -29,11 +29,11 @@ Quick start
     encoder = chemistry.MolecularGraphEncoder(atom_encoder, bond_encoder)
 
     # Obtain features and associated labels
-    x_train = encoder(qm7['train']['x'])
-    y_train = qm7['train']['y']
+    x_train = encoder(esol['train']['x'])
+    y_train = esol['train']['y']
 
-    x_test = encoder(qm7['test']['x'])
-    y_test = qm7['test']['y']
+    x_test = encoder(esol['test']['x'])
+    y_test = esol['test']['y']
 
     # Build model via Keras API
     gnn_model = keras.Sequential([
