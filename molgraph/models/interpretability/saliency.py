@@ -20,7 +20,8 @@ def _maybe_flat_values(x):
 
 @keras.utils.register_keras_serializable(package='molgraph')
 class SaliencyMapping(keras.Model):
-
+    '''Vanilla saliency mapping.
+    '''
     def __init__(
         self,
         model: keras.Model,
