@@ -8,22 +8,22 @@ Convolutional
 
 GCNConv
 ===========================
-.. autoclass:: molgraph.layers.GCNConv(molgraph.layers._BaseLayer)
+.. autoclass:: molgraph.layers.GCNConv(molgraph.layers.BaseLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GINConv
 ===========================
-.. autoclass:: molgraph.layers.GINConv(molgraph.layers._BaseLayer)
+.. autoclass:: molgraph.layers.GINConv(molgraph.layers.BaseLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GraphSageConv
 ===========================
-.. autoclass:: molgraph.layers.GraphSageConv(molgraph.layers._BaseLayer)
+.. autoclass:: molgraph.layers.GraphSageConv(molgraph.layers.BaseLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GCNIIConv
 ===========================
-.. autoclass:: molgraph.layers.GCNIIConv(molgraph.layers._BaseLayer)
+.. autoclass:: molgraph.layers.GCNIIConv(molgraph.layers.BaseLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 
@@ -33,22 +33,27 @@ Attentional
 
 GATConv
 ===========================
-.. autoclass:: molgraph.layers.GATConv(molgraph.layers._BaseLayer)
+.. autoclass:: molgraph.layers.GATConv(molgraph.layers.BaseLayer)
+  :members: call, get_config, from_config, compute_output_shape
+
+GATv2Conv
+===========================
+.. autoclass:: molgraph.layers.GATv2Conv(molgraph.layers.BaseLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GatedGCNConv
 ===========================
-.. autoclass:: molgraph.layers.GatedGCNConv(molgraph.layers._BaseLayer)
+.. autoclass:: molgraph.layers.GatedGCNConv(molgraph.layers.BaseLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GMMConv
 ===========================
-.. autoclass:: molgraph.layers.GMMConv(molgraph.layers._BaseLayer)
+.. autoclass:: molgraph.layers.GMMConv(molgraph.layers.BaseLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GraphTransformerConv
 ===========================
-.. autoclass:: molgraph.layers.GraphTransformerConv(molgraph.layers._BaseLayer)
+.. autoclass:: molgraph.layers.GraphTransformerConv(molgraph.layers.BaseLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 
@@ -58,7 +63,7 @@ Message-passing
 
 MPNNConv
 ===========================
-  .. autoclass:: molgraph.layers.MPNNConv(molgraph.layers._BaseLayer)
+  .. autoclass:: molgraph.layers.MPNNConv(molgraph.layers.BaseLayer)
     :members: call, get_config, from_config, compute_output_shape
 
 
@@ -68,12 +73,12 @@ Geometric
 
 DTNNConv
 ===========================
-.. autoclass:: molgraph.layers.DTNNConv(molgraph.layers._BaseLayer)
+.. autoclass:: molgraph.layers.DTNNConv(molgraph.layers.BaseLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GCFConv
 ===========================
-.. autoclass:: molgraph.layers.GCFConv(molgraph.layers._BaseLayer)
+.. autoclass:: molgraph.layers.GCFConv(molgraph.layers.BaseLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 
