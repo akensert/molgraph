@@ -1,11 +1,11 @@
-# Graph Neural Networks for Molecular Machine Learning
+# MolGraph: Graph Neural Networks for Molecular Machine Learning
 
 *This is an early release; things are still being updated and added. Hence, API compatibility may break in the future.*
 
 *Any feedback is welcomed!*
 
 ## Manuscript
-See [pre-print](https://arxiv.org/abs/2208.09944). Feedback on the manuscript is also welcomed!
+See [pre-print](https://arxiv.org/abs/2208.09944)
 
 ## Documentation
 See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
