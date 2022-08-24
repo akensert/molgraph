@@ -15,7 +15,7 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 Install via **pip**:
 
 <pre>
-pip install git+https://github.com/akensert/molgraph.git
+pip install molgraph
 </pre>
 
 Install via **docker**:

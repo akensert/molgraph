@@ -47,10 +47,7 @@ setuptools.setup(
         'machine-learning',
         'molecular-machine-learning',
         'molecular-graphs',
-        'chemistry',
         'cheminformatics',
-        'chemoinformatics',
-        'chemometrics',
         'bioinformatics',
     ]
 )
