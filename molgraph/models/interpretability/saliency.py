@@ -142,6 +142,8 @@ class SaliencyMapping(keras.Model):
 
 @keras.utils.register_keras_serializable(package='molgraph')
 class IntegratedSaliencyMapping(SaliencyMapping):
+    '''Integrated saliency mapping.
+    '''
 
     def __init__(
         self,
