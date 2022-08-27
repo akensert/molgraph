@@ -313,11 +313,11 @@ class GraphTensor(composite_tensor.CompositeTensor):
             if k in data:
                 data[k] = convert_tensor(
                     new_value, data[k])
-            elif _compatible_sizes(new_value, data['node_feature']):
-                data[k] = convert_tensor(new_value, data['node_feature'])
             else:
-                data[k] = convert_tensor(new_value, data['edge_dst'])
-
+                data[k] = tf.cond(
+                    _compatible_sizes(new_value, data['node_feature']),
+                    lambda: convert_tensor(new_value, data['node_feature']),
+                    lambda: convert_tensor(new_value, data['edge_dst']))
         return self.__class__(data)
 
     def remove(
