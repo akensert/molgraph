@@ -5,6 +5,7 @@ from tensorflow.keras import regularizers
 from tensorflow.keras import constraints
 from tensorflow.keras import activations
 from tensorflow.keras import layers
+import math
 
 from typing import Optional
 from typing import Callable
@@ -23,7 +24,12 @@ class MPNNConv(BaseLayer):
 
     """Message passing neural network layer (MPNN)
 
-    Implementation is based on Gilmer et al. (2017) [#]_.
+    Implementation is based on Gilmer et al. (2017) [#]_. In contrast to Gilmer
+    et al. this implementation does not use weight tying; for neither the message
+    function nor the update function. Furthermore, instead of the GRU-based
+    update function, here, a simple fully-connected (dense) layer is used.
+
+    For an MPNN more similar to Gilmer et al., see ``molgraph.models.MPNN``.
 
     **Examples:**
 
@@ -101,6 +107,8 @@ class MPNNConv(BaseLayer):
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
             Dropout applied to the output of the layer. Default to None.
+        update_activation (tf.keras.activations.Activation, callable, str, None):
+            Activation function used for the update function. Default to None.
         activation (tf.keras.activations.Activation, callable, str, None):
             Activation function applied to the output of the layer. Default to 'relu'.
         use_bias (bool):
@@ -136,6 +144,7 @@ class MPNNConv(BaseLayer):
         batch_norm: bool = True,
         residual: bool = True,
         dropout: Optional[float] = None,
+        update_activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = 'relu',
         use_bias: bool = True,
         kernel_initializer: Union[
@@ -168,8 +177,8 @@ class MPNNConv(BaseLayer):
             **kwargs)
 
         self.use_edge_features = use_edge_features
-        self.residual = residual
         self.apply_self_projection = self_projection
+        self.update_activation = update_activation
 
     def subclass_build(
         self,
@@ -177,7 +186,8 @@ class MPNNConv(BaseLayer):
         edge_feature_shape: Optional[tf.TensorShape] = None
     ) -> None:
         self.message_projection = self.get_dense(self.units * self.units)
-        self.update_step = keras.layers.GRUCell(self.units)
+        self.update_step = keras.layers.Dense(
+            self.units, activation=self.update_activation)
 
         if (
             self.units != node_feature_shape[-1] and
@@ -194,53 +204,86 @@ class MPNNConv(BaseLayer):
             tensor = tensor.update({
                 'node_feature': self.node_resample(tensor.node_feature)})
 
-        # Aggregate node states from neighbors
-        node_feature_aggregated = self.message_step(tensor)
-
-        # Update aggregated node states via a step of GRU
-        node_feature_update, _ = self.update_step(
-            node_feature_aggregated, tensor.node_feature)
-
-        return tensor.update({'node_feature': node_feature_update})
-
-    def message_step(self, tensor: GraphTensor) -> tf.Tensor:
-
         # MPNN requires edge features, if edge features do not exist,
-        # we force edge features by initializing a ones vector
+        # we force edge features by initializing them as ones vector
         if not hasattr(tensor, 'edge_feature') or not self.use_edge_features:
             tensor = tensor.update({
                 'edge_feature': tf.ones(
                     shape=[tf.shape(tensor.edge_dst)[0], 1], dtype=tf.float32)})
 
-        # Apply linear transformation to edge features
-        edge_feature = self.message_projection(tensor.edge_feature)
-
-        # Reshape edge features for neighborhood aggregation later
-        edge_feature = tf.reshape(edge_feature, (-1, self.units, self.units))
-
-        # Obtain node states of neighbors
-        node_feature_src = tf.gather(tensor.node_feature, tensor.edge_src)
-        node_feature_src = tf.expand_dims(node_feature_src, axis=-1)
-
-        # Apply transformation followed by neighborhood aggregation
-        node_feature_src = tf.matmul(edge_feature, node_feature_src)
-        node_feature_src = tf.squeeze(node_feature_src, axis=-1)
-
-        node_feature_updated = tf.math.unsorted_segment_sum(
-            data=node_feature_src,
-            segment_ids=tensor.edge_dst,
-            num_segments=tf.shape(tensor.node_feature)[0])
+        node_feature_aggregated = message_step(
+            node_feature=tensor.node_feature,
+            edge_feature=tensor.edge_feature,
+            edge_dst=tensor.edge_dst,
+            edge_src=tensor.edge_src,
+            projection=self.message_projection)
 
         if self.apply_self_projection:
-            node_feature_updated += self.self_projection(tensor.node_feature)
+            node_feature_aggregated += self.self_projection(tensor.node_feature)
 
-        return node_feature_updated
+        node_feature_update = self.update_step(
+            tf.concat([tensor.node_feature, node_feature_aggregated], axis=1))
+
+        return tensor.update({'node_feature': node_feature_update})
 
     def get_config(self):
         base_config = super().get_config()
         config = {
             'use_edge_features': self.use_edge_features,
             'self_projection': self.apply_self_projection,
+            'update_activation': self.update_activation
         }
         base_config.update(config)
         return base_config
+
+
+class MessageFunction(keras.layers.Layer):
+
+    def __init__(self, units, **kwargs):
+        super().__init__(**kwargs)
+
+    def build(self, input_shape):
+        pass
+
+    def call(self, tensor: GraphTensor) -> GraphTensor:
+
+        return tensor
+
+def message_step(
+    node_feature: tf.Tensor,
+    edge_feature: tf.Tensor,
+    edge_dst: tf.Tensor,
+    edge_src: tf.Tensor,
+    projection: keras.layers.Dense,
+) -> tf.Tensor:
+    '''Performs a message passing step.
+
+    Args:
+        node_feature (tf.Tensor):
+            Node features; field of GraphTensor.
+        edge_feature (tf.Tensor):
+            Edge features; field of GraphTensor.
+        edge_dst (tf.Tensor):
+            Destination node indices; field of GraphTensor.
+        edge_src (tf.Tensor):
+            Source node indices; field of GraphTensor.
+        projection (keras.layers.Dense):
+            Dense layer that transforms edge features.
+
+    Returns (tf.Tensor):
+        Returns updated (aggregated) node features.
+    '''
+    output_units = int(math.sqrt(projection.units))
+    # Apply linear transformation to edge features
+    edge_feature = projection(edge_feature)
+    # Reshape edge features to match source nodes' features
+    edge_feature = tf.reshape(edge_feature, (-1, output_units, output_units))
+    # Obtain source nodes' features (1-hop neighbor nodes)
+    node_feature_src = tf.expand_dims(tf.gather(node_feature, edge_src), -1)
+    # Apply edge features (obtain messages to be passed to destination nodes)
+    messages = tf.squeeze(tf.matmul(edge_feature, node_feature_src), -1)
+    # Send messages to destination nodes
+    return tf.math.unsorted_segment_sum(
+        data=messages,
+        segment_ids=edge_dst,
+        num_segments=tf.shape(node_feature)[0])
