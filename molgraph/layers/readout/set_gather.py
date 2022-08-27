@@ -91,14 +91,20 @@ class SetGatherReadout(layers.Layer):
 
             # Split into parts correspoding to each graph in the batch,
             # and compute normalized attention coefficients via softmax
-            attention_coef = tf.TensorArray(
-                tf.float32, size=0, dynamic_size=True, infer_shape=False)
-            for i in tf.range(num_graphs):
+            def body(i, attention_coef):
                 node_feature_partitioned = tf.gather(
                     node_feature_reduced, tf.where(graph_indicator == i)[:, 0])
                 attention_coef = attention_coef.write(
                     tf.cast(i, tf.int32), tf.nn.softmax(node_feature_partitioned))
+                return tf.add(i, 1), attention_coef
 
+            def cond(i, _):
+                return tf.less(i, num_graphs)
+
+            i = tf.constant(0, dtype=graph_indicator.dtype)
+            attention_coef = tf.TensorArray(
+                tf.float32, size=0, dynamic_size=True, infer_shape=False)
+            _, attention_coef = tf.while_loop(cond, body, [i, attention_coef])
             attention_coef = tf.reshape(attention_coef.concat(), (-1, 1))
 
             # Apply attention to node features, and sum based on graph_indicator
