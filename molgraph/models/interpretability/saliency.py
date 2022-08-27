@@ -13,26 +13,47 @@ NOT_IMPLEMENTED_ERROR_MESSAGE = (
     "{} only makes predictions (call model.predict instead)")
 
 
-def _maybe_flat_values(x):
-    if isinstance(x, tf.RaggedTensor):
-        return x.flat_values
-    return x
-
 @keras.utils.register_keras_serializable(package='molgraph')
 class SaliencyMapping(keras.Model):
     '''Vanilla saliency mapping.
+
+    **Example:**
+
+    >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
+    ...     atom_encoder=molgraph.chemistry.AtomFeaturizer([
+    ...         molgraph.chemistry.features.Symbol(),
+    ...         molgraph.chemistry.features.Hybridization()
+    ...     ])
+    ... )
+    >>> esol = molgraph.chemistry.datasets.get('esol')
+    >>> esol['train']['x'] = encoder(esol['train']['x'])
+    >>> esol['test']['x'] = encoder(esol['test']['x'])
+    >>> # Pass GraphTensor to model
+    >>> gnn_model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=esol['train']['x'].spec),
+    ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_1'),
+    ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_2'),
+    ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_3'),
+    ...     molgraph.layers.Readout('mean'),
+    ...     tf.keras.layers.Dense(units=512),
+    ...     tf.keras.layers.Dense(units=1)
+    ... ])
+    >>> gnn_model.compile(optimizer='adam', loss='mse')
+    >>> gnn_model.fit(esol['train']['x'], esol['train']['y'], epochs=10)
+    >>> saliency = molgraph.models.SaliencyMapping(model=gnn_model)
+    >>> # Interpretability models can only be predicted with
+    >>> saliency_maps = saliency.predict(esol['test']['x'])
+
     '''
+
     def __init__(
         self,
         model: keras.Model,
-        output_mode: str = 'float',
         output_activation: Optional[str] = None,
     ) -> None:
         super().__init__()
-
         self._model = model
         self._activation = keras.activations.get(output_activation)
-        self._output_mode = output_mode
 
     def compute_gradients(self, x: GraphTensor, y: tf.Tensor) -> tf.Tensor:
 
@@ -129,7 +150,6 @@ class SaliencyMapping(keras.Model):
     def get_config(self):
         config = {
             'model': keras.layers.serialize(self._model),
-            'output_mode': self._output_mode,
             'output_activation': keras.activations.serialize(self._activation),
         }
         return config
@@ -143,19 +163,45 @@ class SaliencyMapping(keras.Model):
 @keras.utils.register_keras_serializable(package='molgraph')
 class IntegratedSaliencyMapping(SaliencyMapping):
     '''Integrated saliency mapping.
+
+    **Example:**
+
+    >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
+    ...     atom_encoder=molgraph.chemistry.AtomFeaturizer([
+    ...         molgraph.chemistry.features.Symbol(),
+    ...         molgraph.chemistry.features.Hybridization()
+    ...     ])
+    ... )
+    >>> bbbp = molgraph.chemistry.datasets.get('bbbp')
+    >>> bbbp['train']['x'] = encoder(bbbp['train']['x'])
+    >>> bbbp['test']['x'] = encoder(bbbp['test']['x'])
+    >>> # Pass GraphTensor to model
+    >>> gnn_model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=bbbp['train']['x'].spec),
+    ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_1'),
+    ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_2'),
+    ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_3'),
+    ...     molgraph.layers.Readout('mean'),
+    ...     tf.keras.layers.Dense(units=512),
+    ...     tf.keras.layers.Dense(units=1, activation='sigmoid')
+    ... ])
+    >>> gnn_model.compile(optimizer='adam', loss='mse')
+    >>> gnn_model.fit(bbbp['train']['x'], bbbp['train']['y'], epochs=10)
+    >>> saliency = molgraph.models.IntegratedSaliencyMapping(model=gnn_model)
+    >>> # Interpretability models can only be predicted with
+    >>> saliency_maps = saliency.predict(bbbp['test']['x'])
+
     '''
 
     def __init__(
         self,
         model: keras.Model,
-        output_mode: str = 'float',
         output_activation: Union[
             None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
         steps: int = 20
     ) -> None:
         super().__init__(
             model=model,
-            output_mode=output_mode,
             output_activation=output_activation)
         self.steps = steps
 
@@ -201,11 +247,39 @@ class IntegratedSaliencyMapping(SaliencyMapping):
 
 @keras.utils.register_keras_serializable(package='molgraph')
 class SmoothGradSaliencyMapping(SaliencyMapping):
+    '''Smooth-gradient saliency mapping.
 
+    **Example:**
+
+    >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
+    ...     atom_encoder=molgraph.chemistry.AtomFeaturizer([
+    ...         molgraph.chemistry.features.Symbol(),
+    ...         molgraph.chemistry.features.Hybridization()
+    ...     ])
+    ... )
+    >>> esol = molgraph.chemistry.datasets.get('esol')
+    >>> esol['train']['x'] = encoder(esol['train']['x'])
+    >>> esol['test']['x'] = encoder(esol['test']['x'])
+    >>> # Pass GraphTensor to model
+    >>> gnn_model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=esol['train']['x'].spec),
+    ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_1'),
+    ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_2'),
+    ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_3'),
+    ...     molgraph.layers.Readout('mean'),
+    ...     tf.keras.layers.Dense(units=512),
+    ...     tf.keras.layers.Dense(units=1)
+    ... ])
+    >>> gnn_model.compile(optimizer='adam', loss='mse')
+    >>> gnn_model.fit(esol['train']['x'], esol['train']['y'], epochs=10)
+    >>> saliency = molgraph.models.SmoothGradSaliencyMapping(model=gnn_model)
+    >>> # Interpretability models can only be predicted with
+    >>> saliency_maps = saliency.predict(esol['test']['x'])
+
+    '''
     def __init__(
         self,
         model: keras.Model,
-        output_mode: str = 'float',
         output_activation: Union[
             None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
         steps: int = 50,
@@ -213,7 +287,6 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
     ) -> None:
         super().__init__(
             model=model,
-            output_mode=output_mode,
             output_activation=output_activation)
         self.steps = steps
         self.noise = noise
@@ -254,3 +327,9 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
         gradients_average = tf.math.reduce_mean(gradients_batch, axis=0)
 
         return tf.reduce_sum(gradients_average, axis=1)
+
+
+def _maybe_flat_values(x):
+    if isinstance(x, tf.RaggedTensor):
+        return x.flat_values
+    return x

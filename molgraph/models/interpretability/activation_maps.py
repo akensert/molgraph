@@ -15,19 +15,50 @@ NOT_IMPLEMENTED_ERROR_MESSAGE = (
 @keras.utils.register_keras_serializable(package='molgraph')
 class GradientActivationMapping(keras.Model):
 
-    '''
-    Gradient activations maps based on Pope et al. [#]_.
+    '''Gradient activation mapping.
+
+    Implementation is based on Pope et al. [#]_.
+
+    **Example:**
+
+    >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
+    ...     atom_encoder=molgraph.chemistry.AtomFeaturizer([
+    ...         molgraph.chemistry.features.Symbol(),
+    ...         molgraph.chemistry.features.Hybridization()
+    ...     ])
+    ... )
+    >>> esol = molgraph.chemistry.datasets.get('esol')
+    >>> esol['train']['x'] = encoder(esol['train']['x'])
+    >>> esol['test']['x'] = encoder(esol['test']['x'])
+    >>> # Pass GraphTensor to model
+    >>> gnn_model = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=esol['train']['x'].spec),
+    ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_1'),
+    ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_2'),
+    ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_3'),
+    ...     molgraph.layers.Readout('mean'),
+    ...     tf.keras.layers.Dense(units=512),
+    ...     tf.keras.layers.Dense(units=1)
+    ... ])
+    >>> gnn_model.compile(optimizer='adam', loss='mse')
+    >>> gnn_model.fit(esol['train']['x'], esol['train']['y'], epochs=10)
+    >>> gam_model = molgraph.models.GradientActivationMapping(
+    ...     model=gnn_model,
+    ...     layer_names=['gcn_conv_1', 'gcn_conv_2', 'gcn_conv_3'],
+    ...     discard_negative_values=False,
+    ... )
+    >>> # Interpretability models can only be predicted with
+    >>> maps = gam_model.predict(esol['test']['x'])
 
     References:
+        .. [#] Pope et al. https://ieeexplore.ieee.org/document/8954227
 
-    .. [#] Pope et al. https://ieeexplore.ieee.org/document/8954227
     '''
 
     def __init__(
         self,
         model,
         layer_names: List[str],
-        output_mode: str = 'float',
         output_activation: Optional[str] = None,
         discard_negative_values: bool = True,
         *args, **kwargs,
@@ -36,7 +67,6 @@ class GradientActivationMapping(keras.Model):
         self._model = model
         self._layer_names = layer_names
         self._activation = keras.activations.get(output_activation)
-        self._output_mode = output_mode
         self._discard_negative_values = discard_negative_values
 
     def compute_activation_maps(
@@ -157,7 +187,6 @@ class GradientActivationMapping(keras.Model):
         config = {
             'model': keras.layers.serialize(self._model),
             'layer_names': self._layer_names,
-            'output_mode': self._output_mode,
             'output_activation': keras.activations.serialize(self._activation),
             'discard_negative_values': self._discard_negative_values,
         }
