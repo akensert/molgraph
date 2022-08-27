@@ -77,6 +77,13 @@ class SegmentPoolingReadout(layers.Layer):
             tensor.node_feature, tensor.graph_indicator)
         return node_feature
 
+    def compute_output_shape(self, input_shape):
+        if input_shape[0] is None and input_shape[1] is not None:
+            # input_shape corresponds to a tf.Tensor
+            return input_shape
+        # input_shape corresponds to a tf.RaggedTensor
+        return input_shape[1:]
+
     def get_config(self):
         config = super().get_config()
         config.update({'mode': self.mode})

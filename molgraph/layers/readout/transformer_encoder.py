@@ -132,6 +132,13 @@ class TransformerEncoderReadout(layers.Layer):
         proj_output = self.layernorm_2(proj_input + self.projection(proj_input))
         return self.average_pooling(proj_output)
 
+    def compute_output_shape(self, input_shape):
+        if input_shape[0] is None and input_shape[1] is not None:
+            # input_shape corresponds to a tf.Tensor
+            return input_shape
+        # input_shape corresponds to a tf.RaggedTensor
+        return input_shape[1:]
+
     def get_config(self):
         config = super().get_config()
         config.update({

@@ -115,6 +115,14 @@ class SetGatherReadout(layers.Layer):
 
         return carry_state_evolved
 
+    def compute_output_shape(self, input_shape):
+        input_shape[-1] = int(input_shape[-1] * 2)
+        if input_shape[0] is None and input_shape[1] is not None:
+            # input_shape corresponds to a tf.Tensor
+            return input_shape
+        # input_shape corresponds to a tf.RaggedTensor
+        return input_shape[1:]
+
     def get_config(self):
         base_config = super().get_config()
         config = {
@@ -144,6 +152,7 @@ class NoInputLSTMCell(layers.Layer):
             initializer="zeros",
             name='bias'
         )
+        self.built = True
 
     def call(
         self,
