@@ -55,7 +55,6 @@ def test_saliency_save_and_load(graph_tensor):
 
     gam_model_1 = SaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     file = tempfile.NamedTemporaryFile()
@@ -69,7 +68,6 @@ def test_saliency_save_and_load(graph_tensor):
 
     gam_model_2 = IntegratedSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     file = tempfile.NamedTemporaryFile()
@@ -83,7 +81,6 @@ def test_saliency_save_and_load(graph_tensor):
 
     gam_model_3 = SmoothGradSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     file = tempfile.NamedTemporaryFile()
@@ -141,21 +138,18 @@ def test_saliency_ragged(graph_tensor):
 
     gam_model_1 = SaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_1.predict(graph_tensor, batch_size=2, verbose=1)
 
     gam_model_2 = IntegratedSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_2.predict(graph_tensor, batch_size=2, verbose=1)
 
     gam_model_3 = SmoothGradSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_3.predict(graph_tensor, batch_size=2, verbose=1)
@@ -180,21 +174,18 @@ def test_saliency(graph_tensor):
 
     gam_model_1 = SaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_1(graph_tensor, batch_size=2, verbose=1)
 
     gam_model_2 = IntegratedSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_2(graph_tensor, batch_size=2, verbose=1)
 
     gam_model_3 = SmoothGradSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_3(graph_tensor, batch_size=2, verbose=1)
@@ -219,21 +210,18 @@ def test_saliency_dataset(graph_tensor):
 
     gam_model_1 = SaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_1.predict(ds, batch_size=2, verbose=1)
 
     gam_model_2 = IntegratedSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_2.predict(ds, batch_size=2, verbose=1)
 
     gam_model_3 = SmoothGradSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_3.predict(ds, batch_size=2, verbose=1)
@@ -259,21 +247,18 @@ def test_saliency_dataset_merged(graph_tensor):
 
     gam_model_1 = SaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_1.predict(ds, batch_size=2, verbose=1)
 
     gam_model_2 = IntegratedSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_2.predict(ds, batch_size=2, verbose=1)
 
     gam_model_3 = SmoothGradSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_3.predict(ds, batch_size=2, verbose=1)
@@ -298,21 +283,18 @@ def test_saliency_dataset_with_label(graph_tensor):
 
     gam_model_1 = SaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_1.predict(ds, batch_size=2, verbose=1)
 
     gam_model_2 = IntegratedSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_2.predict(ds, batch_size=2, verbose=1)
 
     gam_model_3 = SmoothGradSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_3.predict(ds, batch_size=2, verbose=1)
@@ -339,21 +321,18 @@ def test_saliency_dataset_with_label_merged(graph_tensor):
 
     gam_model_1 = SaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_1.predict(ds, batch_size=2, verbose=1)
 
     gam_model_2 = IntegratedSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_2.predict(ds, batch_size=2, verbose=1)
 
     gam_model_3 = SmoothGradSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_3.predict(ds, batch_size=2, verbose=1)
@@ -386,21 +365,18 @@ def test_saliency_dataset_with_onehot_label(graph_tensor):
 
     gam_model_1 = SaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_1.predict(ds, batch_size=2, verbose=1)
 
     gam_model_2 = IntegratedSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_2.predict(ds, batch_size=2, verbose=1)
 
     gam_model_3 = SmoothGradSaliencyMapping(
         sequential_model,
-        ['conv_1', 'conv_2', 'conv_3', 'conv_4'],
         'linear',
     )
     gam_model_3.predict(ds, batch_size=2, verbose=1)
@@ -437,7 +413,8 @@ def test_gam(graph_tensor):
         tf.keras.layers.Dense(1)
     ])
 
-    gam_model = GradientActivationMapping(sequential_model, ['conv_1', 'conv_2'], 'linear')
+    gam_model = GradientActivationMapping(
+        sequential_model, ['conv_1', 'conv_2'], 'linear')
     gam_model(graph_tensor, batch_size=2, verbose=1)
 
 
@@ -455,7 +432,8 @@ def test_gam_dataset(graph_tensor):
         tf.keras.layers.Dense(1)
     ])
 
-    gam_model = GradientActivationMapping(sequential_model, ['conv_1', 'conv_2'], 'linear')
+    gam_model = GradientActivationMapping(
+        sequential_model, ['conv_1', 'conv_2'], 'linear')
     gam_model.predict(ds, batch_size=2, verbose=1)
 
 
@@ -474,7 +452,8 @@ def test_gam_dataset_merged(graph_tensor):
         tf.keras.layers.Dense(1)
     ])
 
-    gam_model = GradientActivationMapping(sequential_model, ['conv_1', 'conv_2'], 'linear')
+    gam_model = GradientActivationMapping(
+        sequential_model, ['conv_1', 'conv_2'], 'linear')
     gam_model.predict(ds, batch_size=2, verbose=1)
 
 @pytest.mark.parametrize('graph_tensor', [graph_tensor])
@@ -492,7 +471,8 @@ def test_gam_dataset_with_label(graph_tensor):
         tf.keras.layers.Dense(1)
     ])
 
-    gam_model = GradientActivationMapping(sequential_model, ['conv_1', 'conv_2'], 'linear')
+    gam_model = GradientActivationMapping(
+        sequential_model, ['conv_1', 'conv_2'], 'linear')
     gam_model.predict(ds, batch_size=2, verbose=1)
 
 
@@ -513,7 +493,8 @@ def test_gam_dataset_with_label_merged(graph_tensor):
         tf.keras.layers.Dense(1)
     ])
 
-    gam_model = GradientActivationMapping(sequential_model, ['conv_1', 'conv_2'], 'linear')
+    gam_model = GradientActivationMapping(
+        sequential_model, ['conv_1', 'conv_2'], 'linear')
     gam_model.predict(ds, batch_size=2, verbose=1)
 
 
@@ -538,5 +519,6 @@ def test_gam_dataset_with_onehot_label(graph_tensor):
         tf.keras.layers.Dense(3)
     ])
 
-    gam_model = GradientActivationMapping(sequential_model, ['conv_1', 'conv_2'], 'linear')
+    gam_model = GradientActivationMapping(
+        sequential_model, ['conv_1', 'conv_2'], 'linear')
     gam_model.predict(ds, verbose=1)
