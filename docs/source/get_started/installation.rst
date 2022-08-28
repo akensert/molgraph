@@ -5,7 +5,7 @@ Install via **pip**:
 
 .. code-block::
 
-  pip install git+https://github.com/akensert/molgraph.git
+  pip install molgraph
 
 Or via **docker**:
 
