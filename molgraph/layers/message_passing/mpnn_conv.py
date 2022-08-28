@@ -246,7 +246,6 @@ class MessageFunction(keras.layers.Layer):
         pass
 
     def call(self, tensor: GraphTensor) -> GraphTensor:
-
         return tensor
 
 def message_step(

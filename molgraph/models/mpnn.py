@@ -52,6 +52,9 @@ class MPNN(keras.layers.Layer):
             set to the input dimension. Default to None.
         steps (int):
             Number of message passing steps. Default to 4.
+        residual: (bool)
+            Whether to add skip connection to the output of each step.
+            Default to True.
         dropout: (float, None):
             Dropout applied to the output of step. Default to None.
         message_kwargs (dict, None):
@@ -73,6 +76,7 @@ class MPNN(keras.layers.Layer):
         self,
         units: Optional[int] = None,
         steps: int = 4,
+        residual: bool = True,
         dropout: Optional[float] = None,
         message_kwargs: Optional[dict] = None,
         update_kwargs: Optional[dict] = None,
@@ -81,8 +85,9 @@ class MPNN(keras.layers.Layer):
         super().__init__(**kwargs)
         self.units = units
         self.steps = steps
+        self.residual = residual
         self.dropout = (
-            None if dropout is None else keras.layers.Dropout(self.dropout))
+            None if dropout is None else keras.layers.Dropout(dropout))
         self.message_kwargs = {} if message_kwargs is None else message_kwargs
         self.update_kwargs = {} if update_kwargs is None else update_kwargs
         self.message_kwargs.pop('units', None)
@@ -91,9 +96,10 @@ class MPNN(keras.layers.Layer):
     def build(self, input_shape: Tuple[int, ...]) -> None:
         if self.units is None:
             self.units = input_shape[-1]
-        else:
-            self.units = max(self.units, input_shape[-1])
-        self.pad_length = max(0, self.units - input_shape[-1])
+
+        if self.units != input_shape[-1]:
+            self.node_resample = keras.layers.Dense(self.units, use_bias=False)
+
         self.message_projection = keras.layers.Dense(
             units=self.units*self.units, **self.message_kwargs)
         self.update_step = keras.layers.GRUCell(
@@ -108,7 +114,7 @@ class MPNN(keras.layers.Layer):
 
         edge_dst = tensor.edge_dst
         edge_src = tensor.edge_src
-        node_feature = tensor.node_feature
+        node_feature_updated = tensor.node_feature
         # MPNN requires edge features, if edge features do not exist,
         # we initialize a ones vector.
         if not hasattr(tensor, 'edge_feature'):
@@ -117,11 +123,12 @@ class MPNN(keras.layers.Layer):
         else:
             edge_feature = tensor.edge_feature
 
-        # Initialize node_feature_updated. Instead of padding, a dense layer
-        # could be used to obtain the correct dimension.
-        node_feature_updated = _maybe_pad_tensor(node_feature, self.pad_length)
+        if hasattr(self, 'node_resample'):
+            node_feature_updated = self.node_resample(node_feature_updated)
 
         for _ in range(self.steps):
+            if self.residual:
+                node_feature_residual = node_feature_updated
             # Perform a step of message passing (message function)
             node_feature_aggregated = message_step(
                 node_feature=node_feature_updated,
@@ -134,6 +141,9 @@ class MPNN(keras.layers.Layer):
                 inputs=node_feature_aggregated,
                 states=node_feature_updated)
 
+            if self.residual:
+                node_feature_updated += node_feature_residual
+
             if self.dropout is not None:
                 node_feature_updated = self.dropout(node_feature_updated)
 
@@ -144,15 +154,10 @@ class MPNN(keras.layers.Layer):
         config = {
             'units': self.units,
             'steps': self.steps,
+            'residual': self.residual,
             'dropout': self.dropout,
             'message_kwargs': self.message_kwargs,
             'update_kwargs': self.update_kwargs,
         }
         base_config.update(config)
         return base_config
-
-
-def _maybe_pad_tensor(tensor: tf.Tensor, pad_length: int) -> tf.Tensor:
-    if pad_length:
-        return tf.pad(tensor, [(0, 0), (0, pad_length)])
-    return tensor
