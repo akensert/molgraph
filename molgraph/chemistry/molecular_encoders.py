@@ -390,7 +390,7 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
             if self.conformer_generator is not None:
                 molecule = self.conformer_generator(molecule)
             else:
-                molecule = molecule_from_string_fn(molecule)
+                molecule = self.molecule_from_string_fn(molecule)
 
             if molecule is None:
                 raise ValueError(
