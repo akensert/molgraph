@@ -311,8 +311,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
                 new_value, data['node_feature'], data['edge_dst'])
 
             if k in data:
-                data[k] = convert_tensor(
-                    new_value, data[k])
+                data[k] = convert_tensor(new_value, data[k])
             else:
                 data[k] = tf.cond(
                     _compatible_sizes(new_value, data['node_feature']),

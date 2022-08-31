@@ -3,7 +3,7 @@ Welcome to MolGraph!
 
 *This is an early release; things are still being updated and added. Hence, API compatibility may break in the future.*
 
-** What is MolGraph?** A light-weight Python package for applying graph neural networks (GNNs) on molecular graphs.
+**What is MolGraph?** A light-weight Python package for applying graph neural networks (GNNs) on molecular graphs.
 It is built with, and aims to be highly compatible with,
 `TensorFlow <https://www.tensorflow.org/api_docs/python/tf>`_ and
 `Keras <https://keras.io/>`_.

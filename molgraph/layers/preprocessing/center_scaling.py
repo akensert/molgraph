@@ -127,7 +127,9 @@ class CenterScaling(layers.experimental.preprocessing.PreprocessingLayer):
 
     Args:
         mean (tf.Tensor, None):
-            The mean of the features. Default to None.
+            The means of the original data; used to transform the data.
+            If None, the layer has to be adapted via e.g. `adapt()`.
+            Default to None.
         **kwargs:
             Specify the relevant ``feature``. Default to ``node_feature``.
             The reminaing kwargs are passed to the parent class.

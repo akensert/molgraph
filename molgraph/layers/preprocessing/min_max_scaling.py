@@ -128,11 +128,15 @@ class MinMaxScaling(layers.experimental.preprocessing.PreprocessingLayer):
 
     Args:
         feature_range (tuple):
-            placeholder
+            The range of values of transformed data.
         minimum (tf.Tensor, None):
-            placeholder
+            The minimum values of the original data; used to transform the data
+            into the given feature_range. If None, the layer has to be adapted
+            via e.g. `adapt()`. Default to None.
         maximum (tf.Tensor, None):
-            placeholder
+            The maximum values of the original data; used to transform the data
+            into the given feature_range. If None, the layer has to be adapted
+            via e.g. `adapt()`. Default to None.
         **kwargs:
             Specify the relevant ``feature``. Default to ``node_feature``.
             The reminaing kwargs are passed to the parent class.

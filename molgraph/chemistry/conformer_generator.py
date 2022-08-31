@@ -15,16 +15,23 @@ class ConformerGenerator:
 
     Args:
         num_conformer_candidates (int, str, None):
-            <placeholder>
+            Number of conformers to generate, from which the conformer with
+            the lowest energy will be selected. If 'auto', the number of
+            conformers will depend on the size of the molecule. Default to
+            'auto'.
         embedding_method (str):
-            <placeholder>
+            The embedding method to use. Either of 'ETDG', 'ETKDG', 'ETKDGv2',
+            'ETKDGv3', 'srETKDGv3' or 'KDG'. Default to 'ETKDGv2'.
         force_field_method (str):
-            <placeholder>
+            The force field method to use. Either of 'MMFF', 'MMFF94', 'MMFF94s'
+            or 'UFF'. Default to 'UFF'.
         max_iter (int, str, None):
-            <placeholder>
+            Maximum number of iterations for generating a conformer. If 'auto',
+            the number of iterations will depend on the size of the molecule.
+            Default to 'auto'.
         keep_hydrogens (bool):
-            <placeholder>
-    
+            Whether to keep the hydrogens of the selected conformer. Default
+            to False.
     '''
 
     num_conformer_candidates: Optional[Union[str, int]] = 'auto'

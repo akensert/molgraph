@@ -106,15 +106,24 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
 
     Args:
         atom_encoder (AtomFeaturizer, AtomTokenizer):
-            <placeholder>
+            The atom encoder to use. Either AtomFeaturizer or AtomTokenizer.
         bond_encoder (BondFeaturizer, BondTokenizer, None):
-            <placeholder>
+            The bond encoder to use. Either BondFeaturizer or BondTokenizer.
+        molecule_from_string_fn (callable):
+            A function that produces a RDKit molecule object from some input
+            (e.g. a SMILES or InChI).
+            Default to ``transform_ops.molecule_from_string``.
         positional_encoding_dim (int, None):
-            <placeholder>
+            The dimension of the positional encoding. If None, positional
+            encoding will not be used. Default to 20.
         self_loops (bool):
-            <placeholder>
+            Whether self loops should be added to the molecular graph. Default
+            to False.
         auxiliary_encoders: (dict[str, callable]):
-            <placeholder>
+            Additional encoders to use to compute additional fields for the
+            molecular graph. The outer dimension of the outputs of these
+            encoders should match that of the outer dimension of the output
+            of either the atom encoder or bond encoder.
 
     **Examples:**
 
@@ -306,13 +315,20 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
 
     Args:
         atom_encoder (AtomFeaturizer, AtomTokenizer):
-            <placeholder>
+            The atom encoder to use. Either AtomFeaturizer or AtomTokenizer.
+        molecule_from_string_fn (callable):
+            A function that produces a RDKit molecule object from some input
+            (e.g. a SMILES or InChI). Only needed if ``conformer_generator`` is
+            set to None. Default to ``transform_ops.molecule_from_string``.
         conformer_generator (ConformerGenerator, callable):
-            <placeholder>
+            A conformer generator which produces a conformer of a given
+            molecule, if a conformer does not exist.
         edge_radius (int, None):
-            <placeholder>
+            The order of neighbors to consider for the distance geometry.
+            If None, all atom pairs will be considered. Default to None.
         coloumb (bool):
-            <placeholder>
+            Whether coloumb values should be computed from the distances, and
+            the associated atomic charges of the atom pairs.
 
     **Examples:**
 
@@ -323,13 +339,13 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
     ...     # ...
     ... ])
     >>> # Define conformer generator.
-    >>> conformer_generator = chemistry.ConformerGenerator()
+    >>> conformer_generator = molgraph.chemistry.ConformerGenerator()
     >>> # Define molecular graph encoder
     >>> encoder = molgraph.chemistry.MolecularGraphEncoder3D(
     ...     atom_encoder=atom_featurizer,
     ...     conformer_generator=conformer_generator,
     ...     edge_radius=None,
-    ...     coloumb=True,
+    ...     coloumb=False,
     ... )
     >>> # Encode two molecules as a GraphTensor
     >>> graph_tensor = encoder(['CCC', 'CCO'])
@@ -340,22 +356,25 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
     >>> # which mimics electrostatic interactions between nuclei
     >>> graph_tensor.edge_feature
     <tf.Tensor: shape=(12, 1), dtype=float32, numpy=
-    array([[23.596718 ],
-           [14.2900505],
-           [23.596718 ],
-           [23.596714 ],
-           [23.596714 ],
-           [14.2900505],
-           [23.671337 ],
-           [20.101519 ],
-           [23.671337 ],
-           [34.28639  ],
-           [34.28639  ],
-           [20.101519 ]], dtype=float32)>
-
+    array([[1.525636 ],
+           [2.5192354],
+           [1.525636 ],
+           [1.5256361],
+           [1.5256361],
+           [2.5192354],
+           [1.5208266],
+           [2.3878794],
+           [1.5208266],
+           [1.3999726],
+           [1.3999726],
+           [2.3878794]], dtype=float32)>
     '''
 
     conformer_generator: Optional[Callable] = None
+    molecule_from_string_fn: Callable[[str], Chem.Mol] = field(
+        default_factory=lambda: partial(molecule_from_string, catch_errors=True),
+        repr=False
+    )
     edge_radius: Optional[int] = None
     coloumb: bool = True
 
@@ -371,7 +390,7 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
             if self.conformer_generator is not None:
                 molecule = self.conformer_generator(molecule)
             else:
-                molecule = molecule_from_string(molecule)
+                molecule = molecule_from_string_fn(molecule)
 
             if molecule is None:
                 raise ValueError(
@@ -389,7 +408,7 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
             data['edge_src'] = np.array(dg['edge_src'], dtype=index_dtype)
 
             if not self.coloumb:
-                edge_feature = dg['edge_length']
+                edge_feature = np.expand_dims(dg['edge_length'], -1)
             else:
                 nuclear_charge = np.array([
                     atom.GetAtomicNum() for atom in atoms], dtype=np.float32)

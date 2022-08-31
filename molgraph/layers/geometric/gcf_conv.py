@@ -82,15 +82,23 @@ class GCFConv(BaseLayer):
 
     Args:
         units (int, None):
-            <placeholder>
+            The number of output units.
         distance_min (float):
-            <placeholder>
+            The smallest center (mean) to be used for the radial basis function.
+            I.e., it defines the minimum distance between atom pairs.
+            Default to -1.0 Angstroms.
         distance_max (float):
-            <placeholder>
+            The largest center (mean) to be used for the radial basis function.
+            I.e., it defines the maximum distance between atom pairs.
+            Default to 18.0 Angstroms.
         distance_granularity (float):
-            <placeholder>
+            The distance between each center (mean) of the radial basis function.
+            The smaller the granularity, the more centers will be used.
+            Default to 0.1 Angstroms.
         rbf_stddev (float, str):
-            <placeholder>
+            The standard deviation of the radial basis function. If 'auto',
+            'distance_granularity' will be used as standard deviation.
+            Default to 'auto'.
         self_projection (bool):
             Whether to apply self projection. Default to True.
         batch_norm: (bool):

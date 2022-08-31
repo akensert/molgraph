@@ -33,7 +33,7 @@ class AtomicFeaturizer:
 
         Args:
             inputs (rdkit.Chem.Atom, rdkit.Chem.Bond):
-                <placeholder>
+                A single RDKit atom or bond.
 
         Returns:
             np.ndarray: A numberical encoding of an atom or a bond.
@@ -46,9 +46,9 @@ class AtomFeaturizer(AtomicFeaturizer):
 
     Args:
         features (list[AtomicFeature]):
-            <placeholder>
+            List of atom features.
         dtype (str, np.dtype):
-            <placeholder>
+            The output dtype.
 
     **Example:**
 
@@ -77,7 +77,7 @@ class AtomFeaturizer(AtomicFeaturizer):
 
         Args:
             inputs (list[rdkit.Chem.Atom]):
-                <placeholder>
+                List of RDKit atoms.
 
         Returns:
             np.ndarray: Numerical encodings of multiple atoms.
@@ -94,9 +94,9 @@ class BondFeaturizer(AtomicFeaturizer):
 
     Args:
         features (list[AtomicFeature]):
-            <placeholder>
+            List of bond features.
         dtype (str, np.dtype):
-            <placeholder>
+            The output dtype.
 
     **Example:**
 
@@ -124,7 +124,7 @@ class BondFeaturizer(AtomicFeaturizer):
 
         Args:
             inputs (list[rdkit.Chem.Bond]):
-                <placeholder>
+                List of RDKit bonds.
 
         Returns:
             np.ndarray: Numerical encodings of multiple bonds.

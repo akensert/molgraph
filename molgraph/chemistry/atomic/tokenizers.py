@@ -29,7 +29,7 @@ class AtomicTokenizer:
 
         Args:
             inputs (rdkit.Chem.Atom, rdkit.Chem.Bond):
-                <placeholder>
+                A single RDKit atom or bond.
 
         Returns:
             np.ndarray: Token encodings of an atom or a bond.
@@ -44,9 +44,9 @@ class AtomTokenizer(AtomicTokenizer):
 
     Args:
         features (list[AtomicFeature]):
-            <placeholder>
+            List of atom features.
         dtype (str, np.dtype):
-            <placeholder>
+            The output dtype.
 
     **Example:**
 
@@ -73,7 +73,7 @@ class AtomTokenizer(AtomicTokenizer):
 
         Args:
             inputs (list[rdkit.Chem.Atom]):
-                <placeholder>
+                List of RDKit atoms.
 
         Returns:
             np.ndarray: Token encodings of multiple atoms.
@@ -91,9 +91,9 @@ class BondTokenizer(AtomicTokenizer):
 
     Args:
         features (list[AtomicFeature]):
-            <placeholder>
+            List of bond features.
         dtype (str, np.dtype):
-            <placeholder>
+            The output dtype.
 
     **Example:**
 
@@ -117,7 +117,7 @@ class BondTokenizer(AtomicTokenizer):
 
         Args:
             inputs (list[rdkit.Chem.Bond]):
-                <placeholder>
+                List of RDKit bonds.
 
         Returns:
             np.ndarray: Token encodings of multiple bonds.

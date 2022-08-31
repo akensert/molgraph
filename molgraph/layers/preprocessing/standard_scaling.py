@@ -126,12 +126,16 @@ class StandardScaling(layers.experimental.preprocessing.PreprocessingLayer):
 
     Args:
         mean (tf.Tensor, None):
-            The mean of the features. Default to None.
+            The means of the original data; used to transform the data.
+            If None, the layer has to be adapted via e.g. `adapt()`.
+            Default to None.
         variance (tf.Tensor, None):
-            The variance of the features. Default to None.
+            The variances of the original data; used to transform the data.
+            If None, the layer has to be adapted via e.g. `adapt()`.
+            Default to None.
         variance_threshold (int, float, None):
             The threshold for removing features, based on the variance of the
-            features over the graph. If None, variance thresholding will not
+            original data. If None, variance thresholding will not
             be performed. Default to None.
         **kwargs:
             Specify the relevant ``feature``. Default to ``node_feature``.
