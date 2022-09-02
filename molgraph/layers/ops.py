@@ -5,77 +5,8 @@ from typing import Optional
 from typing import Tuple
 
 
-def softmax_edge_weights(
-    edge_weight: tf.Tensor,
-    edge_dst: tf.Tensor,
-    exponentiate: bool = True,
-    clip_values: Tuple[float, float] = (-5.0, 5.0),
-) -> tf.Tensor:
-    '''Normalizes edge weights via softmax.
-
-    The sum of edge weights associated with each destination node sums to 1.
-
-    Args:
-        edge_weight (tf.Tensor):
-            A vector of edge weights
-        edge_dst (tf.Tensor):
-            A vector of destination node indices (corresponding to edge_weight)
-        exponentiate (bool):
-            Whether the edge_weights should be exponentiated. Default to True.
-        clip_values (tuple):
-            If exponentiation, clip values before it.
-
-    Returns:
-        tf.Tensor: New, normalized, edge weights.
-    '''
-
-    def true_fn(edge_weight, edge_dst, exponentiate, clip_values):
-        'If edges exist, call this function'
-        if exponentiate:
-            edge_weight = tf.clip_by_value(edge_weight, *clip_values)
-            edge_weight = tf.math.exp(edge_weight)
-        num_segments = tf.maximum(tf.reduce_max(edge_dst) + 1, 1)
-        edge_weight_sum = tf.math.unsorted_segment_sum(
-            edge_weight, edge_dst, num_segments) + keras.backend.epsilon()
-        repeats = tf.math.bincount(tf.maximum(edge_dst, 0))
-        edge_weight_sum = tf.repeat(edge_weight_sum, repeats, axis=0)
-        return edge_weight / edge_weight_sum
-
-    def false_fn(edge_weight):
-        'If no edges exist, call this function'
-        return edge_weight
-
-    return tf.cond(
-        tf.greater(tf.shape(edge_dst)[0], 0),
-        lambda: true_fn(edge_weight, edge_dst, exponentiate, clip_values),
-        lambda: false_fn(edge_weight))
-
-def reduce_features(
-    feature: tf.Tensor,
-    mode: Optional[str],
-    reduce_dim: int,
-) -> tf.Tensor:
-    '''Reduces dimension of node (or edge) features.
-
-    Args:
-        feature (tf.Tensor):
-            The features to be reduced. Either node or edge features.
-        mode (str, None):
-            The type of reduction to be performed. Either of 'concat', 'sum'
-            'mean' or None. If None, 'mean' is performed.
-        reduce_dim (int):
-            The dimension to be reduced.
-
-    Returns:
-        tf.Tensor: Reduced features. If initially a rank 3 tensor, now a rank 2 tensor.
-    '''
-    if mode == 'concat':
-        return tf.reshape(feature, (-1, reduce_dim))
-    elif mode == 'sum':
-        return tf.reduce_sum(feature, axis=1)
-    return tf.reduce_mean(feature, axis=1)
-
 def propagate_node_features(
+    *,
     node_feature: tf.Tensor,
     edge_dst: tf.Tensor,
     edge_src: tf.Tensor,
@@ -115,7 +46,54 @@ def propagate_node_features(
         node_feature = tf.where(node_feature >= 65500., 0., node_feature)
     return node_feature
 
+def softmax_edge_weights(
+    *,
+    edge_weight: tf.Tensor,
+    edge_dst: tf.Tensor,
+    exponentiate: bool = True,
+    clip_values: Tuple[float, float] = (-5.0, 5.0),
+) -> tf.Tensor:
+    '''Normalizes edge weights via softmax.
+
+    The sum of edge weights associated with each destination node sums to 1.
+
+    Args:
+        edge_weight (tf.Tensor):
+            A vector of edge weights
+        edge_dst (tf.Tensor):
+            A vector of destination node indices (corresponding to edge_weight)
+        exponentiate (bool):
+            Whether the edge_weights should be exponentiated. Default to True.
+        clip_values (tuple):
+            If exponentiation, clip values before it.
+
+    Returns:
+        tf.Tensor: New, normalized, edge weights.
+    '''
+
+    def true_fn(edge_weight, edge_dst, exponentiate, clip_values):
+        'If edges exist, call this function.'
+        if exponentiate:
+            edge_weight = tf.clip_by_value(edge_weight, *clip_values)
+            edge_weight = tf.math.exp(edge_weight)
+        num_segments = tf.maximum(tf.reduce_max(edge_dst) + 1, 1)
+        edge_weight_sum = tf.math.unsorted_segment_sum(
+            edge_weight, edge_dst, num_segments) + keras.backend.epsilon()
+        repeats = tf.math.bincount(tf.maximum(edge_dst, 0))
+        edge_weight_sum = tf.repeat(edge_weight_sum, repeats, axis=0)
+        return edge_weight / edge_weight_sum
+
+    def false_fn(edge_weight):
+        'If no edges exist, call this function.'
+        return edge_weight
+
+    return tf.cond(
+        tf.greater(tf.shape(edge_dst)[0], 0),
+        lambda: true_fn(edge_weight, edge_dst, exponentiate, clip_values),
+        lambda: false_fn(edge_weight))
+
 def compute_edge_weights_from_degrees(
+    *,
     edge_dst: tf.Tensor,
     edge_src: tf.Tensor,
     edge_feature: Optional[tf.Tensor] = None,
@@ -146,7 +124,7 @@ def compute_edge_weights_from_degrees(
         edge_feature = tf.expand_dims(edge_feature, axis=1)
 
     def true_fn(edge_dst, edge_src, edge_feature, mode):
-        """If edges exist, call this function"""
+        'If edges exist, call this function.'
         # divide_no_nan makes sense? or tf.where(deg) -> .. * edge_feature
         degree = tf.math.unsorted_segment_sum(
             edge_feature, edge_dst, tf.reduce_max(edge_dst) + 1)
@@ -164,7 +142,7 @@ def compute_edge_weights_from_degrees(
         return edge_weight
 
     def false_fn(edge_feature):
-        """If no edges exist, call this function"""
+        'If no edges exist, call this function.'
         edge_weight = tf.zeros(
             tf.TensorShape([0]).concatenate(edge_feature.shape[1:]),
             dtype=tf.float32)
@@ -175,3 +153,30 @@ def compute_edge_weights_from_degrees(
         lambda: true_fn(edge_dst, edge_src, edge_feature, mode),
         lambda: false_fn(edge_feature)
     )
+
+def reduce_features(
+    *,
+    feature: tf.Tensor,
+    mode: Optional[str],
+    output_units: Optional[int],
+) -> tf.Tensor:
+    '''Reduces dimension of node (or edge) features.
+
+    Args:
+        feature (tf.Tensor):
+            The features to be reduced. Either node or edge features.
+        mode (str, None):
+            The type of reduction to be performed. Either of 'concat', 'sum'
+            'mean' or None. If None, 'mean' is performed.
+        output_units (int, None):
+            The output dimension (outermost dimension) after reshaping. Only
+            relevant if ``mode='concat'``.
+
+    Returns:
+        tf.Tensor: Reduced features. If initially a rank 3 tensor, now a rank 2 tensor.
+    '''
+    if mode == 'concat':
+        return tf.reshape(feature, (-1, output_units))
+    elif mode == 'sum':
+        return tf.reduce_sum(feature, axis=1)
+    return tf.reduce_mean(feature, axis=1)

@@ -19,9 +19,9 @@ from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.chemistry.atomic.featurizers import AtomFeaturizer
-from molgraph.chemistry.atomic.featurizers import BondFeaturizer
-from molgraph.chemistry.transform_ops import molecule_from_string
+from molgraph.chemistry.atomic.featurizers import AtomicFeaturizer
+from molgraph.chemistry.atomic.tokenizers import AtomicTokenizer
+from molgraph.chemistry.ops import molecule_from_string
 
 
 logger = logging.getLogger(__name__)
@@ -30,9 +30,9 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BaseMolecularGraphEncoder(ABC):
 
-    'Base class for the (existing) molecular graph encoders.'
+    'Base class for ``MolecularGraphEncoder`` and ``MolecularGraphEncoder3D``.'
 
-    atom_encoder: Union[AtomFeaturizer, Callable]
+    atom_encoder: Union[AtomicFeaturizer, AtomicTokenizer, Callable]
 
     @abstractmethod
     def call(
@@ -50,10 +50,9 @@ class BaseMolecularGraphEncoder(ABC):
         device: str = '/cpu:0',
         **kwargs,
     ) -> GraphTensor:
-        '''Generates a molecular graph (``GraphTensor``) from a string,
-        list of strings, ``Chem.Mol``, or list of ``Chem.Mol``.
-
-        'String' refers to SMILES, InChI or SDF block.
+        '''Generates a molecular graph, namely ``GraphTensor``, from a molecule.
+        Depending on ``molecule_from_string_fn`` the molecule(s) could be
+        represented as SMILES, InChI or SDF files, etc.
 
         Args:
             inputs (str, list[str], Chem.Mol, list[Chem.Mol]):
@@ -105,38 +104,38 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     '''Molecular graph encoder, encoding molecular graphs as ``GraphTensor``.
 
     Args:
-        atom_encoder (AtomFeaturizer, AtomTokenizer):
-            The atom encoder to use. Either AtomFeaturizer or AtomTokenizer.
-        bond_encoder (BondFeaturizer, BondTokenizer, None):
-            The bond encoder to use. Either BondFeaturizer or BondTokenizer.
+        atom_encoder (AtomicFeaturizer, AtomicTokenizer):
+            The atom encoder to use.
+        bond_encoder (AtomicFeaturizer, AtomicTokenizer, None):
+            The bond encoder to use. Default to None.
         molecule_from_string_fn (callable):
-            A function that produces a RDKit molecule object from some input
-            (e.g. a SMILES or InChI).
-            Default to ``transform_ops.molecule_from_string``.
+            A function that produces an RDKit molecule object from some input,
+            e.g. SMILES, InChI or SDFs. Default to
+            ``chemistry.molecule_from_string``.
         positional_encoding_dim (int, None):
             The dimension of the positional encoding. If None, positional
-            encoding will not be used. Default to 20.
+            encoding will not be used. Default to 16.
         self_loops (bool):
             Whether self loops should be added to the molecular graph. Default
             to False.
-        auxiliary_encoders: (dict[str, callable]):
+        auxiliary_encoders: (dict[str, callable], None):
             Additional encoders to use to compute additional fields for the
             molecular graph. The outer dimension of the outputs of these
             encoders should match that of the outer dimension of the output
-            of either the atom encoder or bond encoder.
+            of either the atom encoder or bond encoder. Default to None
 
     **Examples:**
 
     Generate a molecular graph with featurizers:
 
     >>> # Define atom featurizer (to produce numerical encoding of atoms)
-    >>> atom_featurizer = molgraph.chemistry.AtomFeaturizer([
+    >>> atom_featurizer = molgraph.chemistry.AtomicFeaturizer([
     ...     molgraph.chemistry.features.Symbol(),
     ...     molgraph.chemistry.features.Hybridization()
     ...     # ...
     ... ])
     >>> # Define bond featurizer (to produce numerical encoding of bonds)
-    >>> bond_featurizer = molgraph.chemistry.BondFeaturizer([
+    >>> bond_featurizer = molgraph.chemistry.AtomicFeaturizer([
     ...     molgraph.chemistry.features.BondType(),
     ...     # ...
     ... ])
@@ -162,13 +161,13 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     Generate a molecular graph with tokenizers:
 
     >>> # Define bond featurizer (to produce numerical encoding of atoms)
-    >>> atom_tokenizer = molgraph.chemistry.AtomTokenizer([
+    >>> atom_tokenizer = molgraph.chemistry.AtomicTokenizer([
     ...     molgraph.chemistry.features.Symbol(),
     ...     molgraph.chemistry.features.Hybridization()
     ...     # ...
     ... ])
     >>> # Define bond featurizer (to produce numerical encoding of bonds)
-    >>> bond_tokenizer = molgraph.chemistry.BondTokenizer([
+    >>> bond_tokenizer = molgraph.chemistry.AtomicTokenizer([
     ...     molgraph.chemistry.features.BondType(),
     ...     # ...
     ... ])
@@ -196,12 +195,12 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     when tokenizers are used to compute ``node_feature`` and ``edge_feature``:
 
     >>> # Define bond featurizer (to produce numerical encoding of atoms)
-    >>> atom_tokenizer = molgraph.chemistry.AtomTokenizer([
+    >>> atom_tokenizer = molgraph.chemistry.AtomicTokenizer([
     ...    molgraph.chemistry.features.Symbol(),
     ...    molgraph.chemistry.features.Hybridization()
     ... ])
     >>> # Define bond featurizer (to produce numerical encoding of bonds)
-    >>> bond_tokenizer = molgraph.chemistry.BondTokenizer([
+    >>> bond_tokenizer = molgraph.chemistry.AtomicTokenizer([
     ...    molgraph.chemistry.features.BondType(),
     ... ])
     >>> # Define molecular graph encoder
@@ -242,12 +241,13 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
 
     '''
 
-    bond_encoder: Optional[Union[BondFeaturizer, Callable]] = None
+    bond_encoder: Optional[Union[
+        AtomicFeaturizer, AtomicTokenizer, Callable]] = None
     molecule_from_string_fn: Callable[[str], Chem.Mol] = field(
         default_factory=lambda: partial(molecule_from_string, catch_errors=True),
         repr=False
     )
-    positional_encoding_dim: Optional[int] = 20
+    positional_encoding_dim: Optional[int] = 16
     self_loops: bool = False
     auxiliary_encoders: Optional[Dict[str, Callable]] = field(
         default=None, repr=False)
@@ -286,12 +286,12 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
 
             # Obtain node (atom) features
             atoms = _get_atoms(molecule)
-            data['node_feature'] = self.atom_encoder.encode_atoms(atoms)
+            data['node_feature'] = self.atom_encoder(atoms)
 
             # Obtain edge (bond) features (if `bond_encoder` exist)
             if self.bond_encoder is not None:
                 bonds = _get_bonds(molecule, *sparse_adjacency)
-                data['edge_feature'] = self.bond_encoder.encode_bonds(bonds)
+                data['edge_feature'] = self.bond_encoder(bonds)
 
             # Obtain positional encoding of nodes (atoms)
             if self.positional_encoding_dim:
@@ -314,26 +314,26 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
     as ``GraphTensor``.
 
     Args:
-        atom_encoder (AtomFeaturizer, AtomTokenizer):
-            The atom encoder to use. Either AtomFeaturizer or AtomTokenizer.
+        atom_encoder (AtomicFeaturizer, AtomicTokenizer):
+            The atom encoder to use.
         molecule_from_string_fn (callable):
-            A function that produces a RDKit molecule object from some input
-            (e.g. a SMILES or InChI). Only needed if ``conformer_generator`` is
-            set to None. Default to ``transform_ops.molecule_from_string``.
-        conformer_generator (ConformerGenerator, callable):
+            A function that produces an RDKit molecule object from some input,
+            e.g. SMILES, InChI or SDFs. Default to
+            ``chemistry.molecule_from_string``.
+        conformer_generator (ConformerGenerator, callable, None):
             A conformer generator which produces a conformer of a given
-            molecule, if a conformer does not exist.
+            molecule, if a conformer does not exist. Default to None.
         edge_radius (int, None):
             The order of neighbors to consider for the distance geometry.
             If None, all atom pairs will be considered. Default to None.
-        coloumb (bool):
-            Whether coloumb values should be computed from the distances, and
-            the associated atomic charges of the atom pairs.
+        coulomb (bool):
+            Whether coulomb values should be computed from the distances, and
+            the associated atomic charges of the atom pairs. Default to True.
 
     **Examples:**
 
     >>> # Define bond featurizer (to produce numerical encoding of atoms)
-    >>> atom_featurizer = molgraph.chemistry.AtomFeaturizer([
+    >>> atom_featurizer = molgraph.chemistry.AtomicFeaturizer([
     ...     molgraph.chemistry.features.Symbol(),
     ...     molgraph.chemistry.features.Hybridization()
     ...     # ...
@@ -345,14 +345,14 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
     ...     atom_encoder=atom_featurizer,
     ...     conformer_generator=conformer_generator,
     ...     edge_radius=None,
-    ...     coloumb=False,
+    ...     coulomb=False,
     ... )
     >>> # Encode two molecules as a GraphTensor
     >>> graph_tensor = encoder(['CCC', 'CCO'])
     >>> # Merge subgraphs into a single disjoint graph.
     >>> graph_tensor = graph_tensor.merge()
     >>> # The main difference between the 2d and 3d encoder is
-    >>> # the edge_feature field. Here, in contains coloumb values,
+    >>> # the edge_feature field. Here, in contains coulomb values,
     >>> # which mimics electrostatic interactions between nuclei
     >>> graph_tensor.edge_feature
     <tf.Tensor: shape=(12, 1), dtype=float32, numpy=
@@ -376,7 +376,7 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
         repr=False
     )
     edge_radius: Optional[int] = None
-    coloumb: bool = True
+    coulomb: bool = True
 
     def call(
         self,
@@ -403,11 +403,11 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
                 molecule, radius=self.edge_radius)
 
             atoms = _get_atoms(molecule)
-            data['node_feature'] = self.atom_encoder.encode_atoms(atoms)
+            data['node_feature'] = self.atom_encoder(atoms)
             data['edge_dst'] = np.array(dg['edge_dst'], dtype=index_dtype)
             data['edge_src'] = np.array(dg['edge_src'], dtype=index_dtype)
 
-            if not self.coloumb:
+            if not self.coulomb:
                 edge_feature = np.expand_dims(dg['edge_length'], -1)
             else:
                 nuclear_charge = np.array([

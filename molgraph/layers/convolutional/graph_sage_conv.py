@@ -186,15 +186,19 @@ class GraphSageConv(BaseLayer):
             node_feature = self.node_src_projection(tensor.node_feature)
             node_feature = self.activation(node_feature)
             node_feature = propagate_node_features(
-                node_feature, tensor.edge_dst, tensor.edge_src,
+                node_feature=node_feature,
+                edge_dst=tensor.edge_dst,
+                edge_src=tensor.edge_src,
                 mode=self.aggregation_mode)
         elif self.aggregation_mode == 'lstm':
             node_feature = self.lstm_aggregate(
                 tensor.node_feature, tensor.edge_dst, tensor.edge_src)
         else:
             node_feature = propagate_node_features(
-                tensor.node_feature, tensor.edge_dst,
-                tensor.edge_src, mode=self.aggregation_mode)
+                node_feature=tensor.node_feature,
+                edge_dst=tensor.edge_dst,
+                edge_src=tensor.edge_src,
+                mode=self.aggregation_mode)
 
         node_feature = tf.concat([node_feature, tensor.node_feature], axis=-1)
 

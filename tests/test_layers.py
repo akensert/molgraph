@@ -7,8 +7,7 @@ sys.path.append('../')
 
 from molgraph import layers
 from molgraph.chemistry.molecular_encoders import MolecularGraphEncoder
-from molgraph.chemistry.atomic.featurizers import AtomFeaturizer
-from molgraph.chemistry.atomic.featurizers import BondFeaturizer
+from molgraph.chemistry.atomic.featurizers import AtomicFeaturizer
 from molgraph.chemistry.atomic import features
 
 import pytest
@@ -16,11 +15,11 @@ import pytest
 
 
 # Define atomic encoders
-atom_encoder = AtomFeaturizer([
+atom_encoder = AtomicFeaturizer([
     features.Symbol({'C', 'N', 'O', 'P', 'Na'}),
     features.Hybridization(),
 ])
-bond_encoder = BondFeaturizer([
+bond_encoder = AtomicFeaturizer([
     features.BondType(),
     features.Rotatable()
 ])
@@ -243,11 +242,11 @@ def test_laplacian_positional_encoding_2() -> None:
 
 # Test readout
 # Define atomic encoders
-atom_encoder = AtomFeaturizer([
+atom_encoder = AtomicFeaturizer([
     features.Symbol({'C', 'N', 'O', 'P', 'Na'}),
     features.Hybridization({'SP', 'SP2', 'SP3'}),
 ])
-bond_encoder = BondFeaturizer([
+bond_encoder = AtomicFeaturizer([
     features.BondType(),
     features.Rotatable()
 ])

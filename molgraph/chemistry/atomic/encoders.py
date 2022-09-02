@@ -106,7 +106,7 @@ def _compute_oov_index(inputs: AtomicFeature, oov_size: int) -> int:
 
 def _assert_ordered_collection(inputs: AtomicFeature) -> AtomicFeature:
     assert isinstance(inputs.allowable_set, (list, tuple, str)), (
-        '`allowable_set` needs to be an ordered collection when `ordinal`=True')
+        '`allowable_set` needs to be an ordered collection when `ordinal=True`')
     return inputs
 
 def _camel_case(s: str, n: int = 3) -> str:

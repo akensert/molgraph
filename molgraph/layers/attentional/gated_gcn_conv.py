@@ -216,10 +216,16 @@ class GatedGCNConv(BaseLayer):
             tensor = tensor.update({'edge_feature': gate})
 
         gate = self.gate_activation(gate)
-        gate = softmax_edge_weights(gate, tensor.edge_dst, exponentiate=False)
+        gate = softmax_edge_weights(
+            edge_weight=gate,
+            edge_dst=tensor.edge_dst,
+            exponentiate=False)
 
         node_feature = propagate_node_features(
-            node_feature, tensor.edge_dst, tensor.edge_src, gate)
+            node_feature=node_feature,
+            edge_dst=tensor.edge_dst,
+            edge_src=tensor.edge_src,
+            edge_weight=gate)
 
         if self.apply_self_projection:
             node_feature += self.self_projection(tensor.node_feature)

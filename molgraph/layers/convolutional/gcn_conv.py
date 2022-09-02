@@ -211,14 +211,17 @@ class GCNConv(BaseLayer):
             node_feature = tensor.node_feature
 
         edge_weight = compute_edge_weights_from_degrees(
-            tensor.edge_dst,
-            tensor.edge_src,
-            tensor.edge_feature if self.use_edge_features else None,
-            self.degree_normalization)
+            edge_dst=tensor.edge_dst,
+            edge_src=tensor.edge_src,
+            edge_feature=tensor.edge_feature if self.use_edge_features else None,
+            mode=self.degree_normalization)
 
         # (n_edges, ndim, 1) x (n_edges, 1, edim) -> (n_edges, ndim, edim)
         node_feature = propagate_node_features(
-            node_feature, tensor.edge_dst, tensor.edge_src, edge_weight)
+            node_feature=node_feature,
+            edge_dst=tensor.edge_dst,
+            edge_src=tensor.edge_src,
+            edge_weight=edge_weight)
 
         if hasattr(self, 'kernel_decomp'):
             # (n_dim, unit, n_bases) x (e_dim, n_bases) -> (n_dim, unit, e_dim)
