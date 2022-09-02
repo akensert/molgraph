@@ -19,7 +19,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from collections import defaultdict
 
-from molgraph.chemistry import transform_ops
+from molgraph.chemistry.ops import molecule_from_string
 
 
 
@@ -245,7 +245,7 @@ def _get_scaffold(molecule: str) -> str:
     """
 
     if not isinstance(molecule, Chem.Mol):
-        molecule = transform_ops.molecule_from_string(molecule, catch_errors=True)
+        molecule = molecule_from_string(molecule, catch_errors=True)
     if molecule is None:
         return
     try:

@@ -6,7 +6,6 @@ from typing import Tuple
 
 def molecule_from_string(
     molecule: Union[str, Chem.Mol],
-    format: Optional[str] = None,
     catch_errors: bool = True,
 ) -> Union[Chem.Mol, None]:
 
@@ -49,17 +48,3 @@ def molecule_from_string(
 
     # Return the (maybe partially) sanitized RDKit molecule object
     return molecule
-
-def molecule_to_image(
-    mol: Chem.Mol,
-    size: Tuple[int, int] = (500, 500),
-    atom_index: bool = False,
-    bond_index: bool = False,
-):
-    if atom_index:
-        for atom in mol.GetAtoms():
-            atom.SetProp('atomNote', str(atom.GetIdx()))
-    if bond_index:
-        for bond in mol.GetBonds():
-            bond.SetProp('bondNote', str(bond.GetIdx()))
-    return Chem.Draw.MolToImage(mol, size=size)

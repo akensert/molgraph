@@ -180,7 +180,9 @@ class GINConv(BaseLayer):
     def subclass_call(self, tensor: GraphTensor) -> GraphTensor:
 
         node_feature = propagate_node_features(
-            tensor.node_feature, tensor.edge_dst, tensor.edge_src)
+            node_feature=tensor.node_feature,
+            edge_dst=tensor.edge_dst,
+            edge_src=tensor.edge_src)
 
         node_feature = (
             (1 + self.epsilon) * tensor.node_feature + node_feature)

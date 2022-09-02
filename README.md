@@ -27,19 +27,7 @@ docker build -t molgraph-tf[-gpu][-jupyter]/molgraph:0.0 molgraph-tf[-gpu][-jupy
 docker run -it <b>[-p 8888:8888]</b> molgraph-tf[-gpu]<b>[-jupyter]</b>/molgraph:0.0
 </pre>
 
-## Requirements/dependencies
-- **Python** (version ~= 3.8.10)
-- **TensorFlow** (version ~= 2.7.0)
-- **RDKit** (version ~= 2022.3.3)
-- **NumPy** (version ~= 1.21.2)
-- **Pandas** (version ~= 1.0.3)
-
-## Tested with
-- **Ubuntu 20.04 - Python 3.8.10**
-- **MacOS Monterey (12.3.1) - Python 3.10.3**
-
-## Minimalistic implementation
-A complete GNN implementation for small molecular graphs in about 30 lines of code:
+Now run your first program with **MolGraph**:
 
 ```python
 from tensorflow import keras
@@ -51,13 +39,13 @@ from molgraph import models
 qm7 = chemistry.datasets.get('esol')
 
 # Define molecular graph encoder
-atom_encoder = chemistry.AtomFeaturizer([
+atom_encoder = chemistry.AtomicFeaturizer([
     chemistry.features.Symbol(),
     chemistry.features.Hybridization(),
     # ...
 ])
 
-bond_encoder = chemistry.BondFeaturizer([
+bond_encoder = chemistry.AtomicFeaturizer([
     chemistry.features.BondType(),
     # ...
 ])
@@ -92,3 +80,14 @@ gam_model = models.GradientActivationMapping(
 
 maps = gam_model.predict(x_train)
 ```
+
+## Requirements/dependencies
+- **Python** (version ~= 3.8.10)
+- **TensorFlow** (version ~= 2.7.0)
+- **RDKit** (version ~= 2022.3.3)
+- **NumPy** (version ~= 1.21.2)
+- **Pandas** (version ~= 1.0.3)
+
+## Tested with
+- **Ubuntu 20.04 - Python 3.8.10**
+- **MacOS Monterey (12.3.1) - Python 3.10.3**

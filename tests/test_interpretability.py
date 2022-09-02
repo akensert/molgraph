@@ -6,7 +6,7 @@ import tempfile
 import shutil
 
 from molgraph.chemistry import MolecularGraphEncoder
-from molgraph.chemistry import AtomFeaturizer, BondFeaturizer
+from molgraph.chemistry import AtomicFeaturizer
 from molgraph.chemistry import features
 from molgraph.layers import GCNConv, Readout
 
@@ -17,7 +17,7 @@ from molgraph.models import SmoothGradSaliencyMapping
 
 import pytest
 
-atom_encoder = AtomFeaturizer([
+atom_encoder = AtomicFeaturizer([
     features.Symbol({'C', 'N', 'O'}, oov_size=1),
     features.Hybridization({'SP', 'SP2', 'SP3'}, oov_size=1),
     features.HydrogenDonor(),
@@ -25,7 +25,7 @@ atom_encoder = AtomFeaturizer([
     features.Hetero()
 ])
 
-bond_encoder = BondFeaturizer([
+bond_encoder = AtomicFeaturizer([
     features.BondType({'SINGLE', 'DOUBLE', 'TRIPLE', 'AROMATIC'}),
     features.Rotatable()
 ])

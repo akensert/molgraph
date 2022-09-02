@@ -20,11 +20,13 @@ from molgraph.layers.ops import reduce_features
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class GraphTransformerConv(BaseLayer):
+class GTConv(BaseLayer):
 
     '''Graph transformer layer
 
     Implementation is based on Dwivedi et al. (2021) [#]_.
+
+    Alias: ``GraphTransformerConv``
 
     **Examples:**
 
@@ -45,11 +47,11 @@ class GraphTransformerConv(BaseLayer):
     ...         ],
     ...     }
     ... )
-    >>> # Build a model with GraphTransformerConv
+    >>> # Build a model with GTConv
     >>> gnn_model = tf.keras.Sequential([
     ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.GraphTransformerConv(16, activation='relu'),
-    ...     molgraph.layers.GraphTransformerConv(16, activation='relu')
+    ...     molgraph.layers.GTConv(16, activation='relu'),
+    ...     molgraph.layers.GTConv(16, activation='relu')
     ... ])
     >>> gnn_model.output_shape
     (None, None, 16)
@@ -80,11 +82,11 @@ class GraphTransformerConv(BaseLayer):
     ...         ],
     ...     }
     ... )
-    >>> # Build a model with GraphTransformerConv
+    >>> # Build a model with GTConv
     >>> gnn_model = tf.keras.Sequential([
     ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.GraphTransformerConv(16, activation='relu'),
-    ...     molgraph.layers.GraphTransformerConv(16, activation='relu')
+    ...     molgraph.layers.GTConv(16, activation='relu'),
+    ...     molgraph.layers.GTConv(16, activation='relu')
     ... ])
     >>> gnn_model.output_shape
     (None, 16)
@@ -309,10 +311,15 @@ class GraphTransformerConv(BaseLayer):
                     'edge', attention_score, tensor.edge_feature)
                 tensor = tensor.update({'edge_feature': edge_feature})
 
-        attention_score = softmax_edge_weights(attention_score, tensor.edge_dst)
+        attention_score = softmax_edge_weights(
+            edge_weight=attention_score,
+            edge_dst=tensor.edge_dst)
 
         node_feature = propagate_node_features(
-            value, tensor.edge_dst, tensor.edge_src, attention_score)
+            node_feature=value,
+            edge_dst=tensor.edge_dst,
+            edge_src=tensor.edge_src,
+            edge_weight=attention_score)
 
         if self.apply_self_projection:
             node_feature += self.self_projection(tensor.node_feature)
@@ -325,7 +332,9 @@ class GraphTransformerConv(BaseLayer):
     def feed_forward_network(self, feature_type, feature, feature_residual):
 
         feature = reduce_features(
-            feature, self.merge_mode, self.units)
+            feature=feature,
+            mode=self.merge_mode,
+            output_units=self.units)
 
         if self.dropout:
             feature = getattr(self, f'{feature_type}_dropout_1')(feature)

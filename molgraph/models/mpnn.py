@@ -107,7 +107,20 @@ class MPNN(keras.layers.Layer):
         self.built = True
 
     def call(self, tensor: GraphTensor) -> GraphTensor:
+        '''Defines the computation from inputs to outputs.
 
+        This method should not be called directly, but indirectly
+        via ``__call__()``. Upon first call, the layer is automatically
+        built via ``build()``.
+
+        Args:
+            tensor (GraphTensor):
+                Input to the layer.
+
+        Returns:
+            GraphTensor:
+                A ``GraphTensor`` with updated node features. 
+        '''
         tensor_orig = tensor
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()

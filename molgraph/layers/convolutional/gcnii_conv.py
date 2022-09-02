@@ -204,10 +204,16 @@ class GCNIIConv(BaseLayer):
             tensor = tensor.update({'node_feature_initial': tensor.node_feature})
 
         edge_weight = compute_edge_weights_from_degrees(
-            tensor.edge_dst, tensor.edge_src, None, self.degree_normalization)
+            edge_dst=tensor.edge_dst,
+            edge_src=tensor.edge_src,
+            edge_feature=None,
+            mode=self.degree_normalization)
 
         node_feature = propagate_node_features(
-            tensor.node_feature, tensor.edge_dst, tensor.edge_src, edge_weight)
+            node_feature=tensor.node_feature,
+            edge_dst=tensor.edge_dst,
+            edge_src=tensor.edge_src,
+            edge_weight=edge_weight)
 
         identity = (
             (1 - self.alpha) * node_feature +

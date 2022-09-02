@@ -20,8 +20,7 @@ graph.
   :caption: Get started
 
   get_started/installation
-  get_started/quick_start
-
+  get_started/walk_through
 
 .. toctree::
   :glob:
@@ -39,4 +38,4 @@ graph.
   :maxdepth: 1
   :caption: Tutorials
 
-  examples/*
+  examples/tutorials/*

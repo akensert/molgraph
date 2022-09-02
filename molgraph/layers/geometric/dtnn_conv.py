@@ -83,16 +83,18 @@ class DTNNConv(BaseLayer):
             The number of output units.
         distance_min (float):
             The smallest center (mean) to be used for the radial basis function.
-            I.e., it defines the minimum distance between atom pairs.
-            Default to -1.0 Angstroms.
+            I.e., it defines the minimum distance between atom pairs; or the
+            minimum electrostatic interaction between nuclei, in the case of
+            Coulomb values. Default to -1.0.
         distance_max (float):
             The largest center (mean) to be used for the radial basis function.
-            I.e., it defines the maximum distance between atom pairs.
-            Default to 18.0 Angstroms.
+            I.e., it defines the maximum distance between atom pairs; or the
+            maximum electrostatic interaction between nuclei, in the case of
+            Coulomb values. Default to 18.0.
         distance_granularity (float):
             The distance between each center (mean) of the radial basis function.
             The smaller the granularity, the more centers will be used.
-            Default to 0.1 Angstroms.
+            Default to 0.1.
         rbf_stddev (float, str):
             The standard deviation of the radial basis function. If 'auto',
             'distance_granularity' will be used as standard deviation.
