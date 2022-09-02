@@ -119,7 +119,7 @@ class MPNN(keras.layers.Layer):
 
         Returns:
             GraphTensor:
-                A ``GraphTensor`` with updated node features. 
+                A ``GraphTensor`` with updated node features.
         '''
         tensor_orig = tensor
         if isinstance(tensor.node_feature, tf.RaggedTensor):
@@ -132,7 +132,8 @@ class MPNN(keras.layers.Layer):
         # we initialize a ones vector.
         if not hasattr(tensor, 'edge_feature'):
             edge_feature = tf.ones(
-                shape=[tf.shape(edge_dst)[0], 1], dtype=node_feature.dtype)
+                shape=[tf.shape(edge_dst)[0], 1],
+                dtype=node_feature_updated.dtype)
         else:
             edge_feature = tensor.edge_feature
 
