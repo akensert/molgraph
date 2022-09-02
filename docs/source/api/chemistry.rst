@@ -25,29 +25,102 @@ ConformerGenerator
 Atomic
 ********************
 
-Featurizers
+Featurizer
 ==================
-.. autoclass:: molgraph.chemistry.AtomFeaturizer(molgraph.chemistry.AtomicFeaturizer)
-  :members:  __call__, encode_atoms,
+.. autoclass:: molgraph.chemistry.AtomicFeaturizer()
+  :members:  __call__,
 
-.. autoclass:: molgraph.chemistry.BondFeaturizer(molgraph.chemistry.AtomicFeaturizer)
-  :members: __call__, encode_bonds,
-
-Tokenizers
+Tokenizer
 ==================
-.. autoclass:: molgraph.chemistry.AtomTokenizer(molgraph.chemistry.AtomicTokenizer)
-  :members: __call__, encode_atoms,
-
-.. autoclass:: molgraph.chemistry.BondTokenizer(molgraph.chemistry.AtomicTokenizer)
-  :members: __call__, encode_bonds,
+.. autoclass:: molgraph.chemistry.AtomicTokenizer()
+  :members: __call__,
 
 Features
 ==================
 
-.. automodule:: molgraph.chemistry.atomic.features
-  :members:
+.. autoclass:: molgraph.chemistry.AtomicFeature()
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.Symbol(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.Hybridization(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.CIPCode(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.ChiralCenter(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.FormalCharge(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.TotalNumHs(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.TotalValence(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.NumRadicalElectrons(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.Degree(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.Aromatic(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.Hetero(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.HydrogenDonor(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.HydrogenAcceptor(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.RingSize(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.Ring(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.CrippenLogPContribution(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.CrippenMolarRefractivityContribution(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.TPSAContribution(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.LabuteASAContribution(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.GasteigerCharge(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.BondType(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.Conjugated(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.Rotatable(AtomicFeature)
+  :members: __call__
+
+.. autoclass:: molgraph.chemistry.features.Stereo(AtomicFeature)
+  :members: __call__
+
+
+**********************
+Chemistry ops
+**********************
+.. automodule:: molgraph.chemistry.ops
+  :members: 
   :member-order: bysource
-  :special-members: __call__
+
 
 **********************
 TF records

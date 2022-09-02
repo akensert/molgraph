@@ -246,23 +246,33 @@ class GATv2Conv(BaseLayer):
             if self.update_edge_features:
                 edge_feature = self.edge_out_projection(attention_feature)
                 edge_feature = reduce_features(
-                    edge_feature, self.merge_mode, self.units)
+                    feature=edge_feature,
+                    mode=self.merge_mode,
+                    output_units=self.units)
+
                 tensor = tensor.update({'edge_feature': edge_feature})
 
         # Apply activation before attention projection
         edge_weights = self.attention_activation(attention_feature)
         edge_weights = self.attention_projection(edge_weights)
 
-        edge_weights = softmax_edge_weights(edge_weights, tensor.edge_dst)
+        edge_weights = softmax_edge_weights(
+            edge_weight=edge_weights,
+            edge_dst=tensor.edge_dst)
 
         node_feature = propagate_node_features(
-            node_feature, tensor.edge_dst, tensor.edge_src, edge_weights)
+            node_feature=node_feature,
+            edge_dst=tensor.edge_dst,
+            edge_src=tensor.edge_src,
+            edge_weight=edge_weights)
 
         if self.apply_self_projection:
             node_feature += self.self_projection(tensor.node_feature)
 
         node_feature = reduce_features(
-            node_feature, self.merge_mode, self.units)
+            feature=node_feature,
+            mode=self.merge_mode,
+            output_units=self.units)
 
         return tensor.update({'node_feature': node_feature})
 

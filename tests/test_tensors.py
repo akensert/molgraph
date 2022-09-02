@@ -4,22 +4,21 @@ import numpy as np
 
 from molgraph import layers
 from molgraph.chemistry.molecular_encoders import MolecularGraphEncoder
-from molgraph.chemistry.atomic.featurizers import AtomFeaturizer
-from molgraph.chemistry.atomic.featurizers import BondFeaturizer
+from molgraph.chemistry.atomic.featurizers import AtomicFeaturizer
 from molgraph.chemistry.atomic import features
 from molgraph.tensors.graph_tensor import GraphTensor
 
 import pytest
 
 # Define atomic encoders
-atom_encoder = AtomFeaturizer([
+atom_encoder = AtomicFeaturizer([
     features.Symbol({'C', 'N', 'O'}, oov_size=1),
     features.Hybridization({'SP', 'SP2', 'SP3'}, oov_size=1),
     features.HydrogenDonor(),
     features.HydrogenAcceptor(),
     features.Hetero()
 ])
-bond_encoder = BondFeaturizer([
+bond_encoder = AtomicFeaturizer([
     features.BondType({'SINGLE', 'DOUBLE', 'TRIPLE', 'AROMATIC'}),
     features.Rotatable()
 ])
@@ -29,30 +28,42 @@ encoder = MolecularGraphEncoder(atom_encoder, bond_encoder)
 # Typical graph, with nested ragged tensors
 graph_tensor = encoder([
     'OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N', '[Na+].[O-]c1ccccc1'])
+graph_tensor_2 = encoder(['C'])
+graph_tensor_3 = encoder(['CC', 'C', 'CC'])
+graph_tensor_4 = encoder([
+    'OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N', '[Na+].[O-]c1ccccc1'],
+    index_dtype='int64')
 
-
-@pytest.mark.parametrize('graph_tensor', [graph_tensor])
-def test_shape_and_dtype(graph_tensor) -> None:
+@pytest.mark.parametrize('x', [
+    (graph_tensor, 3, 'int32'),
+    (graph_tensor_2, 1, 'int32'),
+    (graph_tensor_3, 3, 'int32'),
+    (graph_tensor_4, 3, 'int64'),
+])
+def test_shape_and_dtype(x) -> None:
+    graph_tensor = x[0]
+    dim = x[1]
+    dtype = x[2]
     graph_tensor.shape.assert_is_compatible_with(
-        tf.TensorShape([3, None, 11]))
+        tf.TensorShape([dim, None, 11]))
     graph_tensor.node_feature.shape.assert_is_compatible_with(
-        tf.TensorShape([3, None, 11]))
+        tf.TensorShape([dim, None, 11]))
     graph_tensor.edge_feature.shape.assert_is_compatible_with(
-        tf.TensorShape([3, None, 5]))
+        tf.TensorShape([dim, None, 5]))
     graph_tensor.edge_dst.shape.assert_is_compatible_with(
-        tf.TensorShape([3, None]))
+        tf.TensorShape([dim, None]))
     graph_tensor.edge_src.shape.assert_is_compatible_with(
-        tf.TensorShape([3, None]))
+        tf.TensorShape([dim, None]))
 
     assert graph_tensor.dtype.name == 'float32'
     assert graph_tensor.node_feature.dtype.name == 'float32'
     assert graph_tensor.edge_feature.dtype.name == 'float32'
-    assert graph_tensor.edge_dst.dtype.name == 'int32'
-    assert graph_tensor.edge_src.dtype.name == 'int32'
+    assert graph_tensor.edge_dst.dtype.name == dtype
+    assert graph_tensor.edge_src.dtype.name == dtype
 
     graph_tensor = graph_tensor.merge()
 
-    assert graph_tensor.graph_indicator.dtype.name == 'int32'
+    assert graph_tensor.graph_indicator.dtype.name == dtype
 
 @pytest.mark.parametrize('graph_tensor', [graph_tensor])
 def test_merge_and_separate(graph_tensor) -> None:
@@ -317,7 +328,7 @@ def test_update_method(graph_tensor) -> None:
     assert not tf.reduce_all(graph_tensor.node_feature == node_feature_merged)
 
 @pytest.mark.parametrize('graph_tensor', [graph_tensor])
-def test_update_method(graph_tensor) -> None:
+def test_update_method_2(graph_tensor) -> None:
 
     GraphTensor(
         data={

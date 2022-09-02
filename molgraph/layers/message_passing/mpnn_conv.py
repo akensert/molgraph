@@ -237,17 +237,6 @@ class MPNNConv(BaseLayer):
         return base_config
 
 
-class MessageFunction(keras.layers.Layer):
-
-    def __init__(self, units, **kwargs):
-        super().__init__(**kwargs)
-
-    def build(self, input_shape):
-        pass
-
-    def call(self, tensor: GraphTensor) -> GraphTensor:
-        return tensor
-
 def message_step(
     node_feature: tf.Tensor,
     edge_feature: tf.Tensor,

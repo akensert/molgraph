@@ -5,7 +5,7 @@ from typing import List
 from typing import Union
 
 from molgraph.chemistry import conformer_utils
-from molgraph.chemistry import transform_ops
+from molgraph.chemistry.ops import molecule_from_string
 
 
 @dataclass
@@ -43,7 +43,7 @@ class ConformerGenerator:
     def __call__(self, molecule: Union[str, Chem.Mol]) -> Chem.Mol:
 
         if not isinstance(molecule, Chem.Mol):
-            molecule = transform_ops.molecule_from_string(molecule)
+            molecule = molecule_from_string(molecule)
             if molecule is None:
                 return None
 

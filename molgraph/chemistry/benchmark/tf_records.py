@@ -40,7 +40,7 @@ def write(
     >>> x = ['CC', 'CCC', 'CCCC']
     >>> y = [ 5.2,  7.4,   8.1]
     >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
-    ...     atom_encoder=molgraph.chemistry.AtomFeaturizer([
+    ...     atom_encoder=molgraph.chemistry.AtomicFeaturizer([
     ...         molgraph.chemistry.features.Symbol(),
     ...         molgraph.chemistry.features.Hybridization(),
     ...     ])

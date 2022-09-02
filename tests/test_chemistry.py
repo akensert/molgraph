@@ -4,10 +4,9 @@ import numpy as np
 
 from molgraph import layers
 from molgraph.chemistry.molecular_encoders import MolecularGraphEncoder
-from molgraph.chemistry.atomic.featurizers import AtomFeaturizer
-from molgraph.chemistry.atomic.featurizers import BondFeaturizer
+from molgraph.chemistry.atomic.featurizers import AtomicFeaturizer
 from molgraph.chemistry.atomic import features
-from molgraph.chemistry.transform_ops import molecule_from_string
+from molgraph.chemistry.ops import molecule_from_string
 
 import pytest
 
@@ -18,16 +17,16 @@ def test_atomic_encoder():
     atom = rdkit_mol.GetAtoms()[0]
     bond = rdkit_mol.GetBonds()[0]
 
-    atom_encoder = AtomFeaturizer([features.Symbol({'C', 'N'}, oov_size=0)])
+    atom_encoder = AtomicFeaturizer([features.Symbol({'C', 'N'}, oov_size=0)])
     assert np.all(atom_encoder(atom) == np.array([0., 0.]))
 
-    atom_encoder = AtomFeaturizer([features.Symbol({'C', 'N'}, oov_size=1)])
+    atom_encoder = AtomicFeaturizer([features.Symbol({'C', 'N'}, oov_size=1)])
     assert np.all(atom_encoder(atom) == np.array([1., 0., 0.]))
 
-    atom_encoder = AtomFeaturizer([features.Symbol({'C', 'N', 'O'})])
+    atom_encoder = AtomicFeaturizer([features.Symbol({'C', 'N', 'O'})])
     assert np.all(atom_encoder(atom) == np.array([0., 0., 1.]))
 
-    atom_encoder = AtomFeaturizer([
+    atom_encoder = AtomicFeaturizer([
         features.Symbol({'C', 'N', 'O'}),
         features.Hybridization({'SP', 'SP2', 'SP3'}),
         features.HydrogenDonor(),
@@ -37,7 +36,7 @@ def test_atomic_encoder():
     assert np.all(atom_encoder(atom) ==
                   np.array([0., 0., 1., 0., 0., 1., 1., 1., 1.]))
 
-    atom_encoder = AtomFeaturizer([
+    atom_encoder = AtomicFeaturizer([
         features.Symbol(['C', 'N', 'O', 'P'], ordinal=True),
         features.Hybridization(['SP', 'SP2', 'SP3', 'SP3D'], ordinal=True),
         features.HydrogenDonor(),
@@ -70,14 +69,14 @@ def test_molecular_encoders():
     edge_src = tf.constant([1, 4, 0, 2, 3, 1, 1, 0], dtype=tf.int32)
 
     # Define atomic encoders
-    atom_encoder = AtomFeaturizer([
+    atom_encoder = AtomicFeaturizer([
         features.Symbol({'C', 'N', 'O'}),
         features.Hybridization({'SP', 'SP2', 'SP3'}),
         features.HydrogenDonor(),
         features.HydrogenAcceptor(),
         features.Hetero()
     ])
-    bond_encoder = BondFeaturizer([
+    bond_encoder = AtomicFeaturizer([
         features.BondType({'SINGLE', 'DOUBLE', 'TRIPLE', 'AROMATIC'}),
         features.Rotatable()
     ])

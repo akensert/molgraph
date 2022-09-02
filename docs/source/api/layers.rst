@@ -51,9 +51,9 @@ GMMConv
 .. autoclass:: molgraph.layers.GMMConv(molgraph.layers.BaseLayer)
   :members: call, get_config, from_config, compute_output_shape
 
-GraphTransformerConv
+GTConv
 ===========================
-.. autoclass:: molgraph.layers.GraphTransformerConv(molgraph.layers.BaseLayer)
+.. autoclass:: molgraph.layers.GTConv(molgraph.layers.BaseLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 
@@ -208,12 +208,13 @@ GNN layer. For example, a basic GCN layer can be coded up as follows:
             graph_tensor = graph_tensor.merge()
         node_feature_transformed = tf.matmul(graph_tensor.node_feature, self.kernel)
         node_feature_aggregated = layer_ops.propagate_node_features(
-            node_feature_transformed,
-            graph_tensor.edge_src,
-            graph_tensor.edge_dst,
+            node_feature=node_feature_transformed,
+            edge_dst=graph_tensor.edge_dst,
+            edge_src=graph_tensor.edge_src,
             mode='mean')
         return graph_tensor_orig.update({'node_feature': node_feature_aggregated})
 
 
 .. automodule:: molgraph.layers.ops
   :members:
+  :member-order: bysource
