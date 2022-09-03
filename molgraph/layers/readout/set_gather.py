@@ -65,7 +65,7 @@ class SetGatherReadout(layers.Layer):
             A ``tf.Tensor`` or `tf.RaggedTensor` based on the ``node_feature``
             field of the inputted ``GraphTensor``.
         '''
-        tensor_orig = tensor
+
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()
 
