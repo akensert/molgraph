@@ -135,7 +135,7 @@ def load(
     **Example:**
 
     >>> # ds = molgraph.chemistry.tf_records.load(
-    ... #     path='/tmp/dummy_records/', # extract_tuple=(x, y)
+    ... #     path='/tmp/dummy_records/', # extract_tuple=('x', 'y')
     ... # )
     >>> # ds = ds.shuffle(3)
     >>> # ds = ds.batch(2)
