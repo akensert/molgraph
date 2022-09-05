@@ -103,18 +103,16 @@ def write(
     input_keys = list(inputs.keys())
     inputs = list(inputs.values())
 
-    directory = os.path.dirname(path)
+    os.makedirs(path, exist_ok=True)
 
-    os.makedirs(directory, exist_ok=True)
+    _specs_to_json(spec, os.path.join(path, 'spec.json'))
 
-    _specs_to_json(spec, os.path.join(directory, 'spec.json'))
-
-    path = [
-        os.path.join(directory, f'tfrecord-{i:04d}.tfrecord')
+    paths = [
+        os.path.join(path, f'tfrecord-{i:04d}.tfrecord')
         for i in range(num_files)
     ]
 
-    inputs.insert(0, path)
+    inputs.insert(0, paths)
 
     with multiprocessing.Pool(processes) as pool:
         pool.map(
@@ -130,7 +128,7 @@ def write(
 def load(
     path: str,
     extract_tuple: Optional[Union[List[str], Tuple[str]]] = None,
-    shuffle_tfrecords: bool = False,
+    shuffle_tf_records: bool = False,
 ) -> tf.data.Dataset:
     '''Loads TF records.
 
@@ -153,7 +151,7 @@ def load(
             dataset will produce dictionaries (corresponding to ``inputs``
             passed to ``write``). If not None, tuples will be produced.
             Default to None.
-        shuffle_tfrecords (bool):
+        shuffle_tf_records (bool):
             Whether tf record files should be shuffled. Default to False.
             Recommended to be set to True when loading training dataet.
 
@@ -165,7 +163,7 @@ def load(
     filenames = sorted(filenames)
     num_files = len(filenames)
     dataset = tf.data.Dataset.from_tensor_slices(filenames)
-    if shuffle_tfrecords:
+    if shuffle_tf_records:
         dataset = dataset.shuffle(num_files)
     dataset = dataset.interleave(
         tf.data.TFRecordDataset, num_parallel_calls=tf.data.AUTOTUNE)

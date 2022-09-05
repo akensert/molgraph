@@ -14,6 +14,7 @@ import multiprocessing
 from functools import partial
 import logging
 import collections
+import os
 
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
@@ -38,7 +39,6 @@ class BaseMolecularGraphEncoder(ABC):
     def call(
         self,
         molecule: Union[str, Chem.Mol],
-        device: str = '/cpu:0',
         **kwargs,
     ) -> GraphTensor:
         pass
@@ -76,26 +76,26 @@ class BaseMolecularGraphEncoder(ABC):
             GraphTensor: A single ``GraphTensor`` representing the
             molecule(s) inputted.
         '''
-        if isinstance(inputs, (list, tuple, set, np.ndarray)):
+        with tf.device(device):
+            if isinstance(inputs, (list, tuple, set, np.ndarray)):
+                # Convert a list of inputs to a list of `GraphTensor`s.
+                # To lower the run-time, multiprocessing is used.
+                with multiprocessing.Pool(processes) as pool:
+                    graph_tensor_list = pool.map(
+                        func=partial(self.call, **kwargs),
+                        iterable=inputs
+                    )
 
-            # Convert a list of inputs to a list of `GraphTensor`s.
-            # To lower the run-time, multiprocessing is used.
-            with multiprocessing.Pool(processes) as pool:
-                graph_tensor_list = pool.map(
-                    func=partial(self.call, device=device, **kwargs),
-                    iterable=inputs
-                )
+                graph_tensor_list = [
+                    gt for gt in graph_tensor_list if gt is not None]
 
-            graph_tensor_list = [
-                gt for gt in graph_tensor_list if gt is not None]
+                # The list of `GraphTensor`s is concatenated to generate a single
+                # `GraphTensor` (disjoint [molecular] graph). The `separate` method
+                # is called to make the nested structures of the `GraphTensor`
+                # ragged. This will allow for batching of the `GraphTensor`.
+                return tf.concat(graph_tensor_list, axis=0).separate()
 
-            # The list of `GraphTensor`s is concatenated to generate a single
-            # `GraphTensor` (disjoint [molecular] graph). The `separate` method
-            # is called to make the nested structures of the `GraphTensor`
-            # ragged. This will allow for batching of the `GraphTensor`.
-            return tf.concat(graph_tensor_list, axis=0).separate()
-
-        return self.call(inputs, device=device, **kwargs)
+            return self.call(inputs, **kwargs)
 
 
 @dataclass
@@ -255,56 +255,53 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     def call(
         self,
         molecule: Union[str, Chem.Mol],
-        device: str = '/cpu:0',
         index_dtype: str = 'int32'
     ) -> GraphTensor:
 
-        with tf.device(device):
+        # Convert string (SMILES or InChI) to RDKit mol if necessary
+        if not isinstance(molecule, (str, Chem.Mol)):
+            raise ValueError(
+                "`molecule` needs to be a string or " +
+                "a RDKit molecule object (`Chem.Mol`), " +
+                "not {}".format(type(molecule))
+            )
 
-            # Convert string (SMILES or InChI) to RDKit mol if necessary
-            if not isinstance(molecule, (str, Chem.Mol)):
-                raise ValueError(
-                    "`molecule` needs to be a string or " +
-                    "a RDKit molecule object (`Chem.Mol`), " +
-                    "not {}".format(type(molecule))
-                )
+        if not isinstance(molecule, Chem.Mol):
+            molecule = self.molecule_from_string_fn(molecule)
 
-            if not isinstance(molecule, Chem.Mol):
-                molecule = self.molecule_from_string_fn(molecule)
+        if molecule is None:
+            raise ValueError(
+                f"Could not convert input ({format}) to an RDKit mol")
 
-            if molecule is None:
-                raise ValueError(
-                    f"Could not convert input ({format}) to an RDKit mol")
+        # Initialize data dictionary
+        data = {}
 
-            # Initialize data dictionary
-            data = {}
+        # Obtain destination and source node (atom) indices of edges (bonds)
+        sparse_adjacency = _compute_adjacency(
+            molecule, self.self_loops, sparse=True, dtype=index_dtype)
+        data['edge_dst'], data['edge_src'] = sparse_adjacency
 
-            # Obtain destination and source node (atom) indices of edges (bonds)
-            sparse_adjacency = _compute_adjacency(
-                molecule, self.self_loops, sparse=True, dtype=index_dtype)
-            data['edge_dst'], data['edge_src'] = sparse_adjacency
+        # Obtain node (atom) features
+        atoms = _get_atoms(molecule)
+        data['node_feature'] = self.atom_encoder(atoms)
 
-            # Obtain node (atom) features
-            atoms = _get_atoms(molecule)
-            data['node_feature'] = self.atom_encoder(atoms)
+        # Obtain edge (bond) features (if `bond_encoder` exist)
+        if self.bond_encoder is not None:
+            bonds = _get_bonds(molecule, *sparse_adjacency)
+            data['edge_feature'] = self.bond_encoder(bonds)
 
-            # Obtain edge (bond) features (if `bond_encoder` exist)
-            if self.bond_encoder is not None:
-                bonds = _get_bonds(molecule, *sparse_adjacency)
-                data['edge_feature'] = self.bond_encoder(bonds)
+        # Obtain positional encoding of nodes (atoms)
+        if self.positional_encoding_dim:
+            data['positional_encoding'] = _compute_positional_encoding(
+                molecule=molecule,
+                dim=self.positional_encoding_dim,
+                dtype=getattr(self.atom_encoder, 'dtype', 'float32'))
 
-            # Obtain positional encoding of nodes (atoms)
-            if self.positional_encoding_dim:
-                data['positional_encoding'] = _compute_positional_encoding(
-                    molecule=molecule,
-                    dim=self.positional_encoding_dim,
-                    dtype=getattr(self.atom_encoder, 'dtype', 'float32'))
+        if self.auxiliary_encoders is not None:
+            for field, encoder in self.auxiliary_encoders.items():
+                data[field] = encoder(molecule)
 
-            if self.auxiliary_encoders is not None:
-                for field, encoder in self.auxiliary_encoders.items():
-                    data[field] = encoder(molecule)
-
-            return GraphTensor(data)
+        return GraphTensor(data)
 
 
 @dataclass
@@ -381,46 +378,43 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
     def call(
         self,
         molecule: str,
-        device: str = '/cpu:0',
         index_dtype: str = 'int32'
     ) -> GraphTensor:
 
-        with tf.device(device):
+        if self.conformer_generator is not None:
+            molecule = self.conformer_generator(molecule)
+        else:
+            molecule = self.molecule_from_string_fn(molecule)
 
-            if self.conformer_generator is not None:
-                molecule = self.conformer_generator(molecule)
-            else:
-                molecule = self.molecule_from_string_fn(molecule)
+        if molecule is None:
+            raise ValueError(
+                f"Could not convert input ({format}) to an RDKit mol")
 
-            if molecule is None:
-                raise ValueError(
-                    f"Could not convert input ({format}) to an RDKit mol")
+        # Initialize data dictionary
+        data = {}
 
-            # Initialize data dictionary
-            data = {}
+        dg = _compute_distance_geometry(
+            molecule, radius=self.edge_radius)
 
-            dg = _compute_distance_geometry(
-                molecule, radius=self.edge_radius)
+        atoms = _get_atoms(molecule)
+        data['node_feature'] = self.atom_encoder(atoms)
+        data['edge_dst'] = np.array(dg['edge_dst'], dtype=index_dtype)
+        data['edge_src'] = np.array(dg['edge_src'], dtype=index_dtype)
 
-            atoms = _get_atoms(molecule)
-            data['node_feature'] = self.atom_encoder(atoms)
-            data['edge_dst'] = np.array(dg['edge_dst'], dtype=index_dtype)
-            data['edge_src'] = np.array(dg['edge_src'], dtype=index_dtype)
+        if not self.coulomb:
+            edge_feature = np.expand_dims(dg['edge_length'], -1)
+        else:
+            nuclear_charge = np.array([
+                atom.GetAtomicNum() for atom in atoms], dtype=np.float32)
+            nuclear_charge_dst = np.take(nuclear_charge, dg['edge_dst'])
+            nuclear_charge_src = np.take(nuclear_charge, dg['edge_src'])
+            edge_feature = (
+                nuclear_charge_dst * nuclear_charge_src) / dg['edge_length']
+            edge_feature = np.expand_dims(edge_feature, -1)
 
-            if not self.coulomb:
-                edge_feature = np.expand_dims(dg['edge_length'], -1)
-            else:
-                nuclear_charge = np.array([
-                    atom.GetAtomicNum() for atom in atoms], dtype=np.float32)
-                nuclear_charge_dst = np.take(nuclear_charge, dg['edge_dst'])
-                nuclear_charge_src = np.take(nuclear_charge, dg['edge_src'])
-                edge_feature = (
-                    nuclear_charge_dst * nuclear_charge_src) / dg['edge_length']
-                edge_feature = np.expand_dims(edge_feature, -1)
+        data['edge_feature'] = np.array(edge_feature, dtype=np.float32)
 
-            data['edge_feature'] = np.array(edge_feature, dtype=np.float32)
-
-            return GraphTensor(data)
+        return GraphTensor(data)
 
 
 def _get_atoms(molecule: Chem.Mol) -> List[Chem.Atom]:
