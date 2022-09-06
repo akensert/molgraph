@@ -259,6 +259,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
         self._spec = GraphTensorSpec(spec)
         self._data = data
 
+    # TODO: modify spec accordingly
     def update(self, new_data: NestedArrays) -> 'GraphTensor':
         '''Updates existing data fields or adds new data fields.
 
@@ -319,6 +320,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
                     lambda: convert_tensor(new_value, data['edge_dst']))
         return self.__class__(data)
 
+    # TODO: modify spec accordingly
     def remove(
         self,
         fields: Union[str, List[str]]
@@ -375,6 +377,12 @@ class GraphTensor(composite_tensor.CompositeTensor):
         _assert_separable(self._data)
 
         data = self._data.copy()
+
+        if 'graph_indicator' not in data:
+            return self.__class__(
+                tf.nest.map_structure(
+                    lambda x: tf.RaggedTensor.from_row_starts(x, [0]),
+                    data))
 
         graph_indicator = data.pop('graph_indicator')
         edge_dst = data.pop('edge_dst')
@@ -474,7 +482,10 @@ class GraphTensor(composite_tensor.CompositeTensor):
     def num_subgraphs(self):
         if 'graph_indicator' in self._data:
             return tf.math.reduce_max(self._data['graph_indicator']) + 1
-        return self._data['node_feature'].nrows()
+        elif isinstance(self._data['node_feature'], tf.RaggedTensor):
+            return self._data['node_feature'].nrows()
+        else:
+            return tf.constant(1, dtype=self._data['edge_dst'].dtype)
 
     def __getattr__(self, name: str) -> Union[tf.Tensor, tf.RaggedTensor, Any]:
         '''Extract data fields as an attribute.
@@ -626,7 +637,7 @@ class GraphTensorSpec(type_spec.BatchableTypeSpec):
 
     def _from_components(self, components: NestedTensors) -> GraphTensor:
         # ExtensionType API
-        return self.value_type(components)
+        return self.value_type(components, self._data_spec)
 
     def _batch(self, batch_size: Union[int, None]) -> 'GraphTensorSpec':
         # BatchableExtensionType API
@@ -769,7 +780,8 @@ def _maybe_add_graph_indicator(
     'Maybe adds `graph_indicator` to data and spec.'
     if (
         'graph_indicator' not in data and
-        isinstance(data['node_feature'], tf.Tensor)
+        isinstance(data['node_feature'], tf.Tensor) and
+        not isinstance(spec['node_feature'], tf.RaggedTensorSpec)
     ):
         data['graph_indicator'] = tf.zeros(
             tf.shape(data['node_feature'])[0],

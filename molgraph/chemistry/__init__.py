@@ -9,6 +9,8 @@ from molgraph.chemistry.atomic.featurizers import BondFeaturizer
 from molgraph.chemistry.atomic.tokenizers import AtomTokenizer
 from molgraph.chemistry.atomic.tokenizers import BondTokenizer
 
+from molgraph.chemistry import vis
+from molgraph.chemistry import ops
 from molgraph.chemistry.ops import molecule_from_string
 from molgraph.chemistry.atomic import features
 from molgraph.chemistry.atomic.features import AtomicFeature
