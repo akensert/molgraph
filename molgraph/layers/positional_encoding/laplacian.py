@@ -109,15 +109,15 @@ class LaplacianPositionalEncoding(layers.Layer):
         self._positional_encoding_precomputed = False
         self._node_feature_shape = None
         self._positional_encoding_shape = None
-        self._built_from_signature = False
+        self._built = False
 
-    def _build_from_signature(
+    def _build(
         self,
         node_feature: Union[tf.Tensor, tf.TensorShape],
         positional_encoding: Optional[Union[tf.Tensor, tf.TensorShape]] = None
     ) -> None:
         'Custom build method for building the layer.'
-        self._built_from_signature = True
+        self._built = True
 
         if hasattr(node_feature, "shape"):
             self._node_feature_shape = tf.TensorShape(node_feature.shape)
@@ -153,7 +153,7 @@ class LaplacianPositionalEncoding(layers.Layer):
 
         This method should not be called directly, but indirectly
         via ``__call__()``. Upon first call, the layer is automatically
-        built via ``_build_from_signature()``.
+        built via ``_build()``.
 
         Args:
             tensor (GraphTensor):
@@ -167,8 +167,8 @@ class LaplacianPositionalEncoding(layers.Layer):
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()
 
-        if not self._built_from_signature:
-            self._build_from_signature(
+        if not self._built:
+            self._build(
                 getattr(tensor, 'node_feature', None),
                 getattr(tensor, 'positional_encoding', None)
             )
@@ -194,9 +194,9 @@ class LaplacianPositionalEncoding(layers.Layer):
         positional_encoding_shape = config.pop("positional_encoding_shape")
         layer = cls(**config)
         if node_feature_shape is None:
-            pass # TODO(akensert): add warning message about not restoring weights
+            pass
         else:
-            layer._build_from_signature(
+            layer._build(
                 node_feature_shape, positional_encoding_shape
             )
         return layer

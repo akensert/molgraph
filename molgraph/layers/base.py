@@ -70,7 +70,7 @@ class BaseLayer(layers.Layer, ABC):
         self._activity_regularizer = regularizers.get(activity_regularizer)
         self._kernel_constraint = constraints.get(kernel_constraint)
         self._bias_constraint = constraints.get(bias_constraint)
-        self._built_from_signature = False
+        self._built = False
         self._node_feature_shape, self._edge_feature_shape = None, None
 
     @abstractmethod
@@ -90,7 +90,7 @@ class BaseLayer(layers.Layer, ABC):
 
         This method should not be called directly, but indirectly
         via ``__call__()``. Upon first call, the layer is automatically
-        built via ``_build_from_signature()``.
+        built via ``_build()``.
 
         Args:
             tensor (GraphTensor):
@@ -106,8 +106,8 @@ class BaseLayer(layers.Layer, ABC):
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()
 
-        if not self._built_from_signature:
-            self._build_from_signature(
+        if not self._built:
+            self._build(
                 getattr(tensor, 'node_feature', None),
                 getattr(tensor, 'edge_feature', None)
             )
@@ -120,13 +120,13 @@ class BaseLayer(layers.Layer, ABC):
             k not in ['edge_dst', 'edge_src', 'graph_indicator']
         })
 
-    def _build_from_signature(
+    def _build(
         self,
         node_feature: Union[tf.Tensor, Shape],
         edge_feature: Optional[Union[tf.Tensor, Shape]] = None
     ) -> None:
         'Custom build method for building the layer.'
-        self._built_from_signature = True
+        self._built = True
 
         if hasattr(node_feature, "shape"):
             self._node_feature_shape = tf.TensorShape(node_feature.shape)
@@ -314,9 +314,9 @@ class BaseLayer(layers.Layer, ABC):
         edge_feature_shape = config.pop('edge_feature_shape')
         layer = cls(**config)
         if None in [node_feature_shape, edge_feature_shape]:
-            pass # TODO(akensert): add warning message about not restoring weights
+            pass
         else:
-            layer._build_from_signature(node_feature_shape, edge_feature_shape)
+            layer._build(node_feature_shape, edge_feature_shape)
         return layer
 
     def get_config(self) -> Config:

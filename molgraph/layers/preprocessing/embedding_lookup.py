@@ -217,7 +217,7 @@ class EmbeddingLookup(layers.StringLookup):
         vocabulary_size = config.pop('vocabulary_size')
         layer = cls(**config)
         if vocabulary_size is None:
-            pass # TODO(akensert): add warning message about not restoring weights
+            pass
         else:
             layer._build_from_vocabulary_size(vocabulary_size)
         return layer

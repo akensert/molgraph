@@ -38,8 +38,8 @@ class TransformerEncoderReadout(layers.Layer):
     (None, 2)
 
     Args:
-        units (int):
-            Number of output units. Default to 256.
+        hidden_units (int):
+            Number of hidden units (of the feedforward network).
         num_heads (int):
             Number of attention heads. Default to 8.
         activation (str, tf.keras.activations.Activation, None):
@@ -48,24 +48,24 @@ class TransformerEncoderReadout(layers.Layer):
 
     def __init__(
         self,
-        units: int = 256,
+        hidden_units: int = 256,
         num_heads: int = 8,
         activation: Union[
             None, str, Callable[[tf.Tensor], tf.Tensor]] = 'relu',
         **kwargs
     ):
         super().__init__(**kwargs)
-        self.units = units
+        self.hidden_units = hidden_units
         self.num_heads = num_heads
         self.activation = activations.get(activation)
         self.layernorm_1 = keras.layers.LayerNormalization()
         self.layernorm_2 = keras.layers.LayerNormalization()
         self.average_pooling = keras.layers.GlobalAveragePooling1D()
 
-        self._built_from_signature = False
+        self._built = False
         self._node_feature_shape = None
 
-    def _build_from_signature(
+    def _build(
         self,
         node_feature: Union[tf.Tensor, tf.TensorShape]
     ) -> None:
@@ -77,7 +77,7 @@ class TransformerEncoderReadout(layers.Layer):
                 GraphTensor, or the node_feature field itself.
         '''
 
-        self._built_from_signature = True
+        self._built = True
 
         if hasattr(node_feature, "shape"):
             self._node_feature_shape = tf.TensorShape(node_feature.shape)
@@ -92,7 +92,7 @@ class TransformerEncoderReadout(layers.Layer):
             self.attention._build_from_signature(
                 self._node_feature_shape, self._node_feature_shape)
             self.projection = keras.Sequential([
-                keras.layers.Dense(self.units, self.activation),
+                keras.layers.Dense(self.hidden_units, self.activation),
                 keras.layers.Dense(node_dim)])
 
     def call(self, tensor: GraphTensor) -> tf.Tensor:
@@ -100,7 +100,7 @@ class TransformerEncoderReadout(layers.Layer):
 
         This method should not be called directly, but indirectly
         via ``__call__()``. Upon first call, the layer is automatically
-        built via ``_build_from_signature()``.
+        built via ``_build()``.
 
         Args:
             tensor (GraphTensor):
@@ -119,8 +119,8 @@ class TransformerEncoderReadout(layers.Layer):
 
         x = node_feature.to_tensor()
 
-        if not self._built_from_signature:
-            self._build_from_signature(x)
+        if not self._built:
+            self._build(x)
 
         # Compute padding mask for attention layer
         padding_mask = tf.reduce_any(tf.not_equal(x, 0.0), axis=-1)
@@ -142,7 +142,7 @@ class TransformerEncoderReadout(layers.Layer):
     def get_config(self):
         config = super().get_config()
         config.update({
-            'units': self.units,
+            'hidden_units': self.hidden_units,
             'num_heads': self.num_heads,
             'activation': activations.serialize(self.activation),
             'node_feature_shape': self._node_feature_shape,
@@ -154,7 +154,7 @@ class TransformerEncoderReadout(layers.Layer):
         node_feature_shape = config.pop("node_feature_shape")
         layer = cls(**config)
         if node_feature_shape is None:
-            pass # TODO(akensert): add warning message about not restoring weights
+            pass
         else:
-            layer._build_from_signature(node_feature_shape)
+            layer._build(node_feature_shape)
         return layer
