@@ -384,6 +384,8 @@ class GraphTensor(composite_tensor.CompositeTensor):
                     lambda x: tf.RaggedTensor.from_row_starts(x, [0]),
                     data))
 
+        data = _remove_intersubgraph_edges(data)
+
         graph_indicator = data.pop('graph_indicator')
         edge_dst = data.pop('edge_dst')
         edge_src = data.pop('edge_src')
@@ -665,6 +667,18 @@ class GraphTensorSpec(type_spec.BatchableTypeSpec):
         # Legacy method of ExtensionType API
         return self
 
+
+def _remove_intersubgraph_edges(data: NestedTensors) -> NestedTensors:
+    '''Removes edges that connects two different subgraphs.
+
+    Applied only when graph_tensor.separate() is called
+    '''
+    subgraphs_dst = tf.gather(data['graph_indicator'], data['edge_dst'])
+    subgraphs_src = tf.gather(data['graph_indicator'], data['edge_src'])
+    mask = tf.where((subgraphs_dst - subgraphs_src) == 0, True, False)
+    data['edge_dst'] = tf.boolean_mask(data['edge_dst'], mask)
+    data['edge_src'] = tf.boolean_mask(data['edge_src'], mask)
+    return data
 
 def _maybe_convert_to_tensors(
     data: NestedArrays,

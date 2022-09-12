@@ -328,6 +328,26 @@ def test_update_method(graph_tensor) -> None:
     assert not tf.reduce_all(graph_tensor.node_feature == node_feature_merged)
 
 @pytest.mark.parametrize('graph_tensor', [graph_tensor])
+def test_intersubgraph_edges(graph_tensor) -> None:
+    graph_tensor = GraphTensor(
+        data={
+            'edge_dst': [0, 1, 1, 2, 3, 1, 4, 4],
+            'edge_src': [1, 0, 3, 4, 2, 4, 3, 1],
+            'node_feature': [
+                [1.0, 0.0],
+                [1.0, 0.0],
+                [1.0, 0.0],
+                [1.0, 0.0],
+                [0.0, 1.0]
+            ],
+            'graph_indicator': [0, 0, 1, 1, 1],
+        }
+    )
+    graph_tensor = graph_tensor.separate().merge()
+    assert tf.reduce_all(graph_tensor.edge_dst == tf.constant([0, 1, 2, 3, 4]))
+    assert tf.reduce_all(graph_tensor.edge_src == tf.constant([1, 0, 4, 2, 3]))
+
+@pytest.mark.parametrize('graph_tensor', [graph_tensor])
 def test_update_method_2(graph_tensor) -> None:
 
     GraphTensor(
