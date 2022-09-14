@@ -36,16 +36,13 @@ class BaseMolecularGraphEncoder(ABC):
     atom_encoder: Union[AtomicFeaturizer, AtomicTokenizer, Callable]
 
     @abstractmethod
-    def call(
-        self,
-        molecule: Union[str, Chem.Mol],
-        **kwargs,
-    ) -> GraphTensor:
+    def call(self, molecule, **kwargs) -> GraphTensor:
         pass
 
     def __call__(
         self,
         inputs: Sequence[Union[str, Chem.Mol]],
+        *,
         processes: Optional[int] = None,
         device: str = '/cpu:0',
         **kwargs,
@@ -77,14 +74,14 @@ class BaseMolecularGraphEncoder(ABC):
             molecule(s) inputted.
         '''
         with tf.device(device):
+
             if isinstance(inputs, (list, tuple, set, np.ndarray)):
                 # Convert a list of inputs to a list of `GraphTensor`s.
                 # To lower the run-time, multiprocessing is used.
                 with multiprocessing.Pool(processes) as pool:
                     graph_tensor_list = pool.map(
                         func=partial(self.call, **kwargs),
-                        iterable=inputs
-                    )
+                        iterable=inputs)
 
                 graph_tensor_list = [
                     gt for gt in graph_tensor_list if gt is not None]
@@ -96,7 +93,6 @@ class BaseMolecularGraphEncoder(ABC):
                 return tf.concat(graph_tensor_list, axis=0).separate()
 
             return self.call(inputs, **kwargs)
-
 
 @dataclass
 class MolecularGraphEncoder(BaseMolecularGraphEncoder):
@@ -255,6 +251,7 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     def call(
         self,
         molecule: Union[str, Chem.Mol],
+        *,
         index_dtype: str = 'int32'
     ) -> GraphTensor:
 
@@ -378,6 +375,7 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
     def call(
         self,
         molecule: str,
+        *,
         index_dtype: str = 'int32'
     ) -> GraphTensor:
 
@@ -418,8 +416,7 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
 
 
 def _get_atoms(molecule: Chem.Mol) -> List[Chem.Atom]:
-    """Returns a list of atoms given an RDKit mol object.
-    """
+    'Returns a list of atoms given an RDKit mol object.'
     return list(molecule.GetAtoms())
 
 def _get_bonds(
@@ -427,10 +424,10 @@ def _get_bonds(
     edge_dst: np.ndarray,
     edge_src: np.ndarray
 ) -> List[Chem.Bond]:
-    """Returns a list of bonds given an RDKit mol object. The order of the
+    '''Returns a list of bonds given an RDKit mol object. The order of the
     bonds in the list corresponds to the sparse adjacency matrix which is
     also part of the resulting `GraphTensor`.
-    """
+    '''
     return [
         molecule.GetBondBetweenAtoms(int(i), int(j))
         for (i, j) in zip(edge_dst, edge_src)
@@ -441,13 +438,13 @@ def _compute_positional_encoding(
     dim: int = 20,
     dtype: np.dtype = np.float32,
 ) -> np.ndarray:
-    """Computes Laplacian positional encoding from a RDKit molecule object.
+    '''Computes Laplacian positional encoding from a RDKit molecule object.
 
     The laplacian positional encoding encodes the position of nodes (atoms) in
-    the molecular graph. This could be seen as a replacement for the typical
+    the molecular graph. This could be seen as a replacement for the
     positional encoding of the transformer models for natural language
     processing tasks (e.g. BERT).
-    """
+    '''
 
     # If the molecule only has one atom, return a zero vector
     if molecule.GetNumAtoms() <= 1:
@@ -478,9 +475,9 @@ def _compute_sorted_eigen_vectors(
     laplacian: np.ndarray,
     dtype: np.dtype = np.float32
 ) -> np.ndarray:
-    """Computes eigen vectors of the laplacian matrix, sorted by the
+    '''Computes eigen vectors of the laplacian matrix, sorted by the
     eigen values.
-    """
+    '''
     eigen_values, eigen_vectors = np.linalg.eig(laplacian)
     indices = eigen_values.argsort()
     eigen_values = eigen_values[indices]
@@ -493,9 +490,7 @@ def _compute_adjacency(
     sparse: bool = False,
     dtype: np.dtype = np.int32,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Computes an adjacency matrix or a sparse adjacency matrix from an
-    RDKit molecule object.
-    """
+    'Computes (sparse) adjacency matrix from an RDKit molecule object.'
 
     adjacency = Chem.GetAdjacencyMatrix(molecule)
 
@@ -513,8 +508,7 @@ def _compute_laplacian(
     adjacency: np.ndarray,
     dtype: np.dtype = np.float32
 ) -> np.ndarray:
-    """Computes the laplacian matrix an adjacency matrix
-    """
+    'Computes the laplacian matrix an adjacency matrix.'
     degree = np.sum(adjacency, axis=1)
     degree = np.sqrt(degree)
     degree = np.divide(1., degree, out=np.zeros_like(degree), where=degree!=0)
@@ -529,7 +523,7 @@ def _compute_distance_between_atoms(
     edge_src: int,
     unit: str
 ) -> float:
-    '''Computes distance between two atoms in the molecule'''
+    'Computes distance between two atoms in the molecule.'
     bond_length = Chem.rdMolTransforms.GetBondLength(
         molecule.GetConformer(), edge_dst, edge_src)
     if unit.lower() == 'bohr':
