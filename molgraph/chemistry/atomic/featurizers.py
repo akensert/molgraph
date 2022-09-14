@@ -99,7 +99,7 @@ class AtomicFeaturizer:
         Returns:
             np.ndarray: numerical encodings of atom(s) or bond(s).
         '''
-        if isinstance(inputs, Chem.rdchem._ROAtomSeq):
+        if isinstance(inputs, (Chem.rdchem._ROAtomSeq, Chem.rdchem._ROBondSeq)):
             inputs = list(inputs)
 
         if not isinstance(inputs, (list, tuple, set, np.ndarray)):

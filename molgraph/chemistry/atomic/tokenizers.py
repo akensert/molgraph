@@ -67,7 +67,7 @@ class AtomicTokenizer:
         Returns:
             np.ndarray: Token encoding of atom(s) or bond(s).
         '''
-        if isinstance(inputs, Chem.rdchem._ROAtomSeq):
+        if isinstance(inputs, (Chem.rdchem._ROAtomSeq, Chem.rdchem._ROBondSeq)):
             inputs = list(inputs)
 
         if not isinstance(inputs, (list, tuple, set, np.ndarray)):
@@ -119,6 +119,7 @@ class BondTokenizer(AtomicTokenizer):
         super().__init__(features)
         warn(f'{self.__class__.__name__} will be deprecated in the near future',
             DeprecationWarning, stacklevel=2)
+
 
 def _validate_features(features: List[AtomicFeature]):
     dummy_mol = Chem.MolFromSmiles('CC')
