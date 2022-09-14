@@ -166,7 +166,7 @@ def load(
     if shuffle_tf_records:
         dataset = dataset.shuffle(num_files)
     dataset = dataset.interleave(
-        tf.data.TFRecordDataset, num_parallel_calls=tf.data.AUTOTUNE)
+        tf.data.TFRecordDataset, num_parallel_calls=1)
     dataset = dataset.map(
         partial(_parse_features, specs=specs, extract_tuple=extract_tuple),
         num_parallel_calls=tf.data.AUTOTUNE)
@@ -185,13 +185,13 @@ def write_from_dataset(
         write(path_subset, value, encoder, num_files, processes, device)
 
 def _serialize_example(feature: Dict[str, tf.train.Feature]) -> bytes:
-    """Converts a dictionary of str:feature pairs to a bytes string."""
+    'Converts a dictionary of str:feature pairs to a bytes string.'
     example_proto = tf.train.Example(
         features=tf.train.Features(feature=feature))
     return example_proto.SerializeToString()
 
 def _to_bytes_feature(value: Union[tf.Tensor, np.ndarray]) -> tf.train.Feature:
-    """Encodes array as a bytes feature."""
+    'Encodes array as a bytes feature.'
     value = tf.io.serialize_tensor(value)
     value = value.numpy()
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
@@ -237,9 +237,9 @@ def _write_tfrecords_to_file(
     encoder: Union[MolecularGraphEncoder, MolecularGraphEncoder3D],
     device: str = '/cpu:0',
 ) -> None:
-    """Writes data to a tf record file. This function is called from
+    '''Writes data to a tf record file. This function is called from
     `write_tfrecords`.
-    """
+    '''
     path, *inputs = inputs
     inputs = list(zip(*inputs))
     with tf.device(device), tf.io.TFRecordWriter(path) as writer:
