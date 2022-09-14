@@ -65,6 +65,7 @@ class SetGatherReadout(layers.Layer):
             A ``tf.Tensor`` or `tf.RaggedTensor` based on the ``node_feature``
             field of the inputted ``GraphTensor``.
         '''
+
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()
 
@@ -84,28 +85,14 @@ class SetGatherReadout(layers.Layer):
 
             # Expand carry state to match node_feature
             carry_state_expanded = tf.gather(carry_state, graph_indicator)
+            carry_state_expanded = tf.ensure_shape(
+                carry_state_expanded, (None, node_dim))
 
             # Perform a linear transformation followed by reduction
-            node_feature_reduced = tf.reduce_sum(
-                node_feature * carry_state_expanded, axis=1)
+            score = tf.reduce_sum(node_feature * carry_state_expanded, axis=1)
 
-            # Split into parts correspoding to each graph in the batch,
-            # and compute normalized attention coefficients via softmax
-            def body(i, attention_coef):
-                node_feature_partitioned = tf.gather(
-                    node_feature_reduced, tf.where(graph_indicator == i)[:, 0])
-                attention_coef = attention_coef.write(
-                    tf.cast(i, tf.int32), tf.nn.softmax(node_feature_partitioned))
-                return tf.add(i, 1), attention_coef
-
-            def cond(i, _):
-                return tf.less(i, num_graphs)
-
-            i = tf.constant(0, dtype=graph_indicator.dtype)
-            attention_coef = tf.TensorArray(
-                tf.float32, size=0, dynamic_size=True, infer_shape=False)
-            _, attention_coef = tf.while_loop(cond, body, [i, attention_coef])
-            attention_coef = tf.reshape(attention_coef.concat(), (-1, 1))
+            # Compute softmax for each subgraph
+            attention_coef = self._softmax(score, graph_indicator)
 
             # Apply attention to node features, and sum based on graph_indicator
             attention_readout = tf.math.segment_sum(
@@ -120,6 +107,12 @@ class SetGatherReadout(layers.Layer):
                 memory_state, carry_state_evolved])
 
         return carry_state_evolved
+
+    @staticmethod
+    def _softmax(score, value_rowids):
+        score = tf.RaggedTensor.from_value_rowids(score, value_rowids)
+        score = tf.nn.softmax(score)
+        return tf.expand_dims(score.flat_values, axis=1)
 
     def compute_output_shape(self, input_shape):
         input_shape[-1] = int(input_shape[-1] * 2)
