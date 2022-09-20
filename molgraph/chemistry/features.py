@@ -48,43 +48,6 @@ _defaults = {
 }
 
 
-
-
-
-class maybe_cache:
-
-    def __init__(self, func):
-        self._cache = {}
-        self._func = func
-
-    def __get__(self, obj, _):
-        return partial(self.__call__, obj)
-
-    def __call__(self, obj, *args, **kwargs):
-
-        if len(args):
-            x = args[0]
-        else:
-            if 'bond' in kwargs:
-                x = kwargs.pop('bond')
-            else:
-                x = kwargs.pop('atom')
-
-        if not x.HasProp('hexid'):
-            return self._func(obj, x)
-
-        key = x.GetProp('hexid')
-
-        if key not in self._cache:
-            if len(self._cache) > 0:
-                self._cache.clear()
-            output = self._func(obj, x)
-            self._cache[key] = output
-            return output
-
-        return self._cache[key]
-
-
 class Feature(ABC):
 
     '''Atomic feature.
@@ -199,8 +162,6 @@ class Feature(ABC):
                 self.oov_size = 0
             else:
                 self.oov_size = oov_size
-
-        self._cache_stage = 2
 
     @abstractmethod
     def __call__(self, inputs: Union[Chem.Atom, Chem.Bond]) -> str:
