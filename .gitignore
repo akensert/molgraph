@@ -19,6 +19,7 @@ molgraph/tensors/_[a-z]*
 *.pb
 _old*
 docs/source/examples/_*.ipynb
+docs/source/examples/tutorials/_*.ipynb
 
 # jupyter
 MANIFEST
