@@ -7,24 +7,23 @@ import shutil
 import numpy as np
 
 from molgraph import layers
-from molgraph.chemistry.molecular_encoders import MolecularGraphEncoder
-from molgraph.chemistry.atomic.featurizers import AtomicFeaturizer
-from molgraph.chemistry.atomic import features
-
+from molgraph.chemistry import MolecularGraphEncoder
+from molgraph.chemistry import Featurizer
+from molgraph.chemistry import features
 from molgraph import layers as gnn_layers
 
 
 import pytest
 
 # Define atomic encoders
-atom_encoder = AtomicFeaturizer([
+atom_encoder = Featurizer([
     features.Symbol({'C', 'N', 'O'}, oov_size=1),
     features.Hybridization({'SP', 'SP2', 'SP3'}, oov_size=1),
     features.HydrogenDonor(),
     features.HydrogenAcceptor(),
     features.Hetero()
 ])
-bond_encoder = AtomicFeaturizer([
+bond_encoder = Featurizer([
     features.BondType({'SINGLE', 'DOUBLE', 'TRIPLE', 'AROMATIC'}),
     features.Rotatable()
 ])

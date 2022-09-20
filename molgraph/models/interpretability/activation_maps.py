@@ -22,7 +22,7 @@ class GradientActivationMapping(keras.Model):
     **Example:**
 
     >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
-    ...     atom_encoder=molgraph.chemistry.AtomicFeaturizer([
+    ...     atom_encoder=molgraph.chemistry.Featurizer([
     ...         molgraph.chemistry.features.Symbol(),
     ...         molgraph.chemistry.features.Hybridization()
     ...     ])

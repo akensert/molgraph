@@ -27,90 +27,90 @@ Atomic
 
 Featurizer
 ==================
-.. autoclass:: molgraph.chemistry.AtomicFeaturizer()
+.. autoclass:: molgraph.chemistry.Featurizer()
   :members:  __call__,
 
 Tokenizer
 ==================
-.. autoclass:: molgraph.chemistry.AtomicTokenizer()
+.. autoclass:: molgraph.chemistry.Tokenizer()
   :members: __call__,
 
 Features
 ==================
 
-.. autoclass:: molgraph.chemistry.AtomicFeature()
+.. autoclass:: molgraph.chemistry.Feature()
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.Symbol(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.Symbol(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.Hybridization(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.Hybridization(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.CIPCode(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.CIPCode(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.ChiralCenter(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.ChiralCenter(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.FormalCharge(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.FormalCharge(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.TotalNumHs(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.TotalNumHs(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.TotalValence(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.TotalValence(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.NumRadicalElectrons(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.NumRadicalElectrons(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.Degree(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.Degree(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.Aromatic(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.Aromatic(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.Hetero(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.Hetero(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.HydrogenDonor(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.HydrogenDonor(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.HydrogenAcceptor(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.HydrogenAcceptor(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.RingSize(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.RingSize(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.Ring(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.Ring(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.CrippenLogPContribution(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.CrippenLogPContribution(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.CrippenMolarRefractivityContribution(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.CrippenMolarRefractivityContribution(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.TPSAContribution(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.TPSAContribution(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.LabuteASAContribution(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.LabuteASAContribution(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.GasteigerCharge(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.GasteigerCharge(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.BondType(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.BondType(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.Conjugated(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.Conjugated(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.Rotatable(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.Rotatable(Feature)
   :members: __call__
 
-.. autoclass:: molgraph.chemistry.features.Stereo(AtomicFeature)
+.. autoclass:: molgraph.chemistry.features.Stereo(Feature)
   :members: __call__
 
 
@@ -118,7 +118,7 @@ Features
 Chemistry ops
 **********************
 .. automodule:: molgraph.chemistry.ops
-  :members: 
+  :members:
   :member-order: bysource
 
 

@@ -4,6 +4,8 @@ from rdkit.Chem import Lipinski
 from rdkit.Chem import Crippen
 from rdkit.Chem import rdMolDescriptors
 from rdkit.Chem import rdPartialCharges
+from functools import partial
+from functools import update_wrapper
 from dataclasses import dataclass
 from dataclasses import field
 from abc import ABC
@@ -15,6 +17,7 @@ from typing import List
 from typing import Sequence
 from typing import Optional
 from typing import NewType
+
 
 
 _defaults = {
@@ -46,17 +49,17 @@ _defaults = {
 
 
 
-class AtomicFeature(ABC):
+class Feature(ABC):
 
     '''Atomic feature.
 
     Defines an atom or bond feature, which can subsequently be passed to
-    an ``chemistry.AtomicFeaturizer`` or ``chemistry.AtomicTokenizer`` to be
+    an ``chemistry.Featurizer`` or ``chemistry.Tokenizer`` to be
     featurized or tokenized respectively.
 
-    Arguments (see below) will only take effect when ``AtomicFeature`` is
-    wrapped in an ``AtomicEncoder``, which occurs automatically inside
-    ``chemistry.AtomicFeaturizer`` or ``chemistry.AtomicTokenizer``.
+    Arguments (see below) will only take effect when ``Feature`` is
+    wrapped in an ``Encoding``, which occurs automatically inside
+    ``chemistry.Featurizer`` or ``chemistry.Tokenizer``.
 
     Args:
         allowable_set (set, list, tuple, None):
@@ -72,12 +75,12 @@ class AtomicFeature(ABC):
 
     **Examples:**
 
-    Pass features to ``chemistry.AtomicFeaturizer`` to encode atom(s)
+    Pass features to ``chemistry.Featurizer`` to encode atom(s)
 
     >>> # Obtain RDKit atoms, via the RDKit API
     >>> atoms = rdkit.Chem.MolFromSmiles('COO').GetAtoms()
-    >>> # Build an atom featurizer, from AtomicFeaturizer
-    >>> atom_featurizer = molgraph.chemistry.AtomicFeaturizer([
+    >>> # Build an atom featurizer, from Featurizer
+    >>> atom_featurizer = molgraph.chemistry.Featurizer([
     ...     molgraph.chemistry.features.Symbol(
     ...         allowable_set={'C', 'O'}, oov_size=1),     # specify param
     ...     molgraph.chemistry.features.HydrogenAcceptor() # use default param
@@ -89,15 +92,15 @@ class AtomicFeature(ABC):
            [0., 0., 1., 1.]], dtype=float32)
 
 
-    Create custom features by subclassing ``chemistry.AtomicFeature``
+    Create custom features by subclassing ``chemistry.Feature``
 
-    >>> class MySymbolFeature(molgraph.chemistry.AtomicFeature):
+    >>> class MySymbolFeature(molgraph.chemistry.Feature):
     ...     def __call__(self, atom: rdkit.Chem.Atom) -> str:
     ...         return atom.GetSymbol()
     >>> # Obtain RDKit atoms, via the RDKit API
     >>> atoms = rdkit.Chem.MolFromSmiles('COO').GetAtoms()
-    >>> # Build an atom featurizer, from AtomicFeaturizer
-    >>> atom_featurizer = molgraph.chemistry.AtomicFeaturizer([
+    >>> # Build an atom featurizer, from Featurizer
+    >>> atom_featurizer = molgraph.chemistry.Featurizer([
     ...     MySymbolFeature(allowable_set={'C', 'O'}, oov_size=1),
     ...     molgraph.chemistry.features.HydrogenAcceptor()
     ... ])
@@ -167,7 +170,8 @@ class AtomicFeature(ABC):
         pass
 
     def __repr__(self):
-        fields = [f'{k}={v}' for k, v in self.__dict__.items()]
+        fields = [f'{k}={v}' for k, v in self.__dict__.items()
+                  if not k.startswith('_')]
         return self.name + '(' + ', '.join(fields) + ')'
 
     @property
@@ -175,7 +179,7 @@ class AtomicFeature(ABC):
         return self.__class__.__name__
 
 
-class AtomicFeatureFactory:
+class FeatureFactory:
 
     'A factory for atomic features.'
 
@@ -186,20 +190,20 @@ class AtomicFeatureFactory:
     def register(
         self,
         name: str
-    ) -> Callable[[AtomicFeature], AtomicFeature]:
-        '''Registers a derived class of ``AtomicFeature`` via decoration.
+    ) -> Callable[[Feature], Feature]:
+        '''Registers a derived class of ``Feature`` via decoration.
 
         **Example:**
 
         >>> @molgraph.chemistry.atom_features.register('atom_mass')
-        >>> class AtomMass(molgraph.chemistry.AtomicFeature):
+        >>> class AtomMass(molgraph.chemistry.Feature):
         ...     def __call__(self, atom: rdkit.Chem.Atom) -> float:
         ...         return atom.GetMass()
         >>> # Obtain atom mass feature
         >>> molgraph.chemistry.atom_features.get('atom_mass')
         AtomMass()
         '''
-        def wrapper(feature: AtomicFeature) -> AtomicFeature:
+        def wrapper(feature: Feature) -> Feature:
             self._add_docs(feature, self._feature_type)
             self._features[name] = feature
             return feature
@@ -212,7 +216,7 @@ class AtomicFeatureFactory:
     def get_all(
         self,
         exclude: Optional[Sequence[str]] = None
-    ) -> List[AtomicFeature]:
+    ) -> List[Feature]:
         '''Instantiates and returns all available features (see
         ``registered features``).
         '''
@@ -226,7 +230,7 @@ class AtomicFeatureFactory:
         return list(self._features.keys())
 
     @staticmethod
-    def _add_docs(feature: AtomicFeature, string: str) -> None:
+    def _add_docs(feature: Feature, string: str) -> None:
         feature.__doc__ = (
             f'''{string.capitalize()} feature.'''
         )
@@ -244,24 +248,24 @@ class AtomicFeatureFactory:
         return class_name + f'(registered_features={self.registered_features})'
 
 
-atom_features = AtomicFeatureFactory('atom')
-bond_features = AtomicFeatureFactory('bond')
+atom_features = FeatureFactory('atom')
+bond_features = FeatureFactory('bond')
 
 
 @atom_features.register(name='symbol')
-class Symbol(AtomicFeature):
+class Symbol(Feature):
     def __call__(self, atom: Chem.Atom) -> str:
         return atom.GetSymbol()
 
 
 @atom_features.register(name='hybridization')
-class Hybridization(AtomicFeature):
+class Hybridization(Feature):
     def __call__(self, atom: Chem.Atom) -> str:
         return atom.GetHybridization().name
 
 
 @atom_features.register(name='cip_code')
-class CIPCode(AtomicFeature):
+class CIPCode(Feature):
     def __call__(self, atom: Chem.Atom) -> Union[None, str]:
         if atom.HasProp("_CIPCode"):
             return atom.GetProp("_CIPCode")
@@ -269,70 +273,70 @@ class CIPCode(AtomicFeature):
 
 
 @atom_features.register(name='chiral_center')
-class ChiralCenter(AtomicFeature):
+class ChiralCenter(Feature):
     def __call__(self, atom: Chem.Atom) -> bool:
         return atom.HasProp("_ChiralityPossible")
 
 
 @atom_features.register(name='formal_charge')
-class FormalCharge(AtomicFeature):
+class FormalCharge(Feature):
     def __call__(self, atom: Chem.Atom) -> int:
         return atom.GetFormalCharge()
 
 
 @atom_features.register(name='total_num_hs')
-class TotalNumHs(AtomicFeature):
+class TotalNumHs(Feature):
     def __call__(self, atom: Chem.Atom) -> int:
         return atom.GetTotalNumHs()
 
 
 @atom_features.register(name='total_valence')
-class TotalValence(AtomicFeature):
+class TotalValence(Feature):
     def __call__(self, atom: Chem.Atom) -> int:
         return atom.GetTotalValence()
 
 
 @atom_features.register(name='num_radical_electrons')
-class NumRadicalElectrons(AtomicFeature):
+class NumRadicalElectrons(Feature):
     def __call__(self, atom: Chem.Atom) -> int:
         return atom.GetNumRadicalElectrons()
 
 
 @atom_features.register(name='degree')
-class Degree(AtomicFeature):
+class Degree(Feature):
     def __call__(self, atom: Chem.Atom) -> int:
         return atom.GetDegree()
 
 
 @atom_features.register(name='aromatic')
-class Aromatic(AtomicFeature):
+class Aromatic(Feature):
     def __call__(self, atom: Chem.Atom) -> bool:
         return atom.GetIsAromatic()
 
 
 @atom_features.register(name='hetero')
-class Hetero(AtomicFeature):
+class Hetero(Feature):
     def __call__(self, atom: Chem.Atom) -> bool:
         mol = atom.GetOwningMol()
         return atom.GetIdx() in [i[0] for i in Lipinski._Heteroatoms(mol)]
 
 
 @atom_features.register(name='hydrogen_donor')
-class HydrogenDonor(AtomicFeature):
+class HydrogenDonor(Feature):
     def __call__(self, atom: Chem.Atom) -> bool:
         mol = atom.GetOwningMol()
         return atom.GetIdx() in [i[0] for i in Lipinski._HDonors(mol)]
 
 
 @atom_features.register(name='hydrogen_acceptor')
-class HydrogenAcceptor(AtomicFeature):
+class HydrogenAcceptor(Feature):
     def __call__(self, atom: Chem.Atom) -> bool:
         mol = atom.GetOwningMol()
         return atom.GetIdx() in [i[0] for i in Lipinski._HAcceptors(mol)]
 
 
 @atom_features.register(name='ring_size')
-class RingSize(AtomicFeature):
+class RingSize(Feature):
     def __call__(self, atom: Chem.Atom) -> int:
         size = 0
         if atom.IsInRing():
@@ -342,13 +346,13 @@ class RingSize(AtomicFeature):
 
 
 @atom_features.register(name='ring')
-class Ring(AtomicFeature):
+class Ring(Feature):
     def __call__(self, atom: Chem.Atom) -> bool:
         return atom.IsInRing()
 
 
 @atom_features.register(name='crippen_log_p_contribution')
-class CrippenLogPContribution(AtomicFeature):
+class CrippenLogPContribution(Feature):
     def __call__(self, atom: Chem.Atom) -> float:
         mol = atom.GetOwningMol()
         val = Crippen._GetAtomContribs(mol)[atom.GetIdx()][0]
@@ -356,7 +360,7 @@ class CrippenLogPContribution(AtomicFeature):
 
 
 @atom_features.register(name='crippen_molar_refractivity_contribution')
-class CrippenMolarRefractivityContribution(AtomicFeature):
+class CrippenMolarRefractivityContribution(Feature):
     def __call__(self, atom: Chem.Atom) -> float:
         mol = atom.GetOwningMol()
         val = Crippen._GetAtomContribs(mol)[atom.GetIdx()][1]
@@ -364,7 +368,7 @@ class CrippenMolarRefractivityContribution(AtomicFeature):
 
 
 @atom_features.register(name='tpsa_contribution')
-class TPSAContribution(AtomicFeature):
+class TPSAContribution(Feature):
     def __call__(self, atom: Chem.Atom) -> float:
         mol = atom.GetOwningMol()
         val = rdMolDescriptors._CalcTPSAContribs(mol)[atom.GetIdx()]
@@ -372,7 +376,7 @@ class TPSAContribution(AtomicFeature):
 
 
 @atom_features.register(name='labute_asa_contribution')
-class LabuteASAContribution(AtomicFeature):
+class LabuteASAContribution(Feature):
     def __call__(self, atom: Chem.Atom) -> float:
         mol = atom.GetOwningMol()
         val = rdMolDescriptors._CalcLabuteASAContribs(mol)[0][atom.GetIdx()]
@@ -380,7 +384,7 @@ class LabuteASAContribution(AtomicFeature):
 
 
 @atom_features.register(name='gasteiger_charge')
-class GasteigerCharge(AtomicFeature):
+class GasteigerCharge(Feature):
     def __call__(self, atom: Chem.Atom) -> float:
         mol = atom.GetOwningMol()
         rdPartialCharges.ComputeGasteigerCharges(mol)
@@ -389,19 +393,19 @@ class GasteigerCharge(AtomicFeature):
 
 
 @bond_features.register(name='bond_type')
-class BondType(AtomicFeature):
+class BondType(Feature):
     def __call__(self, bond: Chem.Bond) -> str:
         return bond.GetBondType().name
 
 
 @bond_features.register(name='conjugated')
-class Conjugated(AtomicFeature):
+class Conjugated(Feature):
     def __call__(self, bond: Chem.Bond) -> bool:
         return bond.GetIsConjugated()
 
 
 @bond_features.register(name='rotatable')
-class Rotatable(AtomicFeature):
+class Rotatable(Feature):
     def __call__(self, bond: Chem.Bond) -> bool:
         mol = bond.GetOwningMol()
         atom_indices = tuple(
@@ -410,6 +414,6 @@ class Rotatable(AtomicFeature):
 
 
 @bond_features.register(name='stereo')
-class Stereo(AtomicFeature):
+class Stereo(Feature):
     def __call__(self, bond: Chem.Bond) -> str:
         return bond.GetStereo().name

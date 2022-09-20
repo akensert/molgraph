@@ -39,13 +39,13 @@ from molgraph import models
 qm7 = chemistry.datasets.get('esol')
 
 # Define molecular graph encoder
-atom_encoder = chemistry.AtomicFeaturizer([
+atom_encoder = chemistry.Featurizer([
     chemistry.features.Symbol(),
     chemistry.features.Hybridization(),
     # ...
 ])
 
-bond_encoder = chemistry.AtomicFeaturizer([
+bond_encoder = chemistry.Featurizer([
     chemistry.features.BondType(),
     # ...
 ])
@@ -72,7 +72,7 @@ gnn_model = keras.Sequential([
 # Compile, fit and evaluate
 gnn_model.compile(optimizer='adam', loss='mae')
 gnn_model.fit(x_train, y_train, epochs=50)
-gnn_model.evaluate(x_test, y_test)
+scores = gnn_model.evaluate(x_test, y_test)
 
 # Compute gradient activation maps
 gam_model = models.GradientActivationMapping(
