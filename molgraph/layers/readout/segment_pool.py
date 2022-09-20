@@ -11,6 +11,8 @@ class SegmentPoolingReadout(layers.Layer):
 
     '''Segmentation pooling for graph readout.
 
+    Alias: ``Readout``
+
     **Example:**
 
     >>> graph_tensor = molgraph.GraphTensor(
