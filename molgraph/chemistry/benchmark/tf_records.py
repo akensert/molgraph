@@ -45,11 +45,11 @@ def write(
     ...         molgraph.chemistry.features.Hybridization(),
     ...     ])
     ... )
-    >>> # molgraph.chemistry.tf_records.write(
-    ... #     path='/tmp/dummy_records/',
-    ... #     inputs={'x': x, 'y': y},
-    ... #     encoder=encoder
-    ... # )
+    >>> molgraph.chemistry.tf_records.write( # doctest: +SKIP
+    ...     path='/tmp/dummy_records/',
+    ...     inputs={'x': x, 'y': y},
+    ...     encoder=encoder
+    ... )
 
     Args:
         path (str):
@@ -134,14 +134,14 @@ def load(
 
     **Example:**
 
-    >>> # ds = molgraph.chemistry.tf_records.load(
-    ... #     path='/tmp/dummy_records/', # extract_tuple=('x', 'y')
-    ... # )
-    >>> # ds = ds.shuffle(3)
-    >>> # ds = ds.batch(2)
-    >>> # ds = ds.prefetch(-1)
-    >>> # for batch in ds.take(1):
-    >>> #     print(batch['x'])
+    >>> ds = molgraph.chemistry.tf_records.load( # doctest: +SKIP
+    ...     path='/tmp/dummy_records/', # extract_tuple=('x', 'y')
+    ... )
+    >>> ds = ds.shuffle(3) # doctest: +SKIP
+    >>> ds = ds.batch(2) # doctest: +SKIP
+    >>> ds = ds.prefetch(-1) # doctest: +SKIP
+    >>> for batch in ds.take(1): # doctest: +SKIP
+    ...     print(batch['x'])
 
     Args:
         path (str):

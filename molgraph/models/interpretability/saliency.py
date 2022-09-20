@@ -39,7 +39,7 @@ class SaliencyMapping(keras.Model):
     ...     tf.keras.layers.Dense(units=1)
     ... ])
     >>> gnn_model.compile(optimizer='adam', loss='mse')
-    >>> gnn_model.fit(esol['train']['x'], esol['train']['y'], epochs=10, verbose=0)
+    >>> _ = gnn_model.fit(esol['train']['x'], esol['train']['y'], epochs=10, verbose=0)
     >>> saliency = molgraph.models.SaliencyMapping(model=gnn_model)
     >>> # Interpretability models can only be predicted with
     >>> saliency_maps = saliency.predict(esol['test']['x'])
@@ -186,7 +186,7 @@ class IntegratedSaliencyMapping(SaliencyMapping):
     ...     tf.keras.layers.Dense(units=1, activation='sigmoid')
     ... ])
     >>> gnn_model.compile(optimizer='adam', loss='mse')
-    >>> gnn_model.fit(bbbp['train']['x'], bbbp['train']['y'], epochs=10, verbose=0)
+    >>> _ = gnn_model.fit(bbbp['train']['x'], bbbp['train']['y'], epochs=10, verbose=0)
     >>> saliency = molgraph.models.IntegratedSaliencyMapping(model=gnn_model)
     >>> # Interpretability models can only be predicted with
     >>> saliency_maps = saliency.predict(bbbp['test']['x'])
@@ -271,7 +271,7 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
     ...     tf.keras.layers.Dense(units=1)
     ... ])
     >>> gnn_model.compile(optimizer='adam', loss='mse')
-    >>> gnn_model.fit(esol['train']['x'], esol['train']['y'], epochs=10, verbose=0)
+    >>> _ = gnn_model.fit(esol['train']['x'], esol['train']['y'], epochs=10, verbose=0)
     >>> saliency = molgraph.models.SmoothGradSaliencyMapping(model=gnn_model)
     >>> # Interpretability models can only be predicted with
     >>> saliency_maps = saliency.predict(esol['test']['x'])

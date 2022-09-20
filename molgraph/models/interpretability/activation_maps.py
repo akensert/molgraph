@@ -41,7 +41,7 @@ class GradientActivationMapping(keras.Model):
     ...     tf.keras.layers.Dense(units=1)
     ... ])
     >>> gnn_model.compile(optimizer='adam', loss='mse')
-    >>> gnn_model.fit(esol['train']['x'], esol['train']['y'], epochs=10, verbose=0)
+    >>> _ = gnn_model.fit(esol['train']['x'], esol['train']['y'], epochs=10, verbose=0)
     >>> gam_model = molgraph.models.GradientActivationMapping(
     ...     model=gnn_model,
     ...     layer_names=['gcn_conv_1', 'gcn_conv_2', 'gcn_conv_3'],

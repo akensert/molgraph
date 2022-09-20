@@ -49,6 +49,42 @@ _defaults = {
 
 
 
+
+
+class maybe_cache:
+
+    def __init__(self, func):
+        self._cache = {}
+        self._func = func
+
+    def __get__(self, obj, _):
+        return partial(self.__call__, obj)
+
+    def __call__(self, obj, *args, **kwargs):
+
+        if len(args):
+            x = args[0]
+        else:
+            if 'bond' in kwargs:
+                x = kwargs.pop('bond')
+            else:
+                x = kwargs.pop('atom')
+
+        if not x.HasProp('hexid'):
+            return self._func(obj, x)
+
+        key = x.GetProp('hexid')
+
+        if key not in self._cache:
+            if len(self._cache) > 0:
+                self._cache.clear()
+            output = self._func(obj, x)
+            self._cache[key] = output
+            return output
+
+        return self._cache[key]
+
+
 class Feature(ABC):
 
     '''Atomic feature.
@@ -114,12 +150,12 @@ class Feature(ABC):
     Utilize feature factories ``chemistry.atom_features`` and
     ``chemistry.bond_features``
 
-    >>> molgraph.chemistry.bond_features.registered_features
+    >>> molgraph.chemistry.bond_features.registered_features # doctest: +SKIP
     ['bond_type',
     'conjugated',
     'rotatable',
     'stereo']
-    >>> molgraph.chemistry.atom_features.registered_features
+    >>> molgraph.chemistry.atom_features.registered_features # doctest: +SKIP
     ['symbol',
      'hybridization',
      'cip_code',
@@ -140,10 +176,10 @@ class Feature(ABC):
      'tpsa_contribution',
      'labute_asa_contribution',
      'gasteiger_charge']
-    >>> molgraph.chemistry.atom_features.get('cip_code')
-    CIPCode(allowable_set={'R', 'S', None}, ordinal=False, oov_size=0)
-    >>> molgraph.chemistry.atom_features.get('cip_code', ordinal=True)
-    CIPCode(allowable_set={'R', 'S', None}, ordinal=True, oov_size=0)
+    >>> molgraph.chemistry.atom_features.get('cip_code') # doctest: +SKIP
+    CIPCode(allowable_set={None, 'R', 'S'}, ordinal=False, oov_size=0)
+    >>> molgraph.chemistry.atom_features.get('cip_code', ordinal=True) # doctest: +SKIP
+    CIPCode(allowable_set={None, 'R', 'S'}, ordinal=True, oov_size=0)
     '''
 
     def __init__(
@@ -157,12 +193,14 @@ class Feature(ABC):
             allowable_set = _defaults.get(self.name, None)
 
         if allowable_set is not None:
-            self.allowable_set = list(allowable_set)
+            self.allowable_set = allowable_set
             self.ordinal = ordinal
             if ordinal:
                 self.oov_size = 0
             else:
                 self.oov_size = oov_size
+
+        self._cache_stage = 2
 
     @abstractmethod
     def __call__(self, inputs: Union[Chem.Atom, Chem.Bond]) -> str:

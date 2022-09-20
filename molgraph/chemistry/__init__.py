@@ -23,7 +23,3 @@ from molgraph.chemistry import features
 
 from molgraph.chemistry.benchmark.datasets import datasets
 from molgraph.chemistry.benchmark import tf_records
-
-from molgraph.chemistry import _set_logging
-
-del _set_logging

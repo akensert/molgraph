@@ -7,6 +7,7 @@ filterwarnings('ignore',
 
 import logging
 #logging.getLogger('tensorflow').setLevel(logging.ERROR)
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 def ignore_gradient_warning(record):
     # If e.g. `update_edge_features` is passed to the last GAT layer, edge
@@ -17,3 +18,7 @@ def ignore_gradient_warning(record):
     return not record.msg.startswith('Gradients do not exist for variables')
 
 logging.getLogger('tensorflow').addFilter(ignore_gradient_warning)
+
+from rdkit import RDLogger
+
+RDLogger.DisableLog("rdApp.*")

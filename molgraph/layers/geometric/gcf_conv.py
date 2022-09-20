@@ -224,7 +224,7 @@ class GCFConv(BaseLayer):
             edge_dst=tensor.edge_dst,
             edge_src=tensor.edge_src,
             edge_weight=rbf_weight,
-            aggregation_mode='mean')
+            mode='mean')
 
         if self.apply_self_projection:
             node_feature += self.self_projection(tensor.node_feature)

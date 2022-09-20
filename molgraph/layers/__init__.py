@@ -54,11 +54,6 @@ from molgraph.layers.ops import propagate_node_features
 from molgraph.layers.ops import reduce_features
 from molgraph.layers.ops import softmax_edge_weights
 
-# filter out some warnings
-from molgraph.layers import _filter_warnings
-
-del _filter_warnings
-
 # Aliases
 Readout = PoolReadout = SegmentPoolReadout = SegmentPoolingReadout
 Set2SetReadout = SetToSetReadout = SetGatherReadout

@@ -17,6 +17,12 @@ import inspect
 
 import molgraph
 
+doctest_global_setup = '''import molgraph
+import tensorflow as tf
+import rdkit
+
+tf.config.set_visible_devices([], 'GPU')'''
+
 # -- Project information -----------------------------------------------------
 
 project = 'MolGraph'
@@ -35,6 +41,7 @@ release = '0.0'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
+    'sphinx.ext.doctest',
     'sphinx.ext.autosummary',
     'sphinx_gallery.load_style',
     'sphinx.ext.linkcode',

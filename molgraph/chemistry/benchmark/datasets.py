@@ -88,11 +88,11 @@ class DatasetFactory:
 
     Obtain a dataset with ease:
 
-    >>> # esol_dataset = molgraph.chemistry.datasets.get('esol')
+    >>> esol_dataset = molgraph.chemistry.datasets.get('esol') # doctest: +SKIP
 
     List available (registered) datasets:
 
-    >>> molgraph.chemistry.datasets.registered_datasets
+    >>> molgraph.chemistry.datasets.registered_datasets # doctest: +SKIP
     ['smrt',
      'qm7',
      'qm8',

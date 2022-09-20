@@ -22,7 +22,7 @@ class GatherIncident(keras.layers.Layer):
     ...         ],
     ...     }
     ... )
-    ... graph_tensor = graph_tensor.merge()
+    >>> graph_tensor = graph_tensor.merge()
     >>> model = tf.keras.Sequential([
     ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
     ...     molgraph.layers.GatherIncident(concat=True)
