@@ -2,13 +2,13 @@ import numpy as np
 import os
 from rdkit import Chem
 from rdkit.Chem.Draw import SimilarityMaps
+import rdkit.Chem.Draw.IPythonConsole
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import List
 from typing import Union
 from typing import Dict
-from IPython.core import display
 from PIL.PngImagePlugin import PngImageFile
 from PIL import Image
 from io import BytesIO
@@ -69,7 +69,9 @@ def visualize_molecule(
             bond.SetProp('bondNote', str(bond.GetIdx()))
     return Chem.Draw.MolToImage(molecule, size=size)
 
-def visualize_conformers(molecule: Chem.Mol) -> display.Image:
+def visualize_conformers(
+    molecule: Chem.Mol
+) -> Chem.Draw.IPythonConsole.display.Image:
     conformers = []
     energies = []
     for conformer in molecule.GetConformers():

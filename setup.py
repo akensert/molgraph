@@ -15,7 +15,8 @@ install_requires = [
     "tensorflow>=2.7.0",
     "numpy>=1.21.2",
     "rdkit>=2022.3.3",
-    "pandas>=1.0.3"
+    "pandas>=1.0.3",
+    "ipython==8.12.0",
 ]
 tests_require = [
     "pytest>=7.1.2"
