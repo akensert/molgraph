@@ -30,12 +30,12 @@ class DMPNN(keras.layers.Layer):
     ... )
     >>> # Build Functional model
     >>> inputs = tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec)
-    >>> x = molgraph.models.MPNN(units=32, steps=4, name='dmpnn')(inputs)
+    >>> x = molgraph.models.DMPNN(units=32, name='dmpnn')(inputs)
     >>> x = molgraph.layers.SetGatherReadout(name='readout')(x)
     >>> outputs = tf.keras.layers.Dense(10, activation='sigmoid')(x)
     >>> dmpnn_classifier = tf.keras.Model(inputs, outputs)
     >>> # Make predictions
-    >>> preds = dmpnn_classifier.predict(graph_tensor)
+    >>> preds = dmpnn_classifier.predict(graph_tensor, verbose=0)
     >>> preds.shape
     (2, 10)
  

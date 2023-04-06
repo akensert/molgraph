@@ -37,7 +37,7 @@ class DGIN(keras.layers.Layer):
     >>> outputs = tf.keras.layers.Dense(10, activation='sigmoid')(x)
     >>> dgin_classifier = tf.keras.Model(inputs, outputs)
     >>> # Make predictions
-    >>> preds = dgin_classifier.predict(graph_tensor)
+    >>> preds = dgin_classifier.predict(graph_tensor, verbose=0)
     >>> preds.shape
     (2, 10)
  

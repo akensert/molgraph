@@ -41,7 +41,6 @@ def test_mpnn_model(graph_tensor) -> None:
     x = layers.SetGatherReadout(name='readout')(x)
     outputs = tf.keras.layers.Dense(10, activation='sigmoid')(x)
     mpnn_classifier = tf.keras.Model(inputs, outputs)
-    # Make predictions
     preds = mpnn_classifier.predict(graph_tensor)
     assert preds.shape == (3, 10)
 
@@ -52,7 +51,6 @@ def test_dmpnn_model(graph_tensor) -> None:
     x = layers.SetGatherReadout(name='readout')(x)
     outputs = tf.keras.layers.Dense(10, activation='sigmoid')(x)
     mpnn_classifier = tf.keras.Model(inputs, outputs)
-    # Make predictions
     preds = mpnn_classifier.predict(graph_tensor)
     assert preds.shape == (3, 10)
 
@@ -63,7 +61,6 @@ def test_dgin_model(graph_tensor) -> None:
     x = layers.SetGatherReadout(name='readout')(x)
     outputs = tf.keras.layers.Dense(10, activation='sigmoid')(x)
     mpnn_classifier = tf.keras.Model(inputs, outputs)
-    # Make predictions
     preds = mpnn_classifier.predict(graph_tensor)
     assert preds.shape == (3, 10)
 
