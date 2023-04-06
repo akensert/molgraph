@@ -12,6 +12,18 @@ MPNN
   :members: call, build, get_config, from_config
   :member-order: bysource
 
+DMPNN
+===========================
+.. autoclass:: molgraph.models.DMPNN(tensorflow.keras.layers.Layer)
+  :members: call, build, get_config, from_config
+  :member-order: bysource
+
+DGIN
+===========================
+.. autoclass:: molgraph.models.DGIN(tensorflow.keras.layers.Layer)
+  :members: call, build, get_config, from_config
+  :member-order: bysource
+
 ***************************
 Interpretability
 ***************************
