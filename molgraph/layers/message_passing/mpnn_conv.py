@@ -31,8 +31,6 @@ class MPNNConv(BaseLayer):
     However, optionally, the previous MPNNConv layer can be passed to the current layer
     via `tie_layer` (see below for example) to perform weight tying.
 
-    For an MPNN more similar to Gilmer et al., see ``molgraph.models.MPNN``.
-
     **Examples:**
 
     Inputs a ``GraphTensor`` encoding (two) subgraphs:
@@ -262,19 +260,19 @@ class MPNNConv(BaseLayer):
                     f'built before building this layer (`{self.name}`). `{self.tie_layer.name}` should ' + 
                     f'come before this layer (`{self.name}`) in the sequence (model).'
                 )
-            self.update_step = self.tie_layer.update_step
+            self.update_projection = self.tie_layer.update_projection
             self.self_projection = self.tie_layer.self_projection
             
         else:
             self.message_projection = self.get_dense(self.units * self.units)
             
             if self.update_mode == 'dense':
-                self.update_step = keras.layers.Dense(
+                self.update_projection = keras.layers.Dense(
                     self.units, self.update_activation)
             elif self.update_mode == 'gru':
-                self.update_step = keras.layers.GRUCell(self.units)
+                self.update_projection = keras.layers.GRUCell(self.units)
             else:
-                self.update_step = keras.layers.LSTMCell(self.units)
+                self.update_projection = keras.layers.LSTMCell(self.units)
 
             if (
                 self.units != node_feature_shape[-1] and
@@ -310,7 +308,7 @@ class MPNNConv(BaseLayer):
         node_feature_update = update_step(
             node_feature=node_feature_aggregated,
             prev_node_feature=tensor.node_feature,
-            update_projection=self.update_step,
+            update_projection=self.update_projection,
             self_projection=self.self_projection)
         
         return tensor.update({'node_feature': node_feature_update})
