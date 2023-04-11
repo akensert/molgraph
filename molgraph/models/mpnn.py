@@ -17,8 +17,7 @@ class MPNN(keras.layers.Layer):
     ``MPNNConv``, which performs a single step of message passing, ``MPNN``
     performs n-steps of message passing. Furthermore, the weights are shared
     between the message functions of the different steps. And the update
-    functions correspond to a single GRU. This implementation is more similar
-    to Gilmer et al. compared to the stacking of ``MPNNConv`` layers.
+    functions correspond to a single GRU.
 
     **Example:**
 

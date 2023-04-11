@@ -25,9 +25,11 @@ class MPNNConv(BaseLayer):
     """Message passing neural network layer (MPNN)
 
     Implementation is based on Gilmer et al. (2017) [#]_. In contrast to Gilmer
-    et al. this implementation does not use weight tying; for neither the message
-    function nor the update function. Furthermore, instead of the GRU-based
-    update function, here, a simple fully-connected (dense) layer is used.
+    et al. this implementation does not use weight tying by default; for neither the 
+    message function nor the update function. Furthermore, instead of the GRU-based
+    update function, here, a simple fully-connected (dense) layer is used by default. 
+    However, optionally, the previous MPNNConv layer can be passed to the current layer
+    via `tie_layer` (see below for example) to perform weight tying.
 
     For an MPNN more similar to Gilmer et al., see ``molgraph.models.MPNN``.
 
@@ -94,11 +96,68 @@ class MPNNConv(BaseLayer):
     >>> gnn_model.output_shape
     (None, 16)
 
+    Tie weights of the previous layer with the subsequent layers:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0]
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...         'edge_feature': [
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0],
+    ...             [0.0, 1.0],
+    ...             [0.0, 1.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0]
+    ...         ],
+    ...     }
+    ... )
+    >>> # Build a model with MPNNConv
+    >>> mpnn_conv_1 = molgraph.layers.MPNNConv(
+    ...     units=16, 
+    ...     update_mode='gru'       # lets use GRU updates instead (as per Gilmer et al. (2017))
+    ... )
+    >>> mpnn_conv_2 = molgraph.layers.MPNNConv(
+    ...     units=32,               # will be ignored as MPNNConv layer is passed to `tie_layer`
+    ...     update_mode='gru',      # will be ignored as MPNNConv layer is passed to `tie_layer`
+    ...     tie_layer=mpnn_conv_1
+    ... )
+    >>> mpnn_conv_3 = molgraph.layers.MPNNConv(
+    ...     units=16,               # will be ignored as MPNNConv layer is passed to `tie_layer`
+    ...     update_mode='gru',      # will be ignored as MPNNConv layer is passed to `tie_layer`
+    ...     tie_layer=mpnn_conv_1   # specifying mpnn_conv_2 would be equivalent
+    ... )
+    >>> gnn_model = tf.keras.Sequential([
+    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     mpnn_conv_1,
+    ...     mpnn_conv_2,
+    ...     mpnn_conv_3,
+    ... ])
+    >>> gnn_model.output_shape
+    (None, 16)
+
     Args:
         units (int, None):
             Number of output units.
         use_edge_features (bool):
             Whether or not to use edge features. Default to True.
+        tie_layer (molgraph.layers.message_passing.mpnn_conv.MPNNConv, None):
+            Pass the previous MPNNConv layer to perform weight tying. If None, weight tying
+            will not be performed (each layer has its own weights). Default to None.
+        update_mode (str):
+            Specify what type of update will be performed. Either of 'dense', 'gru' or 'lstm'. 
+            If 'gru' or 'lstm' is passed to MPNNConv layers, make sure weight tying is performed
+            (see 'tie_layer' argument above). Default to 'dense'.
         self_projection (bool):
             Whether to apply self projection. Default to True.
         batch_norm: (bool):
@@ -108,7 +167,8 @@ class MPNNConv(BaseLayer):
         dropout: (float, None):
             Dropout applied to the output of the layer. Default to None.
         update_activation (tf.keras.activations.Activation, callable, str, None):
-            Activation function used for the update function. Default to None.
+            Activation function used for the update function. Only relevant if 'dense' is passed
+            to the `update_mode` argument. Default to None.
         activation (tf.keras.activations.Activation, callable, str, None):
             Activation function applied to the output of the layer. Default to 'relu'.
         use_bias (bool):
@@ -140,6 +200,8 @@ class MPNNConv(BaseLayer):
         self,
         units: Optional[int] = None,
         use_edge_features: bool = True,
+        update_mode: str = 'dense',
+        tie_layer: Optional['MPNNConv'] = None,
         self_projection: bool = True,
         batch_norm: bool = True,
         residual: bool = True,
@@ -161,7 +223,7 @@ class MPNNConv(BaseLayer):
         **kwargs
     ):
         super().__init__(
-            units=units,
+            units=units if not tie_layer else None,
             batch_norm=batch_norm,
             residual=residual,
             dropout=dropout,
@@ -179,24 +241,51 @@ class MPNNConv(BaseLayer):
         self.use_edge_features = use_edge_features
         self.apply_self_projection = self_projection
         self.update_activation = update_activation
+        self.update_mode = update_mode.lower()
+        self.tie_layer = tie_layer 
 
     def subclass_build(
         self,
         node_feature_shape: tf.TensorShape,
         edge_feature_shape: Optional[tf.TensorShape] = None
     ) -> None:
-        self.message_projection = self.get_dense(self.units * self.units)
-        self.update_step = keras.layers.Dense(
-            self.units, activation=self.update_activation)
+     
+        if self.tie_layer:
+            if type(self) != type(self.tie_layer):
+                raise ValueError(
+                    f'`{self.tie_layer.name}` needs to be the same type as this layer (`{self.name}`)'
+                )
+            self.message_projection = getattr(self.tie_layer, 'message_projection', None)
+            if not self.message_projection:
+                raise ValueError(
+                    f'`{self.tie_layer.name}` is not built. Make sure `{self.tie_layer.name}` is ' +
+                    f'built before building this layer (`{self.name}`). `{self.tie_layer.name}` should ' + 
+                    f'come before this layer (`{self.name}`) in the sequence (model).'
+                )
+            self.update_step = self.tie_layer.update_step
+            self.self_projection = self.tie_layer.self_projection
+            
+        else:
+            self.message_projection = self.get_dense(self.units * self.units)
+            
+            if self.update_mode == 'dense':
+                self.update_step = keras.layers.Dense(
+                    self.units, self.update_activation)
+            elif self.update_mode == 'gru':
+                self.update_step = keras.layers.GRUCell(self.units)
+            else:
+                self.update_step = keras.layers.LSTMCell(self.units)
 
-        if (
-            self.units != node_feature_shape[-1] and
-            not hasattr(self, 'node_resample')
-        ):
-            self.node_resample = self.get_dense(self.units)
+            if (
+                self.units != node_feature_shape[-1] and
+                not hasattr(self, 'node_resample')
+            ):
+                self.node_resample = self.get_dense(self.units)
 
-        if self.apply_self_projection:
-            self.self_projection = self.get_dense(self.units)
+            if self.apply_self_projection:
+                self.self_projection = self.get_dense(self.units)
+            else:
+                self.self_projection = None
 
     def subclass_call(self, tensor: GraphTensor) -> GraphTensor:
 
@@ -218,23 +307,45 @@ class MPNNConv(BaseLayer):
             edge_src=tensor.edge_src,
             projection=self.message_projection)
 
-        if self.apply_self_projection:
-            node_feature_aggregated += self.self_projection(tensor.node_feature)
-
-        node_feature_update = self.update_step(
-            tf.concat([tensor.node_feature, node_feature_aggregated], axis=1))
-
+        node_feature_update = update_step(
+            node_feature=node_feature_aggregated,
+            prev_node_feature=tensor.node_feature,
+            update_projection=self.update_step,
+            self_projection=self.self_projection)
+        
         return tensor.update({'node_feature': node_feature_update})
 
     def get_config(self):
         base_config = super().get_config()
         config = {
             'use_edge_features': self.use_edge_features,
+            'update_mode': self.update_mode,
+            'tie_layer': keras.layers.serialize(self.tie_layer),
             'self_projection': self.apply_self_projection,
             'update_activation': self.update_activation
         }
         base_config.update(config)
         return base_config
+
+
+def update_step(
+    node_feature: tf.Tensor, 
+    prev_node_feature: tf.Tensor,
+    update_projection: Union[
+        keras.layers.Dense, keras.layers.GRUCell, keras.layers.LSTMCell
+    ],
+    self_projection: keras.layers.Dense,
+) -> tf.Tensor:
+    if self_projection:
+        node_feature += self_projection(prev_node_feature)
+    if isinstance(update_projection, keras.layers.Dense):
+        node_feature = update_projection(
+            tf.concat([prev_node_feature, node_feature], axis=1))
+    else:
+        node_feature, _ = update_projection(
+            inputs=node_feature,
+            states=prev_node_feature)
+    return node_feature
 
 
 def message_step(

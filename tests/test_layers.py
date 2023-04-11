@@ -196,6 +196,7 @@ def test_gated_gcn_conv(parameters) -> None:
     {'units': 128, 'residual': True, 'self_projection': True},
     {'units': 128, 'use_edge_features': True, 'residual': True, 'self_projection': True},
     {'units': 128, 'use_edge_features': False, 'residual': True, 'self_projection': True},
+    {'units': 128, 'use_edge_features': False, 'residual': True, 'self_projection': True, 'update_mode': 'GRU'}
 ])
 def test_mpnn_conv(parameters) -> None:
     list(map(partial(map_fn, layer=layers.MPNNConv, parameters=parameters), inputs))
