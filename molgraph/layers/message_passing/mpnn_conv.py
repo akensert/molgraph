@@ -307,7 +307,7 @@ class MPNNConv(BaseLayer):
 
         node_feature_update = update_step(
             node_feature=node_feature_aggregated,
-            prev_node_feature=tensor.node_feature,
+            node_feature_prev=tensor.node_feature,
             update_projection=self.update_projection,
             self_projection=self.self_projection)
         
@@ -328,21 +328,21 @@ class MPNNConv(BaseLayer):
 
 def update_step(
     node_feature: tf.Tensor, 
-    prev_node_feature: tf.Tensor,
+    node_feature_prev: tf.Tensor,
     update_projection: Union[
         keras.layers.Dense, keras.layers.GRUCell, keras.layers.LSTMCell
     ],
     self_projection: keras.layers.Dense,
 ) -> tf.Tensor:
     if self_projection:
-        node_feature += self_projection(prev_node_feature)
+        node_feature += self_projection(node_feature_prev)
     if isinstance(update_projection, keras.layers.Dense):
         node_feature = update_projection(
-            tf.concat([prev_node_feature, node_feature], axis=1))
+            tf.concat([node_feature_prev, node_feature], axis=1))
     else:
         node_feature, _ = update_projection(
             inputs=node_feature,
-            states=prev_node_feature)
+            states=node_feature_prev)
     return node_feature
 
 
