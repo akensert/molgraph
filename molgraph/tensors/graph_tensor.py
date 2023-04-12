@@ -341,7 +341,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
             fields = [fields]
         for field in fields:
             if field in _non_updatable_fields:
-                raise ValueError(f'{k} cannot be removed.')
+                raise ValueError(f'{field} cannot be removed.')
             data.pop(field)
         return self.__class__(data)
 
@@ -724,38 +724,43 @@ def _maybe_convert_to_tensors(
 
 def _check_data_keys(data: NestedArrays):
     'Asserts that necessary fields exist in the graph (tensor)'
-    return [
-        tf.Assert(
-            req_field in data, [f'`data` requires `{req_field}` field']
-        )
-        for req_field in _required_fields]
+    for req_field in _required_fields:
+        assert_op = tf.Assert(
+            req_field in data, 
+            [f'`data` requires `{req_field}` field'])
+        _maybe_mark_used(assert_op)
+    return
 
 def _check_data_values(data: NestedArrays):
     'Asserts that the values of the data fields are of correct type'
-    return [
-        tf.Assert(
-            isinstance(v, _allowable_input_types),
+    for key, value in data.items():
+        assert_op = tf.Assert(
+            isinstance(value, _allowable_input_types),
             [
-                f'Field `{k}` is needs to be a `tf.Tensor`, ' +
+                f'Field `{key}` is needs to be a `tf.Tensor`, ' +
                 '`tf.RaggedTensor`, `np.ndarray`, `list` or `tuple`'
             ]
         )
-        for (k, v) in data.items()]
+        _maybe_mark_used(assert_op)
+    return
 
 def _check_tensor_types(data: NestedTensors):
     'Asserts that all nested values of data are of the same tensor type'
     tests = [isinstance(x, tf.Tensor) for x in data.values()]
     same_types = all(tests) or not any(tests)
-    return tf.Assert(
+    assert_op = tf.Assert(
         same_types, [
             f'Nested tensors are not the same type. ' +
              'Found both `tf.Tensor`s and `tf.RaggedTensor`s'])
+    _maybe_mark_used(assert_op)
+    return
 
 def _check_ragged_rank(x: tf.RaggedTensor):
-    return tf.Assert(
+    assert_op = tf.Assert(
         tf.math.equal(x.ragged_rank, 1),
-        ['Ragged rank of field needs to be 1.']
-    )
+        ['Ragged rank of field needs to be 1.'])
+    _maybe_mark_used(assert_op)
+    return
 
 def _compatible_sizes(
     a: Union[tf.Tensor, tf.RaggedTensor],
@@ -773,7 +778,7 @@ def _assert_compatible_sizes(
     target: Union[tf.Tensor, tf.RaggedTensor],
     *comparators: Union[tf.Tensor, tf.RaggedTensor]
 ):
-    return tf.Assert(
+    assert_op = tf.Assert(
         tf.math.reduce_any(
             tf.nest.map_structure(
                 lambda comparator: _compatible_sizes(target, comparator),
@@ -786,6 +791,8 @@ def _assert_compatible_sizes(
             'nodes or edges as the existig fields'
         ]
     )
+    _maybe_mark_used(assert_op)
+    return
 
 def _maybe_add_graph_indicator(
     data: NestedTensors,
@@ -811,15 +818,19 @@ def _maybe_add_graph_indicator(
 
 def _assert_mergeable(data: NestedTensors):
     'Asserts that all nested tensors are ragged.'
-    return tf.Assert(
+    assert_op = tf.Assert(
         all([isinstance(x, tf.RaggedTensor) for x in data.values()]),
         [f'All data values need to be `tf.RaggedTensor`s to be merged'])
+    _maybe_mark_used(assert_op)
+    return
 
 def _assert_separable(data: NestedTensors):
     'Asserts that all nested tensors are non-ragged'
-    return tf.Assert(
+    assert_op = tf.Assert(
         all([isinstance(x, tf.Tensor) for x in data.values()]),
         [f'All data values need to be `tf.Tensor`s to be separated'])
+    _maybe_mark_used(assert_op)
+    return
 
 def _slice_to_tensor(slice_obj: slice, limit: int) -> tf.Tensor:
     '''Converts slice to a tf.range, which can subsequently be used with
@@ -832,9 +843,10 @@ def _slice_to_tensor(slice_obj: slice, limit: int) -> tf.Tensor:
     stop = slice_obj.stop
     step = slice_obj.step
 
-    tf.Assert(
+    assert_op = tf.Assert(
         step is None or not (step < 0 or step == 0),
         ['Slice step cannot be negative or zero.'])
+    _maybe_mark_used(assert_op)
 
     limit = tf.convert_to_tensor(limit)
 
@@ -870,6 +882,11 @@ def _slice_to_tensor(slice_obj: slice, limit: int) -> tf.Tensor:
     start = tf.cond(start > stop, lambda: stop, lambda: start)
 
     return tf.range(start, stop, step)
+
+def _maybe_mark_used(assert_op):
+    if hasattr(assert_op, 'mark_used'):
+        assert_op.mark_used()
+    return
 
 @tf.experimental.dispatch_for_api(tf.gather)
 def graph_tensor_gather(
