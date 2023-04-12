@@ -30,7 +30,7 @@ Activation = Optional[Union[Callable[[tf.Tensor], tf.Tensor], str]]
 @keras.utils.register_keras_serializable(package='molgraph')
 class BaseLayer(layers.Layer, ABC):
 
-    'Only meant to be a base layer for the built-in GNN layers.'
+    'Base layer for the built-in GNN layers.'
 
     def __init__(
         self,
