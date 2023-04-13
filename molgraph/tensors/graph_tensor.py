@@ -389,43 +389,41 @@ class GraphTensor(composite_tensor.CompositeTensor):
         graph_indicator = data.pop('graph_indicator')
         edge_dst = data.pop('edge_dst')
         edge_src = data.pop('edge_src')
-
         graph_indicator_edges = tf.gather(graph_indicator, edge_dst)
 
         def to_ragged_tensor(
             tensor: Union[tf.Tensor, tf.RaggedTensor],
+            graph_indicator: tf.Tensor,
             num_subgraphs: tf.Tensor,
         ) -> tf.RaggedTensor:
-
             if isinstance(tensor, tf.RaggedTensor):
                 return tensor
-
-            value_rowids, nrows = tf.cond(
-                _compatible_sizes(tensor, graph_indicator),
-                lambda: (graph_indicator, num_subgraphs),
-                lambda: tf.cond(
-                    _compatible_sizes(tensor, graph_indicator_edges),
-                    lambda: (graph_indicator_edges, num_subgraphs),
-                    lambda: (tf.zeros(
-                        tf.shape(tensor)[0], dtype=graph_indicator.dtype),
-                            tf.constant(1, dtype=num_subgraphs.dtype))
-                )
-            )
             return tf.RaggedTensor.from_value_rowids(
-                tensor, value_rowids, nrows)
+                tensor, graph_indicator, num_subgraphs)
         
         num_subgraphs = self.num_subgraphs
-        data = tf.nest.map_structure(
-            lambda x: to_ragged_tensor(x, num_subgraphs), data)
+
+        data_edges = {k: v for (k, v) in data.items() if 'edge' in k}
+        data_nodes = {k: v for (k, v) in data.items() if not 'edge' in k}
+
+        data_edges = tf.nest.map_structure(
+            lambda x: to_ragged_tensor(
+                x, graph_indicator_edges, num_subgraphs), data_edges)
+        data_nodes = tf.nest.map_structure(
+            lambda x: to_ragged_tensor(
+                x, graph_indicator, num_subgraphs), data_nodes)   
+
         decrement = tf.gather(
-            data['node_feature'].row_starts(), graph_indicator_edges)
+            data_nodes['node_feature'].row_starts(), graph_indicator_edges)
         decrement = tf.cast(decrement, dtype=edge_dst.dtype)
-        data['edge_dst'] = tf.RaggedTensor.from_value_rowids(
+        data_edges['edge_dst'] = tf.RaggedTensor.from_value_rowids(
             edge_dst - decrement, graph_indicator_edges, num_subgraphs)
-        data['edge_src'] = tf.RaggedTensor.from_value_rowids(
+        data_edges['edge_src'] = tf.RaggedTensor.from_value_rowids(
             edge_src - decrement, graph_indicator_edges, num_subgraphs)
 
-        return self.__class__(data)
+        data_nodes.update(data_edges)
+
+        return self.__class__(data_nodes)
 
     @property
     def _type_spec(self) -> 'GraphTensorSpec':
