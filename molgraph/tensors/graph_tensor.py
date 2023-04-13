@@ -413,7 +413,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
             )
             return tf.RaggedTensor.from_value_rowids(
                 tensor, value_rowids, nrows)
-
+        
         num_subgraphs = self.num_subgraphs
         data = tf.nest.map_structure(
             lambda x: to_ragged_tensor(x, num_subgraphs), data)
@@ -678,6 +678,8 @@ def _remove_intersubgraph_edges(data: NestedTensors) -> NestedTensors:
     mask = tf.where((subgraphs_dst - subgraphs_src) == 0, True, False)
     data['edge_dst'] = tf.boolean_mask(data['edge_dst'], mask)
     data['edge_src'] = tf.boolean_mask(data['edge_src'], mask)
+    if 'edge_feature' in data:
+        data['edge_feature'] = tf.boolean_mask(data['edge_feature'], mask)
     return data
 
 def _maybe_convert_to_tensors(
@@ -933,21 +935,11 @@ def graph_tensor_concat(
         raise ValueError(
             f'axis=0 is required for `{values[0].__class__.__name__}`s.')
 
-    def get_row_lengths(x, dtype):
-        if hasattr(x, 'row_lengths'):
-            return tf.cast(x.row_lengths(), dtype=dtype)
-        return tf.cast(x.shape[:1], dtype=dtype)
-
-    def from_row_lengths(x, num_nodes, num_edges, dtype):
-        return tf.cond(
-            tf.shape(x, dtype)[0] == tf.reduce_sum(num_nodes),
-            lambda: tf.RaggedTensor.from_row_lengths(x, num_nodes),
-            lambda: tf.cond(
-                tf.shape(x, dtype)[0] == tf.reduce_sum(num_edges),
-                lambda: tf.RaggedTensor.from_row_lengths(x, num_edges),
-                lambda: tf.RaggedTensor.from_row_lengths(x, tf.shape(x)[:1])
-            )
-        )
+    def fast_ragged_stack(component_data, dtype):
+        row_lengths = [len(x) for x in component_data]
+        component_data_concat = tf.concat(component_data, axis=0)
+        return tf.RaggedTensor.from_row_lengths(
+            component_data_concat, tf.cast(row_lengths, dtype))
 
     structure = values[0]._data
 
@@ -967,22 +959,16 @@ def graph_tensor_concat(
 
     dtype = values[0]['edge_dst'].dtype
 
-    num_nodes = tf.concat([
-        get_row_lengths(x['node_feature'], dtype) for x in values], axis=0)
-
-    num_edges = tf.concat([
-        get_row_lengths(x['edge_dst'], dtype) for x in values], axis=0)
-
     if ragged:
         # Keep only values (resulting from tf.nest.flatten)
         flat_sequence = [f[::2] for f in flat_sequence]
 
     flat_sequence = list(zip(*flat_sequence))
-    flat_sequence = [tf.concat(x, axis=0) for x in flat_sequence]
-    values = tf.nest.pack_sequence_as(structure, flat_sequence)
-    values = tf.nest.map_structure(
-        lambda x: from_row_lengths(x, num_nodes, num_edges, dtype),
-        values)
+    flat_sequence_stacked = [
+        fast_ragged_stack(x, dtype) for x in flat_sequence
+    ]
+    values = tf.nest.pack_sequence_as(structure, flat_sequence_stacked)
+
     values = GraphTensor(values)
 
     if ragged:
