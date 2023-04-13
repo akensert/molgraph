@@ -314,6 +314,11 @@ class GraphTensor(composite_tensor.CompositeTensor):
             if k in data:
                 data[k] = convert_tensor(new_value, data[k])
             else:
+                if 'node' not in k and 'edge' not in k:
+                    raise ValueError(
+                        'Please prepend `node_` or `edge_` to the new fields added, ' + 
+                        'depending on if they are associated with the nodes or edges ' + 
+                        'of the graph.')
                 data[k] = tf.cond(
                     _compatible_sizes(new_value, data['node_feature']),
                     lambda: convert_tensor(new_value, data['node_feature']),

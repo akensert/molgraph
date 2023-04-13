@@ -110,7 +110,7 @@ def test_incompatible_size(graph_tensor) -> None:
     with pytest.raises(tf.errors.InvalidArgumentError):
         graph_tensor_merged = graph_tensor.merge()
         graph_tensor_merged = graph_tensor_merged.update({
-            'random_feature': tf.random.uniform((3, 3))
+            'node_random_feature': tf.random.uniform((3, 3))
         })
 
 @pytest.mark.parametrize('graph_tensor', [graph_tensor])
@@ -127,7 +127,7 @@ def test_different_tensor_type_but_compatible_size(graph_tensor) -> None:
     random_feature = tf.random.uniform(graph_tensor_merged.node_feature.shape)
     value_rowids = graph_tensor_merged.graph_indicator
     graph_tensor_merged = graph_tensor_merged.update({
-        'random_feature': tf.RaggedTensor.from_value_rowids(
+        'node_random_feature': tf.RaggedTensor.from_value_rowids(
             random_feature, value_rowids
         )
     })
@@ -139,12 +139,12 @@ def test_incompatible_tensor_type_for_replacement(graph_tensor) -> None:
         random_feature = tf.random.uniform(graph_tensor_merged.node_feature.shape)
         value_rowids = graph_tensor_merged.graph_indicator
         graph_tensor_merged = graph_tensor_merged.update({
-            'random_feature': tf.RaggedTensor.from_value_rowids(
+            'node_random_feature': tf.RaggedTensor.from_value_rowids(
                 random_feature, value_rowids
             )
         })
         graph_tensor_merged = graph_tensor_merged.update({
-            'random_feature': tf.random.uniform((10, 5))
+            'node_random_feature': tf.random.uniform((10, 5))
         })
 
 @pytest.mark.parametrize('graph_tensor', [graph_tensor])
@@ -153,12 +153,12 @@ def test_incompatible_tensor_type_for_replacement_reversed(graph_tensor) -> None
     graph_tensor_merged = graph_tensor.merge()
     random_feature = tf.random.uniform(graph_tensor_merged.node_feature.shape)
     graph_tensor_merged = graph_tensor_merged.update({
-        'random_feature': random_feature})
+        'node_random_feature': random_feature})
 
     with pytest.raises(tf.errors.InvalidArgumentError):
         random_feature = tf.ragged.constant([[1., 2.], [4., 5., 6., 7.]])
         graph_tensor_merged = graph_tensor_merged.update({
-            'random_feature': random_feature
+            'node_random_feature': random_feature
         })
 
 @pytest.mark.parametrize('graph_tensor', [graph_tensor])
@@ -179,8 +179,8 @@ def test_compatible_tf_function(graph_tensor) -> None:
     @tf.function
     def f4(x):
         x = x.update({'node_feature': tf.random.uniform((32, 11))})
-        x = x.update({'random_feature': tf.random.uniform((32, 11))})
-        x = x.remove(['random_feature'])
+        x = x.update({'node_random_feature': tf.random.uniform((32, 11))})
+        x = x.remove(['node_random_feature'])
         return x
 
     @tf.function
