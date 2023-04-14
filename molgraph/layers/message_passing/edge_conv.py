@@ -273,9 +273,11 @@ class EdgeConv(keras.layers.Layer):
             with tf_utils.maybe_init_scope(self):
                 self._initialize_edge_state = (
                     True if not hasattr(tensor, 'edge_state') else False)
-                self.units = (
-                    self.units if (self.units and (self._initialize_edge_state or self.update_mode == 'dense'))
-                    else tensor.edge_state.shape[-1])
+                if not (self.units and (self._initialize_edge_state or self.update_mode == 'dense')):
+                    if hasattr(tensor, 'edge_state'):
+                        self.units = tensor.edge_state.shape[-1]
+                    else:
+                        self.units = tensor.node_feature.shape[-1] + tensor.edge_feature.shape[-1]
                 self._build(self.units, self._initialize_edge_state)
                 self._built = True
 
