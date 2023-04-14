@@ -274,7 +274,7 @@ class EdgeConv(keras.layers.Layer):
                 self._initialize_edge_state = (
                     True if not hasattr(tensor, 'edge_state') else False)
                 self.units = (
-                    self.units if (self._initialize_edge_state or self.update_mode == 'dense')
+                    self.units if (self.units and (self._initialize_edge_state or self.update_mode == 'dense'))
                     else tensor.edge_state.shape[-1])
                 self._build(self.units, self._initialize_edge_state)
                 self._built = True
