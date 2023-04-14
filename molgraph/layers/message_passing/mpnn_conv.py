@@ -153,8 +153,8 @@ class MPNNConv(BaseLayer):
             Pass the previous MPNNConv layer to perform weight tying. If None, weight tying
             will not be performed (each layer has its own weights). Default to None.
         update_mode (str):
-            Specify what type of update will be performed. Either of 'dense', 'gru' or 'lstm'. 
-            If 'gru' or 'lstm' is passed to MPNNConv layers, make sure weight tying is performed
+            Specify what type of update will be performed. Either of 'dense' or 'gru'.
+            If 'gru' is passed to MPNNConv layers, make sure weight tying is performed
             (see 'tie_layer' argument above). Default to 'dense'.
         self_projection (bool):
             Whether to apply self projection. Default to True.
@@ -269,10 +269,8 @@ class MPNNConv(BaseLayer):
             if self.update_mode == 'dense':
                 self.update_projection = keras.layers.Dense(
                     self.units, self.update_activation)
-            elif self.update_mode == 'gru':
-                self.update_projection = keras.layers.GRUCell(self.units)
             else:
-                self.update_projection = keras.layers.LSTMCell(self.units)
+                self.update_projection = keras.layers.GRUCell(self.units)
 
             if (
                 self.units != node_feature_shape[-1] and
