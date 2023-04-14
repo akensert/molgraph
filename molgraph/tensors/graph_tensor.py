@@ -167,12 +167,12 @@ class GraphTensor(composite_tensor.CompositeTensor):
     ...    graph_tensor['node_feature'].shape)
     >>> # Add new field
     >>> graph_tensor = graph_tensor.update({
-    ...     'random_feature': random_feature_1})
+    ...     'node_random_feature': random_feature_1})
     >>> # Update exisiting field
     >>> graph_tensor = graph_tensor.update({
     ...     'node_feature': random_feature_2})
     >>> # Remove field
-    >>> graph_tensor = graph_tensor.remove(['random_feature'])
+    >>> graph_tensor = graph_tensor.remove(['node_random_feature'])
     >>> graph_tensor
     GraphTensor(
       edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,

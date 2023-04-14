@@ -6,14 +6,21 @@ from typing import Union
 from typing import Callable
 
 from molgraph.tensors import GraphTensor
+from molgraph.layers.message_passing.edge_conv import edge_message_step
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class DMPNN(keras.layers.Layer):
+class DMPNN(keras.models.Model):
 
     '''Directed message passing neural network (DMPNN).
 
     Implementation is based on Yang et al. (2019) [#]_.
+
+    **Important:**
+
+    As of now, EdgeConv only works on (sub)graphs with at least one edge/bond. If your dataset consists
+    of molecules with a single atom, please add self loops: 
+    ``molgraph.chemistry.MolecularGraphEncoder(..., self_loops=True)``
 
     **Example:**
 
@@ -87,6 +94,8 @@ class DMPNN(keras.layers.Layer):
         self.dense_kwargs.pop('activaton', None)
 
     def build(self, input_shape: Optional[Tuple[int, ...]] = None) -> None:
+        if not self.units:
+            self.units = input_shape[-1]
         self.initial_projection = keras.layers.Dense(
             self.units, self.activation, **self.dense_kwargs)
         self.update_projection = keras.layers.Dense(
@@ -132,9 +141,13 @@ class DMPNN(keras.layers.Layer):
         
         for _ in range(self.steps):
             
-            message = edge_message_passing(
-                tensor, self.parallel_iterations)
-
+            message = edge_message_step(
+                edge_feature=tensor.edge_feature,
+                edge_src=tensor.edge_src,
+                edge_dst=tensor.edge_dst,
+                graph_indicator=tensor.graph_indicator,
+                parallel_iterations=self.parallel_iterations)
+    
             edge_feature = self.activation(
                 self.update_projection(message) + edge_feature)
             
@@ -164,49 +177,4 @@ class DMPNN(keras.layers.Layer):
         }
         base_config.update(config)
         return base_config
-    
-    
-def _get_reverse_edge_features_fn(
-    tensor: GraphTensor
-) -> tf.Tensor:
-    # Find the index of "reverse" edge of edge_src->edge_dst
-    edge_exclude = tf.logical_and(
-        tensor.edge_src[:, None] == tensor.edge_dst,
-        tensor.edge_dst[:, None] == tensor.edge_src)
-    # Obtain index of edge_src->edge_dst ("forward") and its corresponding
-    # edge_src<-edge_dst ("reverse"). For molecules: forward and reverse
-    # edges are usually the same and always exist. 
-    edge_forward, edge_reverse = tf.split(tf.where(edge_exclude), 2, axis=-1)
-    return tf.tensor_scatter_nd_add(
-        tf.zeros_like(tensor.edge_feature), 
-        tf.expand_dims(edge_forward, -1), 
-        tf.gather(tensor.edge_feature, edge_reverse))
-
-def _get_reverse_edge_features(
-    tensor: GraphTensor, 
-    parallel_iterations: Optional[int] = None
-) -> tf.Tensor:
-    'Obtain reverse edge features to subtract from aggregated edge features.'
-    output_spec = tf.RaggedTensorSpec(
-        shape=[None, tensor.edge_feature.shape[-1]], 
-        ragged_rank=0, 
-        dtype=tf.float32)
-    reverse_edge_feature = tf.map_fn(
-        fn=_get_reverse_edge_features_fn, 
-        elems=tensor.separate(), 
-        fn_output_signature=output_spec,
-        parallel_iterations=parallel_iterations)
-    return reverse_edge_feature.merge_dims(outer_axis=0, inner_axis=1)
-    
-def edge_message_passing(
-    tensor: GraphTensor, 
-    parallel_iterations: Optional[int] = None
-) -> tf.Tensor:
-    num_nodes = tf.shape(tensor.node_feature)[0]
-    message = tf.math.unsorted_segment_sum(
-        tensor.edge_feature, tensor.edge_dst, num_nodes)
-    message = tf.gather(message, tensor.edge_src)
-    message = message - _get_reverse_edge_features(
-        tensor, parallel_iterations)
-    return message
     

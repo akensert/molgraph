@@ -14,11 +14,13 @@ from molgraph.layers.geometric.gcf_conv import GCFConv
 from molgraph.layers.geometric.dtnn_conv import DTNNConv
 
 from molgraph.layers.message_passing.mpnn_conv import MPNNConv
+from molgraph.layers.message_passing.edge_conv import EdgeConv
 
 # readout
 from molgraph.layers.readout.segment_pool import SegmentPoolingReadout
 from molgraph.layers.readout.set_gather import SetGatherReadout
 from molgraph.layers.readout.transformer_encoder import TransformerEncoderReadout
+from molgraph.layers.readout.node_readout import NodeReadout
 
 # positional encoding
 from molgraph.layers.positional_encoding.laplacian import LaplacianPositionalEncoding

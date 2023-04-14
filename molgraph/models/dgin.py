@@ -7,15 +7,21 @@ from typing import Callable
 
 from molgraph.tensors import GraphTensor
 from molgraph.layers.ops import propagate_node_features
-from molgraph.models.dmpnn import edge_message_passing
+from molgraph.layers.message_passing.edge_conv import edge_message_step
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class DGIN(keras.layers.Layer):
+class DGIN(keras.models.Model):
 
     '''Directed graph isomorphism network (DGIN).
 
     Implementation is based on Wieder et al. (2021) [#]_. 
+    
+    **Important:**
+
+    As of now, EdgeConv only works on (sub)graphs with at least one edge/bond. If your dataset consists
+    of molecules with a single atom, please add self loops: 
+    ``molgraph.chemistry.MolecularGraphEncoder(..., self_loops=True)``
     
     **Example:**
 
@@ -93,6 +99,8 @@ class DGIN(keras.layers.Layer):
         self.dense_kwargs.pop('activaton', None)
 
     def build(self, input_shape: Optional[Tuple[int, ...]] = None) -> None:
+        if not self.units:
+            self.units = input_shape[-1]
         self.initial_projection = keras.layers.Dense(
             self.units, self.activation, **self.dense_kwargs)
         self.update_projection = keras.layers.Dense(
@@ -139,8 +147,12 @@ class DGIN(keras.layers.Layer):
         
         for _ in range(self.edge_message_steps):
             
-            message = edge_message_passing(
-                tensor, self.parallel_iterations)
+            message = edge_message_step(
+                edge_feature=tensor.edge_feature,
+                edge_src=tensor.edge_src,
+                edge_dst=tensor.edge_dst,
+                graph_indicator=tensor.graph_indicator,
+                parallel_iterations=self.parallel_iterations)
 
             edge_feature = self.activation(
                 self.update_projection(message) + edge_feature)

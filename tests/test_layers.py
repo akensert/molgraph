@@ -202,6 +202,23 @@ def test_mpnn_conv(parameters) -> None:
     list(map(partial(map_fn, layer=layers.MPNNConv, parameters=parameters), inputs))
 
 
+def map_fn_edge_conv(inp, layer, parameters):
+    layer = layer(**parameters)
+    out = layer(inp)
+    units = layer.units
+    assert out.shape[0] == inp.shape[0]
+    assert out.edge_state.shape[-1] == units
+
+@pytest.mark.parametrize("parameters", [
+    {'units': None},
+    {'units': 128, 'update_mode': 'GRU'},
+    {'units': 128, 'update_mode': 'DENSE'},
+    {'units': 33, 'parallel_iterations': 4}
+])
+def test_edge_conv(parameters) -> None:
+    list(map(partial(map_fn_edge_conv, layer=layers.EdgeConv, parameters=parameters), inputs[:4]))
+
+
 
 # Define molecular graph encoder (without positional encoding)
 encoder = MolecularGraphEncoder(atom_encoder, bond_encoder, positional_encoding_dim=None)

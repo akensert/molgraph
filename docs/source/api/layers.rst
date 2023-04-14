@@ -66,6 +66,11 @@ MPNNConv
   .. autoclass:: molgraph.layers.MPNNConv(molgraph.layers.BaseLayer)
     :members: call, get_config, from_config, compute_output_shape
 
+EdgeConv
+===========================
+  .. autoclass:: molgraph.layers.EdgeConv(tf.keras.layers.Layer)
+    :members: call, get_config, from_config, compute_output_shape
+
 
 ***************************
 Geometric
@@ -99,6 +104,11 @@ TransformerEncoderReadout
 SetGatherReadout
 ===========================
 .. autoclass:: molgraph.layers.SetGatherReadout(tensorflow.keras.layers.Layer)
+  :members: call, get_config, from_config, compute_output_shape
+
+NodeReadout
+===========================
+.. autoclass:: molgraph.layers.NodeReadout(tensorflow.keras.layers.Layer)
   :members: call, get_config, from_config, compute_output_shape
 
 
