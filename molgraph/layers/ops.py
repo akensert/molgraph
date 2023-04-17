@@ -79,8 +79,7 @@ def softmax_edge_weights(
         num_segments = tf.maximum(tf.reduce_max(edge_dst) + 1, 1)
         edge_weight_sum = tf.math.unsorted_segment_sum(
             edge_weight, edge_dst, num_segments) + keras.backend.epsilon()
-        repeats = tf.math.bincount(tf.maximum(edge_dst, 0))
-        edge_weight_sum = tf.repeat(edge_weight_sum, repeats, axis=0)
+        edge_weight_sum = tf.gather(edge_weight_sum, edge_dst)
         return edge_weight / edge_weight_sum
 
     def false_fn(edge_weight):
