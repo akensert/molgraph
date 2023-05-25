@@ -49,12 +49,15 @@ inputs = [
 
 
 def map_fn(inp, layer, parameters):
-    layer = layer(**parameters)
-    out = layer(inp)
-    units = layer.units
+    # two-layered GNN
+    layer1 = layer(**parameters)
+    layer2 = layer(**parameters)
+    out = layer1(inp)
+    out = layer2(out)
+    units = layer2.units
     assert out.shape[0] == inp.shape[0]
     assert out.shape[-1] == units
-    if layer.update_edge_features and hasattr(inp, 'edge_feature'):
+    if layer1.update_edge_features and hasattr(inp, 'edge_feature'):
         assert out.edge_feature.shape[0] == inp.edge_feature.shape[0]
         assert out.edge_feature.shape[-1] == units
 
@@ -92,6 +95,7 @@ def test_gcn_conv(parameters) -> None:
     {'units': 128, 'residual': False, 'self_projection': False},
     {'units': None, 'residual': True, 'self_projection': True},
     {'units': 128, 'residual': True, 'self_projection': True},
+    {'units': 128, 'use_edge_features': True, 'residual': True, 'self_projection': True},
 ])
 def test_gin_conv(parameters) -> None:
     list(map(partial(map_fn, layer=layers.GINConv, parameters=parameters), inputs))

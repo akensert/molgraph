@@ -23,7 +23,8 @@ class GINConv(BaseLayer):
 
     '''Graph isomorphism convolution layer (GIN).
 
-    Implementation based on Dwivedi et al. (2022) [#]_ and Xu et al. (2019) [#]_.
+    Implementation based on Dwivedi et al. (2022) [#]_, Xu et al. (2019) [#]_, 
+    and Hu et al. (2020) [#]_.
 
     **Examples:**
 
@@ -73,9 +74,51 @@ class GINConv(BaseLayer):
     >>> gnn_model.output_shape
     (None, 16)
 
+    With edge features ("GINEConv"):
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     data={
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
+    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'node_feature': [
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0]
+    ...         ],
+    ...         'graph_indicator': [0, 0, 1, 1, 1],
+    ...         'edge_feature': [
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0],
+    ...             [0.0, 1.0],
+    ...             [0.0, 1.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0],
+    ...             [1.0, 0.0],
+    ...             [0.0, 1.0]
+    ...         ],
+    ...     }
+    ... )
+    >>> # Build a model with GINConv
+    >>> gnn_model = tf.keras.Sequential([
+    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     molgraph.layers.GINConv(
+    ...         16, activation='relu', use_edge_features=True), # need to be explicit
+    ...     molgraph.layers.GINConv(
+    ...         16, activation='relu', use_edge_features=True)  # need to be explicit
+    ... ])
+    >>> gnn_model.output_shape
+    (None, 16)
+
     Args:
         units (int, None):
             Number of output units.
+        use_edge_features (bool):
+            Whether or not to use edge features. Default to False.
+        apply_relu_activation (bool):
+            Whether to apply relu activation before aggregation step. Only relevant
+            if use_edge_features is set to True. Default to False.
         self_projection (bool):
             Whether to apply self projection. Default to True.
         batch_norm: (bool):
@@ -109,12 +152,14 @@ class GINConv(BaseLayer):
     References:
         .. [#] https://arxiv.org/pdf/2003.00982.pdf
         .. [#] https://arxiv.org/pdf/1810.00826.pdf
-
+        .. [#] https://arxiv.org/pdf/1905.12265.pdf
     '''
 
     def __init__(
         self,
         units: Optional[int] = None,
+        use_edge_features: bool = False,
+        apply_relu_activation: bool = False,
         self_projection: bool = True,
         batch_norm: bool = True,
         residual: bool = True,
@@ -153,12 +198,17 @@ class GINConv(BaseLayer):
         self.batch_norm = batch_norm
         self.activation = activations.get('relu')
         self.apply_self_projection = self_projection
+        self.use_edge_features = use_edge_features
+        self.apply_relu_activation = apply_relu_activation
 
     def subclass_build(
         self,
         node_feature_shape: Optional[tf.TensorShape] = None,
         edge_feature_shape: Optional[tf.TensorShape] = None
     ) -> None:
+
+        if edge_feature_shape is None:
+            self.use_edge_features = False
 
         self.projection_1 = self.get_dense(self.units)
         self.projection_2 = self.get_dense(self.units)
@@ -168,6 +218,12 @@ class GINConv(BaseLayer):
             regularizer=None,
             trainable=True,
             name='epsilon')
+
+        node_dim = node_feature_shape[-1]
+        if self.use_edge_features:
+            edge_dim = edge_feature_shape[-1]
+            if edge_dim != node_dim:
+                self.edge_projection = self.get_dense(node_dim)
 
         if self.batch_norm:
             self.batch_norm = layers.BatchNormalization()
@@ -179,13 +235,24 @@ class GINConv(BaseLayer):
 
     def subclass_call(self, tensor: GraphTensor) -> GraphTensor:
 
-        node_feature = propagate_node_features(
-            node_feature=tensor.node_feature,
-            edge_dst=tensor.edge_dst,
-            edge_src=tensor.edge_src)
-
+        if not self.use_edge_features:
+            node_feature_aggregated = propagate_node_features(
+                node_feature=tensor.node_feature,
+                edge_dst=tensor.edge_dst,
+                edge_src=tensor.edge_src)
+        else:
+            node_feature_src = tf.gather(tensor.node_feature, tensor.edge_src)
+            if hasattr(self, 'edge_projection'):
+                edge_feature_updated = self.edge_projection(tensor.edge_feature)
+                tensor = tensor.update({'edge_feature': edge_feature_updated})
+            node_feature_src += tensor.edge_feature
+            if self.apply_relu_activation:
+                node_feature_src = tf.nn.relu(node_feature_src)
+            node_feature_aggregated = tf.math.unsorted_segment_sum(
+                node_feature_src, tensor.edge_dst, tf.shape(tensor.node_feature)[0])
+            
         node_feature = (
-            (1 + self.epsilon) * tensor.node_feature + node_feature)
+            (1 + self.epsilon) * tensor.node_feature + node_feature_aggregated)
 
         node_feature = self.projection_1(node_feature)
 
@@ -205,6 +272,8 @@ class GINConv(BaseLayer):
         base_config = super().get_config()
         config = {
             'self_projection': self.apply_self_projection,
+            'use_edge_features': self.use_edge_features,
+            'apply_relu_activation': self.apply_relu_activation
         }
         base_config.update(config)
         return base_config
