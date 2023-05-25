@@ -10,6 +10,32 @@ See [pre-print](https://arxiv.org/abs/2208.09944)
 ## Documentation
 See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 
+## Implementations
+
+- **Convolutional**
+    - GCNConv (`GCNConv`)
+    - GCN(E)Conv (`GCNConv`)
+    - GINConv (`GINConv`)
+    - GIN(E)Conv (`GINConv`)
+    - GCNIIConv (`GCNIIConv`)
+    - GraphSageConv (`GraphSageConv`)
+- **Attentional**
+    - GATConv (`GATConv`)
+    - GAT(E)Conv (`GATConv`)
+    - GATv2Conv (`GATv2Conv`)
+    - GAT(E)v2Conv (`GATv2Conv`)
+    - GTConv (`GTConv`)
+    - GT(E)Conv (`GTConv`)
+    - GMMConv (`GMMConv`)
+    - GatedGCNConv (`GatedGCNConv`)
+    - GatedGCN(E)Conv (`GatedGCNConv`)
+- **Message-passing**
+    - MPNNConv (`MPNNConv`)
+    - EdgeConv (`EdgeConv`)
+- **Geometric**
+    - DTNNConv (`DTNNConv`)
+    - GCFConv (`GCFConv`)
+    
 ## Installation
 
 Install via **pip**:
