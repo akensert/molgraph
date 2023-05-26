@@ -56,6 +56,12 @@ GTConv
 .. autoclass:: molgraph.layers.GTConv(molgraph.layers.BaseLayer)
   :members: call, get_config, from_config, compute_output_shape
 
+AttentiveFPConv
+===========================
+.. autoclass:: molgraph.layers.AttentiveFPConv(molgraph.layers.GATConv)
+  :members: call, get_config, from_config, compute_output_shape
+
+
 
 ***************************
 Message-passing
@@ -110,6 +116,12 @@ NodeReadout
 ===========================
 .. autoclass:: molgraph.layers.NodeReadout(tensorflow.keras.layers.Layer)
   :members: call, get_config, from_config, compute_output_shape
+
+AttentiveFPReadout
+===========================
+.. autoclass:: molgraph.layers.AttentiveFPReadout(tensorflow.keras.layers.Layer)
+  :members: call, get_config, from_config, compute_output_shape
+
 
 
 ***************************

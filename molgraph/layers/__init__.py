@@ -5,6 +5,8 @@ from molgraph.layers.attentional.gated_gcn_conv import GatedGCNConv
 from molgraph.layers.attentional.gt_conv import GTConv
 from molgraph.layers.attentional.gmm_conv import GMMConv
 
+from molgraph.layers.attentional.attentive_fp_conv import AttentiveFPConv
+
 from molgraph.layers.convolutional.gcn_conv import GCNConv
 from molgraph.layers.convolutional.graph_sage_conv import GraphSageConv
 from molgraph.layers.convolutional.gin_conv import GINConv
@@ -21,6 +23,7 @@ from molgraph.layers.readout.segment_pool import SegmentPoolingReadout
 from molgraph.layers.readout.set_gather import SetGatherReadout
 from molgraph.layers.readout.transformer_encoder import TransformerEncoderReadout
 from molgraph.layers.readout.node_readout import NodeReadout
+from molgraph.layers.readout.attentive_fp_readout import AttentiveFPReadout
 
 # positional encoding
 from molgraph.layers.positional_encoding.laplacian import LaplacianPositionalEncoding

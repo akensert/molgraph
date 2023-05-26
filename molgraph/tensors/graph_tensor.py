@@ -702,6 +702,7 @@ def _maybe_convert_to_tensors(
         'Checks if tensor is rectangular (non-ragged)'
         lengths = set()
         for xi in x:
+            # TODO: What if tf.Tensor?
             if not isinstance(xi, (np.ndarray, list, tuple)):
                 lengths.add(0)
             else:
@@ -720,6 +721,7 @@ def _maybe_convert_to_tensors(
                 raise ValueError(
                     'Tensor needs to be either `tf.Tensor` or `tf.RaggedTensor`.')
         if _is_rectangular(x):
+            # TODO: slow; implement something like "fast_convert_to_ragged()"
             return tf.convert_to_tensor(x)
         return tf.ragged.constant(x, ragged_rank=1) # Pretty slow
 

@@ -1,6 +1,6 @@
 # MolGraph: Graph Neural Networks for Molecular Machine Learning
 
-*This is an early release; things are still being updated and added. Hence, API compatibility may break in the future.*
+*This is an early release; things are still being updated, added and experimented with. Hence, API compatibility may break in the future.*
 
 *Any feedback is welcomed!*
 
@@ -29,6 +29,7 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
     - GMMConv (`GMMConv`)
     - GatedGCNConv (`GatedGCNConv`)
     - GatedGCN(E)Conv (`GatedGCNConv`)
+    - AttentiveFPConv (`AttentiveFPConv`)
 - **Message-passing**
     - MPNNConv (`MPNNConv`)
     - EdgeConv (`EdgeConv`)

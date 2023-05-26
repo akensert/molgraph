@@ -65,6 +65,20 @@ def map_fn(inp, layer, parameters):
 @pytest.mark.parametrize("parameters", [
     {'units': None,
     'residual': False,
+    'merge_mode': 'mean', 
+    'self_projection': False},
+    {'units': 128, 'residual': False, 'self_projection': False},
+    {'units': None, 'residual': True, 'merge_mode': 'mean', 'self_projection': True},
+    {'units': 128, 'residual': True, 'self_projection': True},
+    {'units': 128, 'apply_initial_node_projection': True, 'residual': True, 'self_projection': True},
+    {'units': 128, 'apply_initial_node_projection': False, 'residual': True, 'self_projection': True},
+])
+def test_attentive_fp_conv(parameters) -> None:
+    list(map(partial(map_fn, layer=layers.AttentiveFPConv, parameters=parameters), inputs))
+
+@pytest.mark.parametrize("parameters", [
+    {'units': None,
+    'residual': False,
     'self_projection': False},
     {'units': 128, 'residual': False, 'self_projection': False},
     {'units': None, 'residual': True, 'self_projection': True},
@@ -314,3 +328,6 @@ def test_transformer_readout() -> None:
 
 def test_set_gather_readout() -> None:
     list(map(partial(map_fn_2, layer=layers.SetGatherReadout), inputs_3))
+
+def test_attentive_fp_readout() -> None:
+    list(map(partial(map_fn_2, layer=layers.AttentiveFPReadout), inputs_3))
