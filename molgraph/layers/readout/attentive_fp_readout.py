@@ -91,9 +91,9 @@ class AttentiveFPReadout(tf.keras.layers.Layer):
     def __init__(
         self,
         steps: int = 4,
-        message_step: GATConv|None = None,
-        update_step: tf.keras.layers.GRUCell|None = None,
-        final_node_projection: tf.keras.layers.Dense|None = None,
+        message_step: Optional[GATConv] = None,
+        update_step: Optional[tf.keras.layers.GRUCell] = None,
+        final_node_projection: Optional[tf.keras.layers.Dense] = None,
         **kwargs
     ):
         super().__init__(**kwargs)

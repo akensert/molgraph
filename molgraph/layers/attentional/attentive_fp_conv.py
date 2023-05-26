@@ -235,7 +235,7 @@ class AttentiveFPConv(GATConv):
         self,
         units: Optional[int] = None,
         apply_initial_node_projection: bool = False,
-        gru_cell: tf.keras.layers.GRUCell|None = None,
+        gru_cell: Optional[tf.keras.layers.GRUCell] = None,
         num_heads: int = 8,
         merge_mode: Optional[str] = 'concat',
         self_projection: bool = True,
