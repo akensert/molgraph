@@ -150,11 +150,11 @@ class AttentiveFPReadout(tf.keras.layers.Layer):
 
 def _add_virtual_super_nodes(
     tensor: GraphTensor
-) -> tuple[GraphTensor, tf.Tensor]:
+) -> Tuple[GraphTensor, tf.Tensor]:
     
     def _get_edges(
         node_feature: tf.RaggedTensor
-    ) -> tuple[tf.RaggedTensor, tf.RaggedTensor]:
+    ) -> Tuple[tf.RaggedTensor, tf.RaggedTensor]:
         graph_sizes = node_feature.row_lengths()
         edge_src_flat = tf.cast(
             tf.ragged.range(1, graph_sizes+1).flat_values, 
