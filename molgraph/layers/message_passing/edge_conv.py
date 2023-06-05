@@ -27,7 +27,7 @@ Config = TypeVar('Config', bound=dict)
 @keras.utils.register_keras_serializable(package='molgraph')
 class EdgeConv(keras.layers.Layer):
 
-    """Edge convolutional layer, used to build DMPNN [#]_ and DGIN [#_] like models.
+    """Edge convolutional layer, used to build DMPNN [#]_ and DGIN [#]_ like models.
 
     **Important:**
 
