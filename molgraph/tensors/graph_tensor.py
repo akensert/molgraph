@@ -681,8 +681,9 @@ def _remove_intersubgraph_edges(data: NestedTensors) -> NestedTensors:
     mask = tf.where((subgraphs_dst - subgraphs_src) == 0, True, False)
     data['edge_dst'] = tf.boolean_mask(data['edge_dst'], mask)
     data['edge_src'] = tf.boolean_mask(data['edge_src'], mask)
-    if 'edge_feature' in data:
-        data['edge_feature'] = tf.boolean_mask(data['edge_feature'], mask)
+    for key in data.keys():
+        if key.startswith('edge') and key != 'edge_dst' and key != 'edge_src':
+            data[key] = tf.boolean_mask(data[key], mask)
     return data
 
 def _maybe_convert_to_tensors(
@@ -702,8 +703,7 @@ def _maybe_convert_to_tensors(
         'Checks if tensor is rectangular (non-ragged)'
         lengths = set()
         for xi in x:
-            # TODO: What if tf.Tensor?
-            if not isinstance(xi, (np.ndarray, list, tuple)):
+            if not isinstance(xi, (tf.Tensor, np.ndarray, list, tuple)):
                 lengths.add(0)
             else:
                 lengths.add(len(xi))
@@ -721,9 +721,9 @@ def _maybe_convert_to_tensors(
                 raise ValueError(
                     'Tensor needs to be either `tf.Tensor` or `tf.RaggedTensor`.')
         if _is_rectangular(x):
-            # TODO: slow; implement something like "fast_convert_to_ragged()"
             return tf.convert_to_tensor(x)
-        return tf.ragged.constant(x, ragged_rank=1) # Pretty slow
+        # TODO: slow; implement something like "fast_convert_to_ragged()"
+        return tf.ragged.constant(x, ragged_rank=1) 
 
     data = {k: maybe_convert(v) for (k, v) in data.items()}
     _check_tensor_types(data)
