@@ -52,9 +52,8 @@ from molgraph.layers.preprocessing.min_max_scaling import EdgeMinMaxScaling
 from molgraph.layers.preprocessing.center_scaling import CenterScaling
 from molgraph.layers.preprocessing.center_scaling import NodeCenterScaling
 from molgraph.layers.preprocessing.center_scaling import EdgeCenterScaling
-from molgraph.layers.preprocessing.masking import FeatureMasking
-from molgraph.layers.preprocessing.masking import NodeFeatureMasking
-from molgraph.layers.preprocessing.masking import EdgeFeatureMasking
+from molgraph.layers.preprocessing.dropout import NodeDropout
+from molgraph.layers.preprocessing.dropout import EdgeDropout
 
 
 # layer ops
