@@ -19,11 +19,14 @@ class EmbeddingLookup(layers.StringLookup):
     '''A loookup layer and embedding layer in combination.
 
     Specify, as keyword argument only,
-    ``EmbeddingLookup(feature='node_feature')`` to perform standard scaling
-    on the ``node_feature`` field of the ``GraphTensor``, or,
-    ``EmbeddingLookup(feature='edge_feature')`` to perform standard scaling
-    on the ``edge_feature`` field of the ``GraphTensor``. If not specified,
-    the ``node_feature`` field will be considered.
+    ``EmbeddingLookup(feature='node_feature', ...)`` to perform embedding lookup
+    on the ``node_feature`` component of the ``GraphTensor``, or,
+    ``EmbeddingLookup(feature='edge_feature', ...)`` to perform embedding lookup
+    on the ``edge_feature`` component of the ``GraphTensor``. If not specified,
+    the ``node_feature`` component will be considered.
+
+    Instead of specifying `feature`, ``NodeEmbeddingLookup(...)`` or 
+    ``EdgeEmbeddingLookup(...)`` can be used instead.
 
     **Examples:**
 
@@ -185,8 +188,8 @@ class EmbeddingLookup(layers.StringLookup):
         Returns:
             GraphTensor:
                 A ``GraphTensor`` with updated features. Either the
-                ``node_features`` field or the ``edge_features``
-                field (of the ``GraphTensor``) are updated.
+                ``node_feature`` component or the ``edge_feature``
+                component (of the ``GraphTensor``) are updated.
         '''
         if not self._built_from_vocabulary_size:
             self._build_from_vocabulary_size(self._vocabulary_size)

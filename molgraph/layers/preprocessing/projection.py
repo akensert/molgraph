@@ -15,11 +15,14 @@ class FeatureProjection(layers.Layer):
     '''Feature projection via dense layer.
 
     Specify, as keyword argument only,
-    ``FeatureProjection(feature='node_feature')`` to perform standard scaling
-    on the ``node_feature`` field of the ``GraphTensor``, or,
-    ``FeatureProjection(feature='edge_feature')`` to perform standard scaling
-    on the ``edge_feature`` field of the ``GraphTensor``. If not specified,
-    the ``node_feature`` field will be considered.
+    ``FeatureProjection(feature='node_feature')`` to perform a projection
+    of the ``node_feature`` component of the ``GraphTensor``, or,
+    ``FeatureProjection(feature='edge_feature')`` to perform a projection
+    of the ``edge_feature`` component of the ``GraphTensor``. If not specified,
+    the ``node_feature`` component will be considered.
+
+    Instead of specifying `feature`, ``NodeFeatureProjection(...)`` or 
+    ``EdgeFeatureProjection(...)`` can be used instead.
 
     **Example:**
 
@@ -131,7 +134,7 @@ class FeatureProjection(layers.Layer):
 
         Returns:
             A ``tf.Tensor`` or `tf.RaggedTensor` based on the ``node_feature``
-            field of the inputted ``GraphTensor``.
+            component of the inputted ``GraphTensor``.
         '''
         tensor_orig = tensor
         if isinstance(getattr(tensor, self.feature), tf.RaggedTensor):

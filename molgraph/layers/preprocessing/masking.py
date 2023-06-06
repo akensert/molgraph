@@ -12,6 +12,9 @@ class FeatureMasking(keras.layers.Layer):
     the `GraphTensor` instance to be produced from `molgraph.chemistry.Tokenizer` 
     instead of `molgraph.chemistry.Tokenizer`.
 
+    Instead of specifying `feature`, ``NodeFeatureMasking(...)`` or 
+    ``EdgeFeatureMasking(...)`` can be used instead.
+
     **Example:**
 
     >>> graph_tensor = molgraph.GraphTensor(

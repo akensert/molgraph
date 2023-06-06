@@ -21,10 +21,10 @@ class StandardScaling(layers.experimental.preprocessing.PreprocessingLayer):
 
     Specify, as keyword argument only,
     ``StandardScaling(feature='node_feature')`` to perform standard scaling
-    on the ``node_feature`` field of the ``GraphTensor``, or,
+    on the ``node_feature`` component of the ``GraphTensor``, or,
     ``StandardScaling(feature='edge_feature')`` to perform standard scaling
-    on the ``edge_feature`` field of the ``GraphTensor``. If not specified,
-    the ``node_feature`` field will be considered.
+    on the ``edge_feature`` component of the ``GraphTensor``. If not specified,
+    the ``node_feature`` component will be considered.
 
     **Examples:**
 
@@ -199,8 +199,8 @@ class StandardScaling(layers.experimental.preprocessing.PreprocessingLayer):
         Returns:
             GraphTensor:
                 A ``GraphTensor`` with updated features. Either the
-                ``node_features`` field or the ``edge_features``
-                field (of the ``GraphTensor``) are updated.
+                ``node_feature`` component or the ``edge_feature``
+                component (of the ``GraphTensor``) are updated.
         '''
         feature = getattr(data, self.feature)
 
@@ -234,8 +234,8 @@ class StandardScaling(layers.experimental.preprocessing.PreprocessingLayer):
         Args:
             input_shape (list, tuple, tf.TensorShape):
                 The shape of the input to the layer. Corresponds to either
-                the ``node_feature`` field or the ``edge_feature``
-                fields of ``GraphTensor``.
+                the ``node_feature`` component or the ``edge_feature``
+                component of ``GraphTensor``.
         '''
         super().build(input_shape)
 
@@ -292,7 +292,7 @@ class StandardScaling(layers.experimental.preprocessing.PreprocessingLayer):
         Args:
             feature (tf.Tensor, tf.RaggedTensor):
                 A mini-batch of inputs to the layer. Corresponds to either
-                the ``node_feature`` or ``edge_feature`` field of
+                the ``node_feature`` or ``edge_feature`` component of
                 ``GraphTensor``.
         '''
 
@@ -401,11 +401,11 @@ class VarianceThreshold(StandardScaling):
     calling the layer.
 
     Specify, as keyword argument only,
-    ``VarianceThreshold(feature='node_feature')`` to perform standard scaling
-    on the ``node_feature`` field of the ``GraphTensor``, or,
-    ``VarianceThreshold(feature='edge_feature')`` to perform standard scaling
-    on the ``edge_feature`` field of the ``GraphTensor``. If not specified,
-    the ``node_feature`` field will be considered.
+    ``VarianceThreshold(feature='node_feature')`` to perform variance thresholding
+    on the ``node_feature`` component of the ``GraphTensor``, or,
+    ``VarianceThreshold(feature='edge_feature')`` to perform variance thresholding
+    on the ``edge_feature`` component of the ``GraphTensor``. If not specified,
+    the ``node_feature`` component will be considered.
 
     **Examples:**
 
@@ -548,8 +548,8 @@ class VarianceThreshold(StandardScaling):
         Returns:
             GraphTensor:
                 A ``GraphTensor`` with updated features. Either the
-                ``node_features`` field or the ``edge_features``
-                field (of the ``GraphTensor``) are updated.
+                ``node_feature`` component or the ``edge_feature``
+                component (of the ``GraphTensor``) are updated.
         '''
         feature = getattr(data, self.feature)
 

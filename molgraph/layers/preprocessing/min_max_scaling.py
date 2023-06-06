@@ -22,11 +22,11 @@ class MinMaxScaling(layers.experimental.preprocessing.PreprocessingLayer):
     '''Min-max scaling between a specified range.
 
     Specify, as keyword argument only,
-    ``MinMaxScaling(feature='node_feature')`` to perform standard scaling
-    on the ``node_feature`` field of the ``GraphTensor``, or,
-    ``MinMaxScaling(feature='edge_feature')`` to perform standard scaling
-    on the ``edge_feature`` field of the ``GraphTensor``. If not specified,
-    the ``node_feature`` field will be considered.
+    ``MinMaxScaling(feature='node_feature')`` to perform min-max scaling
+    on the ``node_feature`` component of the ``GraphTensor``, or,
+    ``MinMaxScaling(feature='edge_feature')`` to perform min-max scaling
+    on the ``edge_feature`` component of the ``GraphTensor``. If not specified,
+    the ``node_feature`` component will be considered.
 
     **Examples:**
 
@@ -200,8 +200,8 @@ class MinMaxScaling(layers.experimental.preprocessing.PreprocessingLayer):
         Returns:
             GraphTensor:
                 A ``GraphTensor`` with updated features. Either the
-                ``node_features`` field or the ``edge_features``
-                field (of the ``GraphTensor``) are updated.
+                ``node_feature`` component or the ``edge_feature``
+                component (of the ``GraphTensor``) are updated.
         '''
         feature = getattr(data, self.feature)
 
