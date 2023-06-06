@@ -41,7 +41,6 @@ class FeatureMasking(keras.layers.Layer):
     ...        'graph_indicator': [0, 0, 0, 0, 0],
     ...    }
     ... )
-
     >>> node_embedding = molgraph.layers.NodeEmbeddingLookup(
     ...    32, mask_token='[MASK]'
     ... )
