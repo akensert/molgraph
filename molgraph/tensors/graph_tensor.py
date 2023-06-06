@@ -409,6 +409,8 @@ class GraphTensor(composite_tensor.CompositeTensor):
         num_subgraphs = self.num_subgraphs
 
         data_edges = {k: v for (k, v) in data.items() if 'edge' in k}
+        # TODO: "not 'edge'" because of 'positional_encoding'. 
+        #       Change to 'node_position' ?
         data_nodes = {k: v for (k, v) in data.items() if not 'edge' in k}
 
         data_edges = tf.nest.map_structure(
@@ -1006,6 +1008,120 @@ def graph_tensor_matmul(
     return tf.matmul(
         a, b, transpose_a, transpose_b, adjoint_a,
         adjoint_b, a_is_sparse, b_is_sparse, output_type)
+
+def _mask_nodes(
+    tensor: GraphTensor, 
+    node_mask: tf.Tensor
+) -> GraphTensor:
+    
+    num_nodes = tf.shape(tensor.node_feature)[0]
+
+    # indices of nodes to keep
+    keep_nodes = tf.boolean_mask(tf.range(num_nodes), node_mask)
+    
+    # Get edge mask: 
+    # edges where edge_dst AND edge_src exist in `keep_nodes` will be kept
+    edge_mask = tf.logical_and(
+        tf.reduce_any(tf.expand_dims(tensor.edge_dst, -1) == keep_nodes, -1),
+        tf.reduce_any(tf.expand_dims(tensor.edge_src, -1) == keep_nodes, -1))
+    
+    # Decrement (node) indices in edge_dst and edge_src:
+    # as nodes are completely dropped, indices needs to be 
+    # decremented accordingly.
+    decr = tf.concat([[-1], keep_nodes], axis=0)
+    decr = tf.math.cumsum(decr[1:] - decr[:-1] - 1)
+    decr = tf.tensor_scatter_nd_add(
+        tensor=tf.zeros((num_nodes,), dtype=decr.dtype),
+        indices=tf.expand_dims(keep_nodes, -1),
+        updates=decr)
+    
+    # Apply mask and decrement to edges
+    edge_dst = tf.boolean_mask(tensor.edge_dst, edge_mask)
+    edge_dst -= tf.gather(decr, edge_dst)
+    edge_src = tf.boolean_mask(tensor.edge_src, edge_mask)
+    edge_src -= tf.gather(decr, edge_src)
+    
+    # Obtain components of the GraphTensor
+    data = tensor._data.copy()
+    
+    # Add new (masked) edge_dst and edge_src
+    data['edge_dst'] = edge_dst
+    data['edge_src'] = edge_src
+    
+    # Apply masks on the rest of the components and add to data
+    # Both components associated with edges and nodes will be masked
+    data['graph_indicator'] = tf.boolean_mask(
+        data['graph_indicator'], node_mask)
+    if 'positional_encoding' in data:
+        data['positional_encoding'] = tf.boolean_mask(
+            data['positional_encoding'], node_mask)
+    already_masked = [
+        'edge_dst', 'edge_src', 'graph_indicator', 'positional_encoding',
+    ]
+    for key in data.keys():
+        if key not in already_masked:
+            if key.startswith('edge'):
+                 data[key] = tf.boolean_mask(data[key], edge_mask)
+            elif key.startswith('node'):
+                 data[key] = tf.boolean_mask(data[key], node_mask)  
+                
+    return GraphTensor(**data)
+
+def _mask_edges(
+    tensor: GraphTensor, 
+    edge_mask: tf.Tensor
+) -> GraphTensor:
+    # Obtain components of the GraphTensor
+    data = tensor._data.copy()
+    # Mask all components associated with edges
+    for key in data.keys():
+        if key.startswith('edge'):
+             data[key] = tf.boolean_mask(data[key], edge_mask)   
+    return GraphTensor(**data)
+
+@tf.experimental.dispatch_for_api(tf.boolean_mask)
+def graph_tensor_boolean_mask(
+    tensor: GraphTensor, mask, axis=None,
+) -> GraphTensor:
+    '''Allows GraphTensor to be masked, via tf.boolean_mask.
+    
+    Conventiently, nodes or edges can be masked from the graph.
+
+    Args:
+        tensor (GraphTensor):
+            An instance of a GraphTensor to be masked.
+        mask (tf.Tensor):
+            The node or edge mask. If the `mask` should be applied to
+            nodes, it should match the outermost dim of `tensor.node_feature`;
+            likewise if mask should be applied to edges, it should match the 
+            outermost dim of `tensor.edge_src` and `tensor.edge_dst`.
+        axis (int, str, None):
+            If axis is set to None, 0, or 'node', nodes will be masked;
+            otherwise, edges will be masked. `axis` usually does not accept
+            strings; however, as (1) the axis to perform node and edge
+            masking is always 0 anyways, and (2) additional arguments 
+            could not be added, it was decided to use the `axis` argument
+            to indicate whether nodes or edges should be masked.
+
+    Returns:
+        GraphTensor: Masked instance of a GraphTensor.
+
+    '''
+    if isinstance(tensor.node_feature, tf.RaggedTensor):
+        ragged = True
+        tensor = tensor.merge()
+    else:
+        ragged = False
+    if isinstance(mask, tf.RaggedTensor):
+        mask = mask.flat_values
+    if 'node' in axis or not axis:
+        tensor = _mask_nodes(tensor, mask)
+    else:
+        tensor = _mask_edges(tensor, mask)
+    if ragged:
+        return tensor.separate()
+    return tensor
+
 
 @tf.experimental.dispatch_for_unary_elementwise_apis(GraphTensor)
 def graph_tensor_unary_elementwise_op_handler(api_func, x):
