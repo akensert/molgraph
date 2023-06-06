@@ -174,6 +174,12 @@ FeatureProjection
   :members: get_config, from_config, call
   :member-order: bysource
 
+FeatureMasking
+===========================
+.. autoclass:: molgraph.layers.FeatureMasking(tensorflow.keras.layers.Layer)
+  :members: get_config, from_config, call
+  :member-order: bysource
+
 NodeDropout
 ===========================
 .. autoclass:: molgraph.layers.NodeDropout(tensorflow.keras.layers.Layer)

@@ -63,7 +63,7 @@ class NodeDropout(keras.layers.Layer):
                 Input to the layer.
 
         Returns:
-            GraphTensor: a masked instance of GraphTensor.
+            GraphTensor: a instance of GraphTensor with some of its nodes dropped.
         '''
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             shape = (tf.reduce_sum(tensor.node_feature.row_lengths()),)
@@ -133,7 +133,7 @@ class EdgeDropout(NodeDropout):
                 Input to the layer.
 
         Returns:
-            GraphTensor: a masked instance of GraphTensor.
+            GraphTensor: a instance of GraphTensor with some of its edges dropped.
         '''
         if isinstance(tensor.edge_src, tf.RaggedTensor):
             shape = (tf.reduce_sum(tensor.edge_src.row_lengths()),)
