@@ -28,6 +28,11 @@ class DotProductIncident(keras.layers.Layer):
     ... ])
     >>> model(graph_tensor)
     <tf.RaggedTensor [[4.0, 4.0], [9.0, 0.0, 9.0, 0.0, 0.0, 0.0]]>
+
+    Args:
+        apply_sigmoid (bool):
+            Whether to apply a sigmoid activaton on the edge scores. 
+            Default to False.
     '''
     def __init__(self, apply_sigmoid: bool = False, **kwargs):
         super().__init__(**kwargs)

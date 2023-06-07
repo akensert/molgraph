@@ -25,9 +25,9 @@ Config = TypeVar('Config', bound=dict)
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class EdgeConv(keras.layers.Layer):
+class EdgeConv(tf.keras.layers.Layer):
 
-    """Edge convolutional layer, used to build DMPNN [#]_ and DGIN [#]_ like models.
+    '''Edge convolutional layer, used to build DMPNN [#]_ and DGIN [#]_ like models.
 
     **Important:**
 
@@ -41,9 +41,7 @@ class EdgeConv(keras.layers.Layer):
     ways. For instance, it uses the very previous edge states (in `molgraph.layers.EdgeConv`) and 
     node states (in `molgraph.layers.GINConv`) as residual ("skip connections") rather than the very 
     initial edge states and node states respectively. Furthermore, this implementation also allows us to use
-    GRU as the update function, though default is to use a Dense layer. Like the models
-    (`molgraph.models.DGIN` and `molgraph.models.DMPNN`), this implementation allows for both shared 
-    ("weight tying") and unshared weights. Simply pass the previous layer via the `tie_layer` argument.
+    GRU as the update function, though default is to use a Dense layer. 
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
@@ -72,8 +70,8 @@ class EdgeConv(keras.layers.Layer):
     >>> # Build a DGIN model for binary classificaton
     >>> gnn_model = tf.keras.Sequential([
     ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.EdgeConv(16),                           # will produce 'edge_state' field
-    ...     molgraph.layers.EdgeConv(16),                           # will produce 'edge_state' field
+    ...     molgraph.layers.EdgeConv(16),                           # will produce 'edge_state' component
+    ...     molgraph.layers.EdgeConv(16),                           # will produce 'edge_state' component
     ...     molgraph.layers.NodeReadout(target='edge_state'),       # target='edge_state' is default
     ...     molgraph.layers.GINConv(32),
     ...     molgraph.layers.GINConv(32),
@@ -83,67 +81,15 @@ class EdgeConv(keras.layers.Layer):
     >>> gnn_model.output_shape
     (None, 1)
 
-    Tie weights of the previous layers with the subsequent layers:
-
-    >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'node_feature': [
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...         'edge_feature': [
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...     }
-    ... )
-    >>> # Build a model with EdgeConv
-    >>> edge_conv_1 = molgraph.layers.EdgeConv(
-    ...     units=16, 
-    ...     update_mode='gru'       # lets use GRU updates instead (as per Gilmer et al. (2017))
-    ... )
-    >>> edge_conv_2 = molgraph.layers.EdgeConv(
-    ...     units=32,               # will be ignored as EdgeConv layer is passed to `tie_layer`
-    ...     update_mode='gru',      # will be ignored as EdgeConv layer is passed to `tie_layer`
-    ...     tie_layer=edge_conv_1
-    ... )
-    >>> edge_conv_3 = molgraph.layers.EdgeConv(
-    ...     units=16,               # will be ignored as EdgeConv layer is passed to `tie_layer`
-    ...     update_mode='gru',      # will be ignored as EdgeConv layer is passed to `tie_layer`
-    ...     tie_layer=edge_conv_1   # specifying edge_conv_2 would be equivalent
-    ... )
-    >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     edge_conv_1,
-    ...     edge_conv_2,
-    ...     edge_conv_3,
-    ...     molgraph.layers.NodeReadout()
-    ... ])
-    >>> gnn_model.output_shape
-    (None, 16)
-
     Args:
         units (int, None):
             Number of output units.
         update_mode (bool):
             Specify what type of update will be performed. Either 'dense' or 'gru'. 
-            If 'gru' is specified, make sure weight tying is performed
-            (see 'tie_layer' argument above). Default to 'dense'.
-        tie_layer (molgraph.layers.message_passing.edge_conv.EdgeConv, None):
-            Pass the previous EdgeConv layer to perform weight tying. If None, weight tying
-            will not be performed (each layer has its own weights). Default to None.
+            Default to 'gru'.
+        update_fn (tf.keras.layers.GRUCell, tf.keras.layers.Dense, None):
+            Optionally pass update function (GRUCell or Dense) for weight-tying 
+            of the update step (GRU step or Dense step). Default to None.
         activation (tf.keras.activations.Activation, callable, str, None):
             Activation function applied to the updated edge states. If None is set, either 'relu'
             (for `update_mode='dense'`) or 'tanh' (for `update_mode='gru'`) will be used. 
@@ -181,8 +127,6 @@ class EdgeConv(keras.layers.Layer):
         recurrent_constraint (tf.keras.constraints.Constraint, None):
             Constraint function applied to the recurrent kernel (only relevant if ``update_mode='gru'``).
             Default to None.
-        automatically_infer_gru_activation (bool):
-            Whether to automatically infer the activation for GRU (when `activation=None`). Default to True.
         parallel_iterations (int, None):
             Number of ``parallel_iterations`` to be set for ``tf.map_fn`` to find
             the reverse edge states to be subtracted from the aggregated edge states.
@@ -190,13 +134,14 @@ class EdgeConv(keras.layers.Layer):
     References:
         .. [#] https://arxiv.org/pdf/1904.01561.pdf
         .. [#] https://www.mdpi.com/1420-3049/26/20/6185
-    """
-
+    '''
+    
     def __init__(
         self,
-        units: Optional[int] = None,
+        units: Optional[int],
         update_mode: str = 'dense',
-        tie_layer: Optional['EdgeConv'] = None,
+        update_fn: Optional[Union[
+            tf.keras.layers.GRUCell, tf.keras.layers.Dense]] = None,
         activation: Union[str, None, Callable[[tf.Tensor], tf.Tensor]] = None,
         recurrent_activation: Union[str, None, Callable[[tf.Tensor], tf.Tensor]] = 'sigmoid',
         use_bias: Optional[bool] = None,
@@ -210,25 +155,38 @@ class EdgeConv(keras.layers.Layer):
         kernel_constraint: Optional[constraints.Constraint] = None,
         bias_constraint: Optional[constraints.Constraint] = None,
         recurrent_constraint: Optional[constraints.Constraint] = None,
-        automatically_infer_gru_activation: bool = True,
         parallel_iterations: Optional[int] = None,
         **kwargs
     ):
+        self_projection = kwargs.pop('self_projection', False)
+
+        if self_projection:
+            raise ValueError('`EdgeConv` does not support self projection.')
+        
         super().__init__(**kwargs)
+
+        if units is None:
+            raise ValueError('`EdgeConv` requires units (int) to be passed.')
+        
         self.units = units
-        self.update_mode = update_mode
-        self.tie_layer = tie_layer
-        if not activation and update_mode != 'dense' and automatically_infer_gru_activation:
-            activation = 'tanh'
-        self.activation = activations.get(activation)
-        self.recurrent_activation = activations.get(recurrent_activation)
+        self.update_fn = update_fn
+        self.update_mode = update_mode.lower()
+        if activation is None:
+            if self.update_mode.startswith('gru'):
+                self.activation = 'tanh'
+            else:
+                self.activation = 'linear'
+        else:
+            self.activation = activation
         if use_bias is None:
-            use_bias = False if update_mode == 'dense' else True
+            use_bias = True if update_mode.startswith('gru') else True
         self.use_bias = use_bias
+        self.recurrent_activation = activations.get(recurrent_activation)
         if kernel_initializer is None:
             kernel_initializer = (
-                initializers.TruncatedNormal(stddev=0.005) if update_mode == 'dense' 
-                else 'glorot_uniform')
+                'glorot_uniform' if self.update_mode.startswith('gru') 
+                else initializers.TruncatedNormal(stddev=0.005)
+            )
         self.kernel_initializer  = initializers.get(kernel_initializer)
         self.bias_initializer = initializers.get(bias_initializer or 'zeros')
         self.recurrent_initializer = initializers.get(recurrent_initializer or 'orthogonal')
@@ -239,22 +197,30 @@ class EdgeConv(keras.layers.Layer):
         self.kernel_constraint = constraints.get(kernel_constraint)
         self.bias_constraint = constraints.get(bias_constraint)
         self.recurrent_constraint = constraints.get(recurrent_constraint)
-        self._parallel_iterations = parallel_iterations
-        self._automatically_infer_gru_activation = automatically_infer_gru_activation
+        self._parallel_iterations = parallel_iterations        
         self._initialize_edge_state = None
         self._built = False
 
-    def _build(self, units, initialize_edge_state):
+    def _build(self, initialize_edge_state):
+        
+        with tf_utils.maybe_init_scope(self):
 
-        if self.tie_layer:
-            self.update_projection = self._get_tied_layer_projection()
-            self.units = self.tie_layer.units
-        else:
             if initialize_edge_state:
-                self.initial_projection = self._get_dense(units)
-            self.update_projection = (
-                self._get_dense(units) if self.update_mode == 'dense' 
-                else self._get_gru(units))
+                self._initialize_edge_state = True
+                self.initial_projection = self._get_dense(self.units)
+            else:
+                self._initialize_edge_state = False
+
+            if self.update_fn is None:
+                self.update_fn = (
+                    self._get_gru(self.units) if self.update_mode.startswith('gru')
+                    else self._get_dense(self.units)
+                )
+            elif self.units != self.update_fn.units:
+                raise ValueError(
+                    'units of `update_fn` needs to match units of this layer.')
+
+            self._built = True
 
     def call(self, tensor: GraphTensor) -> GraphTensor:
 
@@ -268,18 +234,11 @@ class EdgeConv(keras.layers.Layer):
             tensor = tensor.update({
                 'edge_feature': tf.ones(
                     shape=[tf.shape(tensor.edge_dst)[0], 1], dtype=tf.float32)})
-
+            
         if not self._built:
-            with tf_utils.maybe_init_scope(self):
-                self._initialize_edge_state = (
-                    True if not hasattr(tensor, 'edge_state') else False)
-                if not (self.units and (self._initialize_edge_state or self.update_mode == 'dense')):
-                    if hasattr(tensor, 'edge_state'):
-                        self.units = tensor.edge_state.shape[-1]
-                    else:
-                        self.units = tensor.node_feature.shape[-1] + tensor.edge_feature.shape[-1]
-                self._build(self.units, self._initialize_edge_state)
-                self._built = True
+            initialize_edge_state = (
+                True if not hasattr(tensor, 'edge_state') else False)
+            self._build(initialize_edge_state)
 
         if self._initialize_edge_state:
             edge_state = tf.gather(tensor.node_feature, tensor.edge_src)
@@ -297,16 +256,26 @@ class EdgeConv(keras.layers.Layer):
         edge_state_update = edge_update_step(
             edge_feature=edge_state_update,
             edge_feature_prev=tensor.edge_state,
-            update_projection=self.update_projection)
+            update_projection=self.update_fn)
         
         return tensor_orig.update({'edge_state': edge_state_update})
 
+    @classmethod
+    def from_config(cls: Type['EdgeConv'], config: Config) -> 'EdgeConv':
+        initialize_edge_state = config.pop('initialize_edge_state') 
+        layer = cls(**config)
+        if initialize_edge_state is None:
+            pass
+        else:
+            layer._build(initialize_edge_state)
+        return layer
+    
     def get_config(self) -> Config:
         base_config = super().get_config()
         config = {
             'units': self.units,
             'update_mode': self.update_mode,
-            'tie_layer': keras.layers.serialize(self.tie_layer),
+            'update_fn': tf.keras.layers.serialize(self.update_fn),
             'activation':
                 activations.serialize(self.activation),
             'recurrent_activation':
@@ -333,19 +302,11 @@ class EdgeConv(keras.layers.Layer):
                 constraints.serialize(self.bias_constraint),
             'recurrent_constraint':
                 constraints.serialize(self.recurrent_constraint),
-            'automatically_infer_gru_activation': self._automatically_infer_gru_activation,
             'parallel_iterations': self._parallel_iterations,
             'initialize_edge_state': self._initialize_edge_state,
         }
         base_config.update(config)
         return base_config
-
-    @classmethod
-    def from_config(cls: Type['EdgeConv'], config: Config) -> 'EdgeConv':
-        initialize_edge_state = config.pop('initialize_edge_state')
-        layer = cls(**config)
-        layer._build(config['units'], initialize_edge_state)
-        return layer
     
     def compute_output_shape(
         self,
@@ -378,29 +339,14 @@ class EdgeConv(keras.layers.Layer):
                 self.kernel_initializer.get_config()),
             bias_initializer=self.bias_initializer.from_config(
                 self.bias_initializer.get_config()),
-            recurrent_initializer=self.recurrent_initializer,
+            recurrent_initializer=self.recurrent_initializer.from_config(
+                self.recurrent_initializer.get_config()),
             kernel_regularizer=self.kernel_regularizer,
             bias_regularizer=self.bias_regularizer,
             recurrent_regularizer=self.recurrent_regularizer,
             kernel_constraint=self.kernel_constraint,
             bias_constraint=self.bias_constraint,
             recurrent_constraint=self.recurrent_constraint)
-
-    def _get_tied_layer_projection(self):
-        self._check_layer_types()
-        update_projection = getattr(self.tie_layer, 'update_projection', None)
-        if not update_projection:
-            raise ValueError(
-                f'`{self.tie_layer.name}` is not built. Make sure `{self.tie_layer.name}` is ' +
-                f'built before building this layer (`{self.name}`). `{self.tie_layer.name}` should ' + 
-                f'come before this layer (`{self.name}`) in the sequence (model).')   
-        return update_projection
-
-    def _check_layer_types(self):
-        if type(self) != type(self.tie_layer):
-            raise ValueError(
-                f'`{self.tie_layer.name}` needs to be the same type as this layer (`{self.name}`)')
-
     
 def edge_update_step(
     edge_feature: tf.Tensor, 
@@ -411,14 +357,14 @@ def edge_update_step(
     if isinstance(update_projection, keras.layers.Dense):
         edge_feature_update = update_projection(
             tf.concat([edge_feature_prev, edge_feature], axis=1))
-    else: # if keras.layers.GRUCell
+    else:
         edge_feature_update, _ = update_projection(
             inputs=edge_feature,
             states=edge_feature_prev)
     return edge_feature_update
 
 def edge_message_step(
-    edge_feature: tf.Tensor, # or 'edge_state'
+    edge_feature: tf.Tensor,
     edge_src: tf.Tensor,
     edge_dst: tf.Tensor,
     graph_indicator: tf.Tensor,
@@ -450,13 +396,13 @@ def _get_reverse_edge_features(
         ragged_rank=0, 
         dtype=tf.float32)
     # Find all reverse edge features in the whole graph
-    reverse_edge_state = tf.map_fn(
+    reverse_edge_feature = tf.map_fn(
         fn=_get_reverse_edge_features_fn, 
         elems=(edge_feature, edge_src, edge_dst), 
         fn_output_signature=output_spec,
         parallel_iterations=parallel_iterations)
     # Convert ragged tensor output to a tensor.
-    return reverse_edge_state.merge_dims(outer_axis=0, inner_axis=1)
+    return reverse_edge_feature.merge_dims(outer_axis=0, inner_axis=1)
 
 def _get_reverse_edge_features_fn(
     inputs: Tuple[tf.Tensor, tf.Tensor, tf.Tensor], 

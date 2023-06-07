@@ -41,8 +41,8 @@ class NodeReadout(keras.layers.Layer):
     >>> # Build a DGIN model for binary classificaton
     >>> gnn_model = tf.keras.Sequential([
     ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.EdgeConv(16),                           # will produce 'edge_state' field
-    ...     molgraph.layers.EdgeConv(16),                           # will produce 'edge_state' field
+    ...     molgraph.layers.EdgeConv(16),                           # will produce 'edge_state' component
+    ...     molgraph.layers.EdgeConv(16),                           # will produce 'edge_state' component
     ...     molgraph.layers.NodeReadout(target='edge_state'),       # target='edge_state' is default
     ...     molgraph.layers.GINConv(32),
     ...     molgraph.layers.GINConv(32),
@@ -55,8 +55,8 @@ class NodeReadout(keras.layers.Layer):
 
     Args:
         target (str):
-            Specifies which field to aggregate. Default to 'edge_state' which is the
-            field produced by ``molgraph.layers.EdgeConv``.
+            Specifies which component to aggregate. Default to 'edge_state' which is the
+            component produced by ``molgraph.layers.EdgeConv``.
         apply_transform (bool):
             Whether to perform a transformaton after the aggregation. Default to False.
         dense_kwargs (None, dict):
