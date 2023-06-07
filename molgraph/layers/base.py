@@ -224,19 +224,38 @@ class BaseLayer(layers.Layer, ABC):
 
         return tensor_update
 
+    def get_common_kwargs(self):
+        common_kwargs = dict(
+            kernel_regularizer=self._kernel_regularizer,
+            bias_regularizer=self._bias_regularizer,
+            activity_regularizer=self._activity_regularizer,
+            kernel_constraint=self._kernel_constraint,
+            bias_constraint=self._bias_constraint,
+        )
+        kernel_initializer = self._kernel_initializer.__class__.from_config(
+            self._kernel_initializer.get_config()
+        )
+        bias_initializer = self._bias_initializer.__class__.from_config(
+            self._bias_initializer.get_config()
+        )
+        common_kwargs["kernel_initializer"] = kernel_initializer
+        common_kwargs["bias_initializer"] = bias_initializer
+        return common_kwargs
+    
     def get_kernel(
         self,
         shape: Shape,
         dtype: DType = tf.float32,
         name: str = 'kernel'
     ) -> tf.Variable:
+        common_kwargs = self.get_common_kwargs()
         return self.add_weight(
             name=name,
             shape=shape,
             dtype=dtype,
-            initializer=self._kernel_initializer,
-            regularizer=self._kernel_regularizer,
-            constraint=self._kernel_constraint,
+            initializer=common_kwargs['kernel_initializer'],
+            regularizer=common_kwargs['kernel_regularizer'],
+            constraint=common_kwargs['kernel_constraint'],
             trainable=True
         )
 
@@ -245,13 +264,14 @@ class BaseLayer(layers.Layer, ABC):
         dtype: DType = tf.float32,
         name: str = 'bias'
     ) -> tf.Variable:
+        common_kwargs = self.get_common_kwargs()
         return self.add_weight(
             name=name,
             shape=shape,
             dtype=dtype,
-            initializer=self._bias_initializer,
-            regularizer=self._bias_regularizer,
-            constraint=self._bias_constraint,
+            initializer=common_kwargs['bias_initializer'],
+            regularizer=common_kwargs['bias_regularizer'],
+            constraint=common_kwargs['bias_constraint'],
             trainable=True
         )
 
@@ -264,13 +284,7 @@ class BaseLayer(layers.Layer, ABC):
             units,
             activation=activation,
             use_bias=self._use_bias,
-            kernel_initializer=self._kernel_initializer,
-            bias_initializer=self._bias_initializer,
-            kernel_regularizer=self._kernel_regularizer,
-            bias_regularizer=self._bias_regularizer,
-            activity_regularizer=self._activity_regularizer,
-            kernel_constraint=self._kernel_constraint,
-            bias_constraint=self._bias_constraint)
+            **self.get_common_kwargs())
 
     def get_einsum_dense(
         self,
@@ -291,13 +305,7 @@ class BaseLayer(layers.Layer, ABC):
             output_shape,
             activation=activation,
             bias_axes=bias_axes,
-            kernel_initializer=self._kernel_initializer,
-            bias_initializer=self._bias_initializer,
-            kernel_regularizer=self._kernel_regularizer,
-            bias_regularizer=self._bias_regularizer,
-            activity_regularizer=self._activity_regularizer,
-            kernel_constraint=self._kernel_constraint,
-            bias_constraint=self._bias_constraint)
+            **self.get_common_kwargs())
 
     def compute_output_shape(
         self,

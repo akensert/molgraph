@@ -314,7 +314,7 @@ class EdgeConv(keras.layers.Layer):
             'use_bias':
                 self.use_bias,
             'kernel_initializer':
-                initializers.serialize(self.kernel_initializer ),
+                initializers.serialize(self.kernel_initializer),
             'bias_initializer':
                 initializers.serialize(self.bias_initializer),
             'recurrent_initializer':
@@ -358,8 +358,10 @@ class EdgeConv(keras.layers.Layer):
             units=units, 
             activation=self.activation,
             use_bias=self.use_bias,
-            kernel_initializer=self.kernel_initializer ,
-            bias_initializer=self.bias_initializer,
+            kernel_initializer=self.kernel_initializer.from_config(
+                self.kernel_initializer.get_config()),
+            bias_initializer=self.bias_initializer.from_config(
+                self.bias_initializer.get_config()),
             kernel_regularizer=self.kernel_regularizer,
             bias_regularizer=self.bias_regularizer,
             activity_regularizer=self.activity_regularizer,
@@ -372,8 +374,10 @@ class EdgeConv(keras.layers.Layer):
             activation=self.activation,
             recurrent_activation=self.recurrent_activation,
             use_bias=self.use_bias,
-            kernel_initializer=self.kernel_initializer ,
-            bias_initializer=self.bias_initializer,
+            kernel_initializer=self.kernel_initializer.from_config(
+                self.kernel_initializer.get_config()),
+            bias_initializer=self.bias_initializer.from_config(
+                self.bias_initializer.get_config()),
             recurrent_initializer=self.recurrent_initializer,
             kernel_regularizer=self.kernel_regularizer,
             bias_regularizer=self.bias_regularizer,
