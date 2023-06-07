@@ -154,12 +154,8 @@ class GATConv(BaseLayer):
             None, str, Callable[[tf.Tensor], tf.Tensor]] = 'leaky_relu',
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = 'relu',
         use_bias: bool = True,
-        kernel_initializer: Union[
-            str, initializers.Initializer
-        ] = initializers.TruncatedNormal(stddev=0.005),
-        bias_initializer: Union[
-            str, initializers.Initializer
-        ] = initializers.Constant(0.),
+        kernel_initializer: Union[str, initializers.Initializer, None] = None,
+        bias_initializer: Union[str, initializers.Initializer, None] = None,
         kernel_regularizer: Optional[regularizers.Regularizer] = None,
         bias_regularizer: Optional[regularizers.Regularizer] = None,
         activity_regularizer: Optional[regularizers.Regularizer] = None,

@@ -40,10 +40,8 @@ class BaseLayer(layers.Layer, ABC):
         dropout: Optional[float] = None,
         activation: Activation = None,
         use_bias: bool = False,
-        kernel_initializer: Union[str, initializers.Initializer
-            ] = initializers.TruncatedNormal(stddev=0.005),
-        bias_initializer: Union[str, initializers.Initializer
-            ] = initializers.Constant(0.),
+        kernel_initializer: Union[str, initializers.Initializer, None] = None,
+        bias_initializer: Union[str, initializers.Initializer, None] = None,
         kernel_regularizer: Optional[regularizers.Regularizer] = None,
         bias_regularizer: Optional[regularizers.Regularizer] = None,
         activity_regularizer: Optional[regularizers.Regularizer] = None,
@@ -57,6 +55,11 @@ class BaseLayer(layers.Layer, ABC):
 
         layers.Layer.__init__(self, **kwargs)
 
+        if kernel_initializer is None:
+            kernel_initializer = initializers.TruncatedNormal(stddev=0.005)
+        if bias_initializer is None:
+            bias_initializer = initializers.Constant(0.)
+    
         self.units = units
         self._batch_norm = batch_norm
         self._residual = residual

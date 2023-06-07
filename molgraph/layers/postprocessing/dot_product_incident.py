@@ -29,6 +29,9 @@ class DotProductIncident(keras.layers.Layer):
     >>> model(graph_tensor)
     <tf.RaggedTensor [[4.0, 4.0], [9.0, 0.0, 9.0, 0.0, 0.0, 0.0]]>
     '''
+    def __init__(self, apply_sigmoid: bool = False, **kwargs):
+        super().__init__(**kwargs)
+        self._apply_sigmoid = apply_sigmoid
 
     def call(self, tensor: GraphTensor) -> GraphTensor:
         '''Defines the computation from inputs to outputs.
@@ -52,6 +55,14 @@ class DotProductIncident(keras.layers.Layer):
             tensor.edge_dst, tensor.edge_src], axis=1)
         node_feature_incident = tf.gather(
             tensor.node_feature, adjacency)
-        tensor_orig = tensor_orig.update({'edge_score': tf.reduce_sum(
-            tf.reduce_prod(node_feature_incident, axis=1), axis=1)})
-        return tensor_orig.edge_score
+        edge_score = tf.reduce_sum(
+            tf.reduce_prod(node_feature_incident, axis=1), axis=1, keepdims=True)
+        if self._apply_sigmoid:
+            return tensor_orig.update({'edge_score': tf.nn.sigmoid(edge_score)})
+        return tensor_orig.update({'edge_score': edge_score})
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({'apply_sigmoid', self._apply_sigmoid})
+        return config
+    

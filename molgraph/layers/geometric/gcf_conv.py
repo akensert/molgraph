@@ -149,12 +149,8 @@ class GCFConv(BaseLayer):
         dropout: Optional[float] = None,
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
         use_bias: bool = True,
-        kernel_initializer: Union[
-            str, initializers.Initializer
-        ] = initializers.GlorotUniform(),
-        bias_initializer: Union[
-            str, initializers.Initializer
-        ] = initializers.Constant(0.),
+        kernel_initializer: Union[str, initializers.Initializer, None] = None,
+        bias_initializer: Union[str, initializers.Initializer, None] = None,
         kernel_regularizer: Optional[regularizers.Regularizer] = None,
         bias_regularizer: Optional[regularizers.Regularizer] = None,
         activity_regularizer: Optional[regularizers.Regularizer] = None,
