@@ -231,7 +231,7 @@ def map_fn_edge_conv(inp, layer, parameters):
 @pytest.mark.parametrize("parameters", [
     {'units': 128, 'update_mode': 'GRU'},
     {'units': 128, 'update_mode': 'DENSE'},
-    {'units': 33, 'parallel_iterations': 4}
+    {'units': 33, 'reduce_memory_usage': True}
 ])
 def test_edge_conv(parameters) -> None:
     list(map(partial(map_fn_edge_conv, layer=layers.EdgeConv, parameters=parameters), inputs[:4]))

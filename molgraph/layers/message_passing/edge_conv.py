@@ -90,6 +90,9 @@ class EdgeConv(tf.keras.layers.Layer):
         update_fn (tf.keras.layers.GRUCell, tf.keras.layers.Dense, None):
             Optionally pass update function (GRUCell or Dense) for weight-tying 
             of the update step (GRU step or Dense step). Default to None.
+        reduce_memory_usage (bool):
+            Whether to compute reverse edge features by looping over subgraphs (less memory usage).
+            Default to False.
         activation (tf.keras.activations.Activation, callable, str, None):
             Activation function applied to the updated edge states. If None is set, either 'relu'
             (for `update_mode='dense'`) or 'tanh' (for `update_mode='gru'`) will be used. 
@@ -127,9 +130,6 @@ class EdgeConv(tf.keras.layers.Layer):
         recurrent_constraint (tf.keras.constraints.Constraint, None):
             Constraint function applied to the recurrent kernel (only relevant if ``update_mode='gru'``).
             Default to None.
-        parallel_iterations (int, None):
-            Number of ``parallel_iterations`` to be set for ``tf.map_fn`` to find
-            the reverse edge states to be subtracted from the aggregated edge states.
 
     References:
         .. [#] https://arxiv.org/pdf/1904.01561.pdf
@@ -142,6 +142,7 @@ class EdgeConv(tf.keras.layers.Layer):
         update_mode: str = 'dense',
         update_fn: Optional[Union[
             tf.keras.layers.GRUCell, tf.keras.layers.Dense]] = None,
+        reduce_memory_usage: bool = False,
         activation: Union[str, None, Callable[[tf.Tensor], tf.Tensor]] = None,
         recurrent_activation: Union[str, None, Callable[[tf.Tensor], tf.Tensor]] = 'sigmoid',
         use_bias: Optional[bool] = None,
@@ -155,7 +156,6 @@ class EdgeConv(tf.keras.layers.Layer):
         kernel_constraint: Optional[constraints.Constraint] = None,
         bias_constraint: Optional[constraints.Constraint] = None,
         recurrent_constraint: Optional[constraints.Constraint] = None,
-        parallel_iterations: Optional[int] = None,
         **kwargs
     ):
         self_projection = kwargs.pop('self_projection', False)
@@ -196,8 +196,8 @@ class EdgeConv(tf.keras.layers.Layer):
         self.recurrent_regularizer = regularizers.get(recurrent_regularizer)
         self.kernel_constraint = constraints.get(kernel_constraint)
         self.bias_constraint = constraints.get(bias_constraint)
-        self.recurrent_constraint = constraints.get(recurrent_constraint)
-        self._parallel_iterations = parallel_iterations        
+        self.recurrent_constraint = constraints.get(recurrent_constraint)     
+        self._reduce_memory_usage = reduce_memory_usage
         self._initialize_edge_state = None
         self._built = False
 
@@ -245,13 +245,13 @@ class EdgeConv(tf.keras.layers.Layer):
             edge_state = tf.concat([edge_state, tensor.edge_feature], axis=-1)
             edge_state = self.initial_projection(edge_state)
             tensor = tensor.update({'edge_state': edge_state})
-                
+        
         edge_state_update = edge_message_step(
             edge_feature=tensor.edge_state,
             edge_src=tensor.edge_src,
             edge_dst=tensor.edge_dst,
             graph_indicator=tensor.graph_indicator,
-            parallel_iterations=self._parallel_iterations)
+            reduce_memory_usage=self._reduce_memory_usage)
 
         edge_state_update = edge_update_step(
             edge_feature=edge_state_update,
@@ -302,7 +302,7 @@ class EdgeConv(tf.keras.layers.Layer):
                 constraints.serialize(self.bias_constraint),
             'recurrent_constraint':
                 constraints.serialize(self.recurrent_constraint),
-            'parallel_iterations': self._parallel_iterations,
+            'reduce_memory_usage': self._reduce_memory_usage,
             'initialize_edge_state': self._initialize_edge_state,
         }
         base_config.update(config)
@@ -368,60 +368,83 @@ def edge_message_step(
     edge_src: tf.Tensor,
     edge_dst: tf.Tensor,
     graph_indicator: tf.Tensor,
-    parallel_iterations: Optional[int] = None
+    reduce_memory_usage: bool,
 ) -> tf.Tensor:
     num_nodes = tf.maximum(tf.reduce_max(edge_src), tf.reduce_max(edge_dst)) + 1
     message = tf.math.unsorted_segment_sum(edge_feature, edge_dst, num_nodes)
     message = tf.gather(message, edge_src)
-    message -= _get_reverse_edge_features(
-        edge_feature, edge_src, edge_dst, graph_indicator, parallel_iterations)
+    if reduce_memory_usage:
+        message -= _get_reverse_edge_features_using_loop(
+            edge_feature, edge_src, edge_dst, graph_indicator)
+    else:
+        message -= _get_reverse_edge_features(
+            edge_feature, edge_src, edge_dst)
     return message
 
-@tf.function
-def _get_reverse_edge_features(
+def _get_reverse_edge_features(edge_feature, edge_src, edge_dst):
+    edge_exclude = tf.logical_and(
+        edge_dst[:, None] == edge_dst,
+        edge_src[:, None] == edge_src)
+        
+    edge_forward, edge_reverse = tf.split(tf.where(edge_exclude), 2, axis=-1)
+
+    return tf.tensor_scatter_nd_add(
+        tf.zeros_like(edge_feature), 
+        tf.expand_dims(edge_forward, -1), 
+        tf.gather(edge_feature, edge_reverse)
+    )
+    
+def _get_reverse_edge_features_using_loop(
     edge_feature: tf.Tensor, 
     edge_src: tf.Tensor,
     edge_dst: tf.Tensor,
     graph_indicator: tf.Tensor,
-    parallel_iterations: Optional[int] = None
 ) -> tf.Tensor:
-    # Make tensors ragged to that they can be iterated over by tf.map_fn
+    'This function finds the reverse edge features/states for each molecule/subgraph.'
+
+    # Split disjoint graph into subgraphs (to reduce memory usage)
     graph_indicator_edges = tf.gather(graph_indicator, edge_dst)
     edge_feature, edge_src, edge_dst = tf.nest.map_structure(
         lambda x: tf.RaggedTensor.from_value_rowids(x, graph_indicator_edges),
         (edge_feature, edge_src, edge_dst))
-    # Define appropriate output spec
-    output_spec = tf.RaggedTensorSpec(
-        shape=[None, edge_feature.shape[-1]], 
-        ragged_rank=0, 
-        dtype=tf.float32)
-    # Find all reverse edge features in the whole graph
-    reverse_edge_feature = tf.map_fn(
-        fn=_get_reverse_edge_features_fn, 
-        elems=(edge_feature, edge_src, edge_dst), 
-        fn_output_signature=output_spec,
-        parallel_iterations=parallel_iterations)
-    # Convert ragged tensor output to a tensor.
-    return reverse_edge_feature.merge_dims(outer_axis=0, inner_axis=1)
+    
+    num_subgraphs = tf.shape(edge_feature)[0]
 
-def _get_reverse_edge_features_fn(
-    inputs: Tuple[tf.Tensor, tf.Tensor, tf.Tensor], 
-) -> tf.Tensor:
-    '''This function finds the reverse edge features/states for each molecule/subgraph.
+    # Loop over each subgraph and compute the reverse edge features
 
-    Will be called by `tf.map_fn` in `_get_reverse_edge_features`.
-    '''
-    edge_feature, edge_src, edge_dst = inputs
-    # Find the index of "reverse" edge of "forward" edge edge_src->edge_dst
-    edge_exclude = tf.logical_and(
-        edge_src[:, None] == edge_dst,
-        edge_dst[:, None] == edge_src)
-    # Obtain index of edge_src->edge_dst ("forward") and its corresponding
-    # edge_src<-edge_dst ("reverse"). For molecules: forward and reverse
-    # edges are usually the same and always exist. 
-    edge_forward, edge_reverse = tf.split(tf.where(edge_exclude), 2, axis=-1)
-    return tf.tensor_scatter_nd_add(
-        tf.zeros_like(edge_feature), 
-        tf.expand_dims(edge_forward, -1), 
-        tf.gather(edge_feature, edge_reverse))
+    def body(arr, i):
 
+        edge_dst_subgraph = edge_dst[i]
+        edge_src_subgraph = edge_src[i]
+        edge_feature_subgraph = edge_feature[i]
+
+        edge_exclude = tf.logical_and(
+            edge_dst_subgraph[:, None] == edge_dst_subgraph,
+            edge_src_subgraph[:, None] == edge_src_subgraph)
+        
+        edge_forward, edge_reverse = tf.split(tf.where(edge_exclude), 2, axis=-1)
+
+        arr = arr.write(
+            i, 
+            tf.tensor_scatter_nd_add(
+                tf.zeros_like(edge_feature_subgraph), 
+                tf.expand_dims(edge_forward, -1), 
+                tf.gather(edge_feature_subgraph, edge_reverse)
+            )
+        )
+        return arr, tf.add(i, 1)
+    
+    def cond(_, i):
+        return tf.less(i, num_subgraphs)
+    
+    reverse_edge_features = tf.TensorArray(
+        dtype=tf.float32, 
+        size=0, 
+        dynamic_size=True, 
+        element_shape=tf.TensorShape([None, edge_feature.shape[-1]])
+    )
+    i = tf.constant(0)
+    loop_vars = [reverse_edge_features, i]
+
+    reverse_edge_features, _ = tf.while_loop(cond, body, loop_vars=loop_vars)
+    return reverse_edge_features.concat()
