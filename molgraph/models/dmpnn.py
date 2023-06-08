@@ -144,9 +144,7 @@ class DMPNN(keras.models.Model):
             message = edge_message_step(
                 edge_feature=tensor.edge_feature,
                 edge_src=tensor.edge_src,
-                edge_dst=tensor.edge_dst,
-                graph_indicator=tensor.graph_indicator,
-                parallel_iterations=self.parallel_iterations)
+                edge_dst=tensor.edge_dst)
     
             edge_feature = self.activation(
                 self.update_projection(message) + edge_feature)
