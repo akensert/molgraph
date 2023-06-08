@@ -67,7 +67,7 @@ class NodeReadout(keras.layers.Layer):
     def __init__(
         self, 
         target: str = 'edge_state', 
-        apply_transform: bool = False,
+        apply_transform: bool = True,
         dense_kwargs: Optional[dict] = None,
         **kwargs
     ):
