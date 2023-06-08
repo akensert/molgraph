@@ -897,6 +897,15 @@ def _maybe_mark_used(assert_op):
         assert_op.mark_used()
     return
 
+@tf.experimental.dispatch_for_api(tf.shape)
+def graph_tensor_tf_shape(
+    input: GraphTensor,
+    out_type=tf.dtypes.int32,
+    name=None
+):
+    return tf.shape(
+        input=input.node_feature, out_type=out_type, name=name)
+
 @tf.experimental.dispatch_for_api(tf.gather)
 def graph_tensor_gather(
     params: GraphTensor,
@@ -936,7 +945,11 @@ def graph_tensor_concat(
     axis: int = 0,
     name: str = 'concat'
 ) -> GraphTensor:
-    'Concatenates list of graph tensors into a single graph tensor.'
+    '''Concatenates list of graph tensors into a single graph tensor.
+    
+    This is important for tf.keras.Model.predict, as it concatenates
+    the batches (of possibly `GraphTensor`s).
+    '''
 
     if axis is not None and axis != 0:
         raise ValueError(
@@ -963,17 +976,28 @@ def graph_tensor_concat(
 
     flat_sequence = tf.nest.map_structure(
         lambda x: tf.nest.flatten(x, expand_composites=True), values)
-
+    
     dtype = values[0]['edge_dst'].dtype
 
     if ragged:
         # Keep only values (resulting from tf.nest.flatten)
-        flat_sequence = [f[::2] for f in flat_sequence]
-
+        row_splits = [f[1::2] for f in flat_sequence]
+        flat_sequence = [f[0::2] for f in flat_sequence]
+        flat_sequence = tf.nest.map_structure(
+            lambda v, r: tf.RaggedTensor.from_row_splits(v, r),
+            flat_sequence, row_splits)
+        
     flat_sequence = list(zip(*flat_sequence))
-    flat_sequence_stacked = [
-        fast_ragged_stack(x, dtype) for x in flat_sequence
-    ]
+
+    if ragged:
+        flat_sequence_stacked = [
+            tf.concat(x, axis=0) for x in flat_sequence
+        ]
+    else:
+        flat_sequence_stacked = [
+            fast_ragged_stack(x, dtype) for x in flat_sequence
+        ]
+
     values = tf.nest.pack_sequence_as(structure, flat_sequence_stacked)
 
     values = GraphTensor(values)
@@ -982,6 +1006,7 @@ def graph_tensor_concat(
         return values
 
     return values.merge()
+
 
 @tf.experimental.dispatch_for_api(tf.matmul)
 def graph_tensor_matmul(
