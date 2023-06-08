@@ -109,11 +109,11 @@ maps = gam_model.predict(x_train)
 ```
 
 ## Requirements/dependencies
-- **Python** (version ~= 3.8.10)
-- **TensorFlow** (version ~= 2.7.0)
-- **RDKit** (version ~= 2022.3.3)
-- **NumPy** (version ~= 1.21.2)
-- **Pandas** (version ~= 1.0.3)
+- **Python** (version >= 3.6 recommended)
+- **TensorFlow** (version >= 2.7.0 recommended)
+- **RDKit** (version >= 2022.3.3 recommended)
+- **NumPy** (version >= 1.21.2 recommended)
+- **Pandas** (version >= 1.0.3 recommended)
 
 ## Tested with
 - **Ubuntu 20.04 - Python 3.8.10**
