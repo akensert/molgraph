@@ -1,24 +1,15 @@
 import tensorflow as tf
 from tensorflow import keras
-from keras.utils import tf_utils
-from tensorflow.keras import initializers
-from tensorflow.keras import regularizers
-from tensorflow.keras import constraints
-from tensorflow.keras import activations
-
+from keras import initializers
+from keras import regularizers
+from keras import constraints
 
 from typing import Optional
 from typing import Callable
 from typing import Union
-from typing import Tuple
-from typing import Type
 from typing import TypeVar
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import BaseLayer
-from molgraph.layers.ops import softmax_edge_weights
-from molgraph.layers.ops import propagate_node_features
-from molgraph.layers.ops import reduce_features
 from molgraph.layers.attentional.gat_conv import GATConv
 
 
@@ -44,8 +35,8 @@ class AttentiveFPConv(GATConv):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'node_feature': [
     ...             [[1.0, 0.0], [1.0, 0.0]],
     ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
@@ -70,8 +61,8 @@ class AttentiveFPConv(GATConv):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -105,8 +96,8 @@ class AttentiveFPConv(GATConv):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -137,13 +128,12 @@ class AttentiveFPConv(GATConv):
     >>> attentive_fp(graph_tensor).shape.as_list()
     [2, 16]
 
-
     Pass the same GRU cell to each layer to perform weight sharing:
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -174,7 +164,6 @@ class AttentiveFPConv(GATConv):
     ... ])
     >>> gnn_model.output_shape
     (None, 16)
-
 
     Args:
         units (int, None):
@@ -228,7 +217,6 @@ class AttentiveFPConv(GATConv):
 
     References:
         .. [#] https://pubs.acs.org/doi/10.1021/acs.jmedchem.9b00959
-
     '''
 
     def __init__(
@@ -299,8 +287,7 @@ class AttentiveFPConv(GATConv):
 
         if self.initial_projection is not None:
             tensor = tensor.update({
-                'node_feature': self.initial_projection(
-                    tensor.node_feature)
+                'node_feature': self.initial_projection(tensor.node_feature)
             })
 
         node_feature_state = tensor.node_feature

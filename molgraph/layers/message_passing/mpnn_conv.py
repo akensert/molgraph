@@ -1,21 +1,16 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import initializers
-from tensorflow.keras import regularizers
-from tensorflow.keras import constraints
-from tensorflow.keras import activations
-from tensorflow.keras import layers
+from keras import initializers
+from keras import regularizers
+from keras import constraints
 import math
 
 from typing import Optional
 from typing import Callable
 from typing import Union
-from typing import Tuple
 
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.layers.base import BaseLayer
-from molgraph.layers.ops import compute_edge_weights_from_degrees
-from molgraph.layers.ops import propagate_node_features
 
 
 
@@ -36,8 +31,8 @@ class MPNNConv(BaseLayer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'node_feature': [
     ...             [[1.0, 0.0], [1.0, 0.0]],
     ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
@@ -62,8 +57,8 @@ class MPNNConv(BaseLayer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -97,8 +92,8 @@ class MPNNConv(BaseLayer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -268,13 +263,13 @@ class MPNNConv(BaseLayer):
         if not hasattr(tensor, 'edge_feature'):
             tensor = tensor.update({
                 'edge_feature': tf.ones(
-                    shape=[tf.shape(tensor.edge_dst)[0], 1], dtype=tf.float32)})
+                    shape=[tf.shape(tensor.edge_src)[0], 1], dtype=tf.float32)})
 
         node_feature_aggregated = message_step(
             node_feature=tensor.node_feature,
             edge_feature=tensor.edge_feature,
-            edge_dst=tensor.edge_dst,
             edge_src=tensor.edge_src,
+            edge_dst=tensor.edge_dst,
             projection=self.message_projection)
 
         node_feature_update = update_step(
@@ -318,8 +313,8 @@ def update_step(
 def message_step(
     node_feature: tf.Tensor,
     edge_feature: tf.Tensor,
-    edge_dst: tf.Tensor,
     edge_src: tf.Tensor,
+    edge_dst: tf.Tensor,
     projection: keras.layers.Dense,
 ) -> tf.Tensor:
     '''Performs a message passing step.
@@ -329,10 +324,10 @@ def message_step(
             Node features; component of GraphTensor.
         edge_feature (tf.Tensor):
             Edge features; component of GraphTensor.
-        edge_dst (tf.Tensor):
-            Destination node indices; component of GraphTensor.
         edge_src (tf.Tensor):
             Source node indices; component of GraphTensor.
+        edge_dst (tf.Tensor):
+            Destination node indices; component of GraphTensor.
         projection (keras.layers.Dense):
             Dense layer that transforms edge features.
 

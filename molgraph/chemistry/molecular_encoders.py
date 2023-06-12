@@ -90,7 +90,7 @@ class BaseMolecularGraphEncoder(ABC):
                 # `GraphTensor` (disjoint [molecular] graph). The `separate` method
                 # is called to make the nested structures of the `GraphTensor`
                 # ragged. This will allow for batching of the `GraphTensor`.
-                return tf.concat(graph_tensor_list, axis=0).separate()
+                return tf.stack(graph_tensor_list, axis=0)
 
             return self.call(inputs, **kwargs)
 
@@ -148,11 +148,11 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     >>> # Merge subgraphs into a single disjoint graph
     >>> graph_tensor.merge()
     GraphTensor(
+      edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
+      edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
       node_feature=<tf.Tensor: shape=(6, 119), dtype=float32>,
       edge_feature=<tf.Tensor: shape=(8, 4), dtype=float32>,
       positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
-      edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
-      edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
       graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
 
     Generate a molecular graph with tokenizers:
@@ -180,12 +180,13 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     >>> # Merge subgraphs into a single disjoint graph
     >>> graph_tensor.merge()
     GraphTensor(
+      edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
+      edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
       node_feature=<tf.Tensor: shape=(6,), dtype=string>,
       edge_feature=<tf.Tensor: shape=(8,), dtype=string>,
       positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
-      edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
-      edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
       graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
+
 
     Obtain numerical encodings of atoms (``node_feature``) and bonds
     (``bond_feature``) with the EmbeddingLookup layer. This is only necessary
@@ -229,13 +230,12 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     >>> graph_tensor = model(graph_tensor)
     >>> graph_tensor
     GraphTensor(
+      edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
+      edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
       node_feature=<tf.Tensor: shape=(6, 16), dtype=float32>,
       edge_feature=<tf.Tensor: shape=(8, 8), dtype=float32>,
       positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
-      edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
-      edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
       graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
-
     '''
 
     bond_encoder: Optional[Union[
@@ -277,7 +277,7 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
         # Obtain destination and source node (atom) indices of edges (bonds)
         sparse_adjacency = _compute_adjacency(
             molecule, self.self_loops, sparse=True, dtype=index_dtype)
-        data['edge_dst'], data['edge_src'] = sparse_adjacency
+        data['edge_src'], data['edge_dst'] = sparse_adjacency
 
         # Obtain node (atom) features
         atoms = _get_atoms(molecule)
@@ -398,16 +398,16 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
 
         atoms = _get_atoms(molecule)
         data['node_feature'] = self.atom_encoder(atoms)
-        data['edge_dst'] = np.array(dg['edge_dst'], dtype=index_dtype)
         data['edge_src'] = np.array(dg['edge_src'], dtype=index_dtype)
-
+        data['edge_dst'] = np.array(dg['edge_dst'], dtype=index_dtype)
+        
         if not self.coulomb:
             edge_feature = np.expand_dims(dg['edge_length'], -1)
         else:
             nuclear_charge = np.array([
                 atom.GetAtomicNum() for atom in atoms], dtype=np.float32)
-            nuclear_charge_dst = np.take(nuclear_charge, dg['edge_dst'])
             nuclear_charge_src = np.take(nuclear_charge, dg['edge_src'])
+            nuclear_charge_dst = np.take(nuclear_charge, dg['edge_dst'])
             edge_feature = (
                 nuclear_charge_dst * nuclear_charge_src) / dg['edge_length']
             edge_feature = np.expand_dims(edge_feature, -1)
@@ -423,8 +423,8 @@ def _get_atoms(molecule: Chem.Mol) -> List[Chem.Atom]:
 
 def _get_bonds(
     molecule: Chem.Mol,
+    edge_src: np.ndarray,
     edge_dst: np.ndarray,
-    edge_src: np.ndarray
 ) -> List[Chem.Bond]:
     '''Returns a list of bonds given an RDKit mol object. The order of the
     bonds in the list corresponds to the sparse adjacency matrix which is
@@ -432,7 +432,7 @@ def _get_bonds(
     '''
     return [
         molecule.GetBondBetweenAtoms(int(i), int(j))
-        for (i, j) in zip(edge_dst, edge_src)
+        for (i, j) in zip(edge_src, edge_dst)
     ]
 
 def _compute_positional_encoding(
@@ -502,9 +502,9 @@ def _compute_adjacency(
     if not sparse:
         return adjacency.astype(dtype)
 
-    bond_dst, bond_src = np.where(adjacency)
+    edge_src, edge_dst = np.where(adjacency)
 
-    return bond_dst.astype(dtype), bond_src.astype(dtype)
+    return edge_src.astype(dtype), edge_dst.astype(dtype)
 
 def _compute_laplacian(
     adjacency: np.ndarray,
@@ -521,16 +521,16 @@ def _compute_laplacian(
 
 def _compute_distance_between_atoms(
     molecule: Chem.Mol,
-    edge_dst: int,
     edge_src: int,
+    edge_dst: int,
     unit: str
 ) -> float:
     'Computes distance between two atoms in the molecule.'
-    bond_length = Chem.rdMolTransforms.GetBondLength(
-        molecule.GetConformer(), edge_dst, edge_src)
+    edge_length = Chem.rdMolTransforms.GetBondLength(
+        molecule.GetConformer(), edge_src, edge_dst)
     if unit.lower() == 'bohr':
-        return bond_length * 1.8897259885789
-    return bond_length
+        return edge_length * 1.8897259885789
+    return edge_length
 
 def _compute_distance_geometry(
     molecule: Chem.Mol,
@@ -548,18 +548,21 @@ def _compute_distance_geometry(
 
     if path is None:
         data = {
-            'edge_length': [], 'edge_dst': [], 'edge_src': [], 'edge_order': []}
+            'edge_length': [], 'edge_src': [], 'edge_dst': [], 'edge_order': []
+        }
         for atom in molecule.GetAtoms():
             path = _compute_distance_geometry(
-                molecule, radius, unit, atom, [atom.GetIdx()], data)
+                molecule, radius, unit, atom, [atom.GetIdx()], data
+            )
         return data
     elif radius and len(path) > (radius + 1):
         return path[:-1]
     elif len(path) > 1:
-        data['edge_dst'].append(path[0])
-        data['edge_src'].append(path[-1])
+        data['edge_src'].append(path[0])
+        data['edge_dst'].append(path[-1])
         data['edge_length'].append(
-            _compute_distance_between_atoms(molecule, path[0], path[-1], unit))
+            _compute_distance_between_atoms(molecule, path[0], path[-1], unit)
+        )
         data['edge_order'].append(-1 + len(path))
 
     for neighbor in atom.GetNeighbors():

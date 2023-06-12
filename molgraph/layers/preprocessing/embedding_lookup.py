@@ -1,10 +1,9 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras import initializers
-from tensorflow.keras import regularizers
-from tensorflow.keras import constraints
-from tensorflow.keras import activations
+from keras import layers
+from keras import initializers
+from keras import regularizers
+from keras import constraints
 
 from typing import Optional
 from typing import Union
@@ -34,8 +33,8 @@ class EmbeddingLookup(layers.StringLookup):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             'Sym:C', 'Sym:C', 'Sym:C', 'Sym:O', 'Sym:N',
     ...         ],
@@ -59,8 +58,8 @@ class EmbeddingLookup(layers.StringLookup):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [[0, 1], [2, 2, 3, 3, 4, 4]],
     ...         'edge_src': [[1, 0], [3, 4, 2, 4, 3, 2]],
+    ...         'edge_dst': [[0, 1], [2, 2, 3, 3, 4, 4]],
     ...         'node_feature': [
     ...             ['Sym:C', 'Sym:C'], ['Sym:C', 'Sym:O', 'Sym:N'],
     ...         ],
@@ -79,7 +78,7 @@ class EmbeddingLookup(layers.StringLookup):
     ...     embedding,
     ... ])
     >>> # Predict (obtain new GraphTensor)
-    >>> output = model.predict(ds)
+    >>> output = model.predict(ds, verbose=0)
     >>> output.node_feature.shape
     TensorShape([2, None, 4])
 

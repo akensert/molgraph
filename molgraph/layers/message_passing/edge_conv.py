@@ -1,24 +1,18 @@
 import tensorflow as tf
 from tensorflow import keras
 from keras.utils import tf_utils
-from tensorflow.keras import initializers
-from tensorflow.keras import regularizers
-from tensorflow.keras import constraints
-from tensorflow.keras import activations
-from tensorflow.keras import layers
-import math
+from keras import initializers
+from keras import regularizers
+from keras import constraints
+from keras import activations
 
 from typing import Optional
 from typing import Callable
 from typing import Union
-from typing import Tuple
 from typing import Type
 from typing import TypeVar
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import BaseLayer
-from molgraph.layers.ops import compute_edge_weights_from_degrees
-from molgraph.layers.ops import propagate_node_features
 
 
 Config = TypeVar('Config', bound=dict)
@@ -45,8 +39,8 @@ class EdgeConv(tf.keras.layers.Layer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -228,7 +222,7 @@ class EdgeConv(tf.keras.layers.Layer):
         if not hasattr(tensor, 'edge_feature'):
             tensor = tensor.update({
                 'edge_feature': tf.ones(
-                    shape=[tf.shape(tensor.edge_dst)[0], 1], dtype=tf.float32)})
+                    shape=[tf.shape(tensor.edge_src)[0], 1], dtype=tf.float32)})
             
         if not self._built:
             initialize_edge_state = (
@@ -368,11 +362,10 @@ def edge_message_step(
 
 def _get_reverse_edge_features(edge_feature, edge_src, edge_dst):
     edge_exclude = tf.logical_and(
-        edge_dst[:, None] == edge_dst,
-        edge_src[:, None] == edge_src)
-        
+        edge_src[:, None] == edge_src,
+        edge_dst[:, None] == edge_dst
+    )
     edge_forward, edge_reverse = tf.split(tf.where(edge_exclude), 2, axis=-1)
-
     return tf.tensor_scatter_nd_add(
         tf.zeros_like(edge_feature), 
         tf.expand_dims(edge_forward, -1), 

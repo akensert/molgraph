@@ -24,8 +24,8 @@ class MPNN(keras.layers.Layer):
     >>> # Obtain GraphTensor
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'node_feature': [
     ...             [[1.0, 0.0], [1.0, 0.0]],
     ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
@@ -39,7 +39,7 @@ class MPNN(keras.layers.Layer):
     >>> outputs = tf.keras.layers.Dense(10, activation='sigmoid')(x)
     >>> mpnn_classifier = tf.keras.Model(inputs, outputs)
     >>> # Make predictions
-    >>> preds = mpnn_classifier.predict(graph_tensor)
+    >>> preds = mpnn_classifier.predict(graph_tensor, verbose=0)
     >>> preds.shape
     (2, 10)
 
@@ -124,14 +124,14 @@ class MPNN(keras.layers.Layer):
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()
 
-        edge_dst = tensor.edge_dst
         edge_src = tensor.edge_src
+        edge_dst = tensor.edge_dst
         node_feature_updated = tensor.node_feature
         # MPNN requires edge features, if edge features do not exist,
         # we initialize a ones vector.
         if not hasattr(tensor, 'edge_feature'):
             edge_feature = tf.ones(
-                shape=[tf.shape(edge_dst)[0], 1],
+                shape=[tf.shape(edge_src)[0], 1],
                 dtype=node_feature_updated.dtype)
         else:
             edge_feature = tensor.edge_feature
@@ -146,8 +146,8 @@ class MPNN(keras.layers.Layer):
             node_feature_aggregated = message_step(
                 node_feature=node_feature_updated,
                 edge_feature=edge_feature,
-                edge_dst=edge_dst,
                 edge_src=edge_src,
+                edge_dst=edge_dst,
                 projection=self.message_projection)
             # Perform a step of GRU (update function)
             node_feature_updated, _ = self.update_step(

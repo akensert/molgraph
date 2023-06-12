@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 
+
 @keras.utils.register_keras_serializable(package='molgraph.metrics')
 class MeanRelativeError(keras.metrics.Mean):
 

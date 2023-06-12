@@ -156,7 +156,7 @@ def test_incompatible_tensor_type_for_replacement_reversed(graph_tensor) -> None
         'node_random_feature': random_feature})
 
     with pytest.raises(tf.errors.InvalidArgumentError):
-        random_feature = tf.ragged.constant([[1., 2.], [4., 5., 6., 7.]])
+        random_feature = tf.ragged.constant([[[1.], [2.]], [[4.], [5.], [6.], [7.]]], ragged_rank=1)
         graph_tensor_merged = graph_tensor_merged.update({
             'node_random_feature': random_feature
         })

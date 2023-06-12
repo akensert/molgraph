@@ -28,8 +28,8 @@ class DGIN(keras.models.Model):
     >>> # Obtain GraphTensor
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'node_feature': [
     ...             [[1.0, 0.0], [1.0, 0.0]],
     ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
@@ -172,8 +172,8 @@ class DGIN(keras.models.Model):
         for _ in range(self.node_message_steps):
             node_feature = propagate_node_features(
                 node_feature=node_feature, 
-                edge_dst=tensor.edge_dst,
-                edge_src=tensor.edge_src)
+                edge_src=tensor.edge_src,
+                edge_dst=tensor.edge_dst)
             node_feature = node_feature + node_feature_initial
             
         return tensor_orig.update({'node_feature': node_feature})

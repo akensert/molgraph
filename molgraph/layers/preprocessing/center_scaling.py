@@ -1,22 +1,16 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras import initializers
+from keras import layers
 from keras.layers.preprocessing import preprocessing_utils as utils
 
-from typing import Tuple
-from typing import List
 from typing import Optional
-from typing import Union
-from typing import Tuple
-
 
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class CenterScaling(layers.experimental.preprocessing.PreprocessingLayer):
+class CenterScaling(layers.PreprocessingLayer):
 
     '''Centering.
 
@@ -33,8 +27,8 @@ class CenterScaling(layers.experimental.preprocessing.PreprocessingLayer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'node_feature': [
     ...             [[1.0, 0.0], [1.0, 0.0]],
     ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
@@ -63,8 +57,8 @@ class CenterScaling(layers.experimental.preprocessing.PreprocessingLayer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'node_feature': [
     ...             [[1.0, 0.0], [1.0, 0.0]],
     ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
@@ -82,7 +76,7 @@ class CenterScaling(layers.experimental.preprocessing.PreprocessingLayer):
     ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
     ...     preprocessing,
     ... ])
-    >>> output = model.predict(ds)
+    >>> output = model.predict(ds, verbose=0)
     >>> output.merge().node_feature
     <tf.Tensor: shape=(5, 2), dtype=float32, numpy=
     array([[ 0.19999999, -0.2       ],
@@ -95,8 +89,8 @@ class CenterScaling(layers.experimental.preprocessing.PreprocessingLayer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],

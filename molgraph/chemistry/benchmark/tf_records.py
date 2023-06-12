@@ -286,7 +286,7 @@ def _parse_features(
 
     x_spec = tf.nest.map_structure(
         lambda spec: tf.RaggedTensorSpec(
-            spec.shape, spec.dtype, 0, x['edge_dst'].dtype),
+            spec.shape, spec.dtype, 0, x['edge_src'].dtype),
         x_spec._data_spec)
     data['x'] = GraphTensor(x, x_spec)
     if extract_tuple is not None:

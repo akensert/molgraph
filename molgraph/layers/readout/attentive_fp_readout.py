@@ -1,20 +1,9 @@
 import tensorflow as tf
 from tensorflow import keras
-from keras.utils import tf_utils
-from tensorflow.keras import initializers
-from tensorflow.keras import regularizers
-from tensorflow.keras import constraints
-from tensorflow.keras import activations
-
 
 from typing import Optional
-from typing import Callable
-from typing import Union
 from typing import Tuple
-from typing import Type
 from typing import TypeVar
-from typing import Any
-
 
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.layers.attentional.gat_conv import GATConv
@@ -39,8 +28,8 @@ class AttentiveFPReadout(tf.keras.layers.Layer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -72,7 +61,6 @@ class AttentiveFPReadout(tf.keras.layers.Layer):
     >>> attentive_fp(graph_tensor).shape.as_list()
     [2, 16]
 
-
     Args:
         steps (int):
             Number of aggregation steps to perform. Default to 4.
@@ -85,7 +73,6 @@ class AttentiveFPReadout(tf.keras.layers.Layer):
 
     References:
         .. [#] https://pubs.acs.org/doi/10.1021/acs.jmedchem.9b00959
-
     '''
 
     def __init__(
@@ -170,7 +157,7 @@ def _add_virtual_super_nodes(
     
     if isinstance(tensor.node_feature, tf.Tensor):
         # (None, node_dim) -> (batch_size, None, node_dim)
-        node_feature: tf.RaggedTensor = tf.RaggedTensor.from_value_rowids(
+        node_feature = tf.RaggedTensor.from_value_rowids(
             tensor.node_feature, tensor.graph_indicator)
     else:
         node_feature = tensor.node_feature

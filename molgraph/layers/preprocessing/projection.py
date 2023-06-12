@@ -1,12 +1,11 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras import initializers
-from tensorflow.keras import regularizers
-from tensorflow.keras import constraints
-from tensorflow.keras import activations
+from keras import layers
+from keras import initializers
+from keras import regularizers
+from keras import constraints
+from keras import activations
 
-from keras.utils import tf_utils
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
@@ -28,8 +27,8 @@ class FeatureProjection(layers.Layer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],

@@ -1,19 +1,17 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import initializers
-from tensorflow.keras import regularizers
-from tensorflow.keras import constraints
-from tensorflow.keras import activations
-from tensorflow.keras import layers
+from keras import initializers
+from keras import regularizers
+from keras import constraints
+from keras import activations
+from keras import layers
 
 from typing import Optional
 from typing import Callable
 from typing import Union
-from typing import Tuple
 
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.layers.base import BaseLayer
-from molgraph.layers.ops import compute_edge_weights_from_degrees
 from molgraph.layers.ops import propagate_node_features
 
 
@@ -32,8 +30,8 @@ class GraphSageConv(BaseLayer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'node_feature': [
     ...             [[1.0, 0.0], [1.0, 0.0]],
     ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
@@ -53,8 +51,8 @@ class GraphSageConv(BaseLayer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -183,17 +181,17 @@ class GraphSageConv(BaseLayer):
             node_feature = self.activation(node_feature)
             node_feature = propagate_node_features(
                 node_feature=node_feature,
-                edge_dst=tensor.edge_dst,
                 edge_src=tensor.edge_src,
+                edge_dst=tensor.edge_dst,
                 mode=self.aggregation_mode)
         elif self.aggregation_mode == 'lstm':
             node_feature = self.lstm_aggregate(
-                tensor.node_feature, tensor.edge_dst, tensor.edge_src)
+                tensor.node_feature, tensor.edge_src, tensor.edge_dst)
         else:
             node_feature = propagate_node_features(
                 node_feature=tensor.node_feature,
-                edge_dst=tensor.edge_dst,
                 edge_src=tensor.edge_src,
+                edge_dst=tensor.edge_dst,
                 mode=self.aggregation_mode)
 
         node_feature = tf.concat([node_feature, tensor.node_feature], axis=-1)
@@ -209,38 +207,30 @@ class GraphSageConv(BaseLayer):
 
         return tensor.update({'node_feature': node_feature})
 
-    def lstm_aggregate(self, node_feature, edge_dst, edge_src):
+    def lstm_aggregate(self, node_feature, edge_src, edge_dst):
 
-        def true_fn(node_feature, edge_dst, edge_src):
-            """If edges exist, call this function"""
+        def true_fn(node_feature, edge_src, edge_dst):
+            'If edges exist, call this function'
 
-            node_indices = tf.unique(edge_dst)[0]
+            # Get number of nodes
             num_nodes = tf.shape(node_feature)[0]
-            #print(node_indices)
 
-            # A bit of a hack to shuffle neighbor (source) nodes of the
-            # destination nodes.
-            random_indices = tf.random.shuffle(tf.range(tf.shape(edge_dst)[0]))
+            # Shuffle neighbor (source) nodes of the destination nodes.
+            random_indices = tf.random.shuffle(tf.range(tf.shape(edge_src)[0]))
             edge_dst = tf.gather(edge_dst, random_indices)
             edge_src = tf.gather(edge_src, random_indices)
             sorted_indices = tf.argsort(edge_dst)
             edge_dst = tf.gather(edge_dst, sorted_indices)
-            edge_dst -= tf.reduce_min(edge_dst)
             edge_src = tf.gather(edge_src, sorted_indices)
 
             # Gather source nodes followed by a partitioning of destination nodes
             node_feature = tf.RaggedTensor.from_value_rowids(
-                tf.gather(node_feature, edge_src), edge_dst)
+                tf.gather(node_feature, edge_src), edge_dst, num_nodes)
             node_feature = node_feature.to_tensor()
             # Pass to lstm for update
             node_feature = self.lstm(node_feature)
 
-            node_feature_dim = tf.shape(node_feature)[-1]
-
-            return tf.scatter_nd(
-                indices=tf.expand_dims(node_indices, axis=-1),
-                updates=node_feature,
-                shape=(num_nodes, node_feature_dim))
+            return node_feature
 
         def false_fn(node_feature):
             """If no edges exist, call this function"""
@@ -249,8 +239,8 @@ class GraphSageConv(BaseLayer):
                 dtype=node_feature.dtype)
 
         return tf.cond(
-            tf.greater(tf.shape(edge_dst)[0], 0),
-            lambda: true_fn(node_feature, edge_dst, edge_src),
+            tf.greater(tf.shape(edge_src)[0], 0),
+            lambda: true_fn(node_feature, edge_src, edge_dst),
             lambda: false_fn(node_feature)
         )
 

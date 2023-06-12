@@ -19,8 +19,8 @@ class FeatureMasking(keras.layers.Layer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...    data={
-    ...        'edge_dst': [0, 0, 1, 1, 1, 2, 3, 4],
     ...        'edge_src': [1, 4, 0, 2, 3, 1, 1, 0],
+    ...        'edge_dst': [0, 0, 1, 1, 1, 2, 3, 4],
     ...        'node_feature': [
     ...            'Sym:C|Hyb:SP3', 
     ...            'Sym:C|Hyb:SP2', 

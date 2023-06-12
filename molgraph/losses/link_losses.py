@@ -22,7 +22,6 @@ class LinkBinaryCrossentropy(keras.losses.BinaryCrossentropy):
         )
 
     def call(self, positive_score, negative_score):
-        negative_score = tf.reshape(negative_score, (-1, 1))
         y_pred = tf.concat([
             positive_score, negative_score
         ], axis=0)
@@ -32,6 +31,7 @@ class LinkBinaryCrossentropy(keras.losses.BinaryCrossentropy):
         return super().call(y_true, y_pred)
 
 
+# TODO: Make it work for len(y_true) != len(y_pred)
 @keras.utils.register_keras_serializable(package='molgraph.losses')
 class LinkContrastiveMarginLoss(keras.losses.Loss):
 
@@ -52,6 +52,8 @@ class LinkContrastiveMarginLoss(keras.losses.Loss):
         base_config.update({'margin': self.margin})
         return base_config
 
+
+# TODO: Make it work for len(y_true) != len(y_pred)
 @keras.utils.register_keras_serializable(package='molgraph.losses')
 class LinkContrastiveBinaryCrossentropy(keras.losses.Loss):
 

@@ -1,15 +1,13 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import initializers
-from tensorflow.keras import regularizers
-from tensorflow.keras import constraints
-from tensorflow.keras import activations
-from tensorflow.keras import layers
+from keras import initializers
+from keras import regularizers
+from keras import constraints
+from keras import layers
 
 from typing import Optional
 from typing import Callable
 from typing import Union
-from typing import Tuple
 
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.layers.base import BaseLayer
@@ -31,8 +29,8 @@ class GMMConv(BaseLayer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'node_feature': [
     ...             [[1.0, 0.0], [1.0, 0.0]],
     ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
@@ -52,8 +50,8 @@ class GMMConv(BaseLayer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -208,8 +206,8 @@ class GMMConv(BaseLayer):
 
         node_feature = propagate_node_features(
             node_feature=node_feature,
-            edge_dst=tensor.edge_dst,
             edge_src=tensor.edge_src,
+            edge_dst=tensor.edge_dst,
             edge_weight=edge_weights)
 
         if self.apply_self_projection:
@@ -232,8 +230,9 @@ class GMMConv(BaseLayer):
             degree = tf.cast(degree, tf.float32)
             degree = tf.where(degree == 0.0, 1.0, degree) ** -(1/2)
             degree = tf.stack([
+                tf.gather(degree, edge_src),
                 tf.gather(degree, edge_dst),
-                tf.gather(degree, edge_src)], axis=1)
+            ], axis=1)
 
             # (n_edges, 2) @ (2, 2) -> (n_edges, 2)
             pseudo_coord = self.pseudo_coord_projection(degree)

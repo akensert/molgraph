@@ -1,8 +1,6 @@
 import tensorflow as tf
 from tensorflow.python.framework import composite_tensor
 from tensorflow.python.framework import type_spec
-from tensorflow.experimental import ExtensionType
-from tensorflow.experimental import BatchableExtensionType
 import numpy as np
 
 from typing import Optional
@@ -14,6 +12,7 @@ from typing import Any
 from typing import Type
 
 
+
 _allowable_input_types = (
     tf.Tensor,
     tf.RaggedTensor,
@@ -21,22 +20,45 @@ _allowable_input_types = (
     list,
     tuple
 )
-_required_fields = ['edge_dst', 'edge_src', 'node_feature']
 
-_non_updatable_fields = ['edge_dst', 'edge_src', 'graph_indicator']
+_required_fields = [
+    'edge_src', 
+    'edge_dst', 
+    'node_feature'
+]
 
-NestedTensors = Mapping[str, Union[tf.Tensor, tf.RaggedTensor]]
-NestedTensorSpecs = Mapping[str, Union[tf.TensorSpec, tf.RaggedTensorSpec]]
-NestedArrays = Mapping[
-    str, Union[ # TensorLike
+_non_updatable_fields = [
+    'edge_src', 
+    'edge_dst', 
+    'graph_indicator'
+]
+
+GraphData = Mapping[
+    str, 
+    Union[ 
         tf.Tensor,
         tf.RaggedTensor,
         np.ndarray,
         list,
         tuple
+    ] # TensorLike
+]
+
+GraphTensorData = Mapping[
+    str, 
+    Union[
+        tf.Tensor, 
+        tf.RaggedTensor
     ]
 ]
 
+GraphTensorDataSpec = Mapping[
+    str, 
+    Union[
+        tf.TensorSpec, 
+        tf.RaggedTensorSpec
+    ]
+]
 
 
 class GraphTensor(composite_tensor.CompositeTensor):
@@ -48,28 +70,29 @@ class GraphTensor(composite_tensor.CompositeTensor):
     can either encode the molecular graph as a single (disjoint) graph (nested
     tensors) or as multiple subgraphs (nested ragged tensors). The former is
     advantageous for efficient computation while the latter is advantageous
-    for batching (via e.g., the tf._data.Dataset API).
+    for batching (via e.g., the tf.data.Dataset API).
 
     Args:
         data (dict):
-            Nested fields of the graph tensor. A dictionary of tensors
-            (tf.Tensor or tf.RaggedTensor), numpy arrays, lists or tuples.
+            Nested data of the graph tensor. Specifically, a dictionary of 
+            tensors (tf.Tensor or tf.RaggedTensor), numpy arrays, lists or tuples.
             Internally, values (of dict) will be converted to tensors.
         spec: (dict):
-            Nested specs (associated with data). A dictionary of
-            tensor specs (tf.TensorSpec or tf.RaggedTensorSpec).
-            Nested structure of spec should be match nested structure of data.
+            Nested specs (associated with nested data). Specifically, a dictionary 
+            of tensor specs (tf.TensorSpec or tf.RaggedTensorSpec). Nested structure 
+            of spec should be match nested structure of data.
         **data_kwargs (tf.Tensor, tf.RaggedTensor, np.array, list, tuple):
-            Components passed as keyword arguments. Can be combined with data.
+            Components passed as keyword arguments.
 
     **Examples:**
 
-    Initialize ``GraphTensor`` with dict of ragged arrays:
+    Initialize ``GraphTensor`` by passing a dict of ragged arrays,
+    resulting in a graph tensor instance with nested tf.RaggedTensor types:
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'node_feature': [
     ...             [[1.0, 0.0], [1.0, 0.0]],
     ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
@@ -79,12 +102,13 @@ class GraphTensor(composite_tensor.CompositeTensor):
     >>> graph_tensor.shape
     TensorShape([2, None, 2])
 
-    Initialize ``GraphTensor`` with dict of arrays:
+    Initialize ``GraphTensor`` by passing a dict of "rectangular" arrays,
+    resulting in a graph tensor instance with nested tf.Tensor types:
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -98,11 +122,11 @@ class GraphTensor(composite_tensor.CompositeTensor):
     >>> graph_tensor.shape
     TensorShape([5, 2])
 
-    Initialize ``GraphTensor`` with keyword arguments:
+    Initialize ``GraphTensor`` by passing data as keyword arguments:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     edge_dst=[[0, 1], [0, 0, 1, 1, 2, 2]],
     ...     edge_src=[[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...     edge_dst=[[0, 1], [0, 0, 1, 1, 2, 2]],
     ...     node_feature=[
     ...         [[1.0, 0.0], [1.0, 0.0]],
     ...         [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
@@ -114,8 +138,8 @@ class GraphTensor(composite_tensor.CompositeTensor):
     Merge subgraphs of ``GraphTensor``:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     edge_dst=[[0, 1], [0, 0, 1, 1, 2, 2]],
     ...     edge_src=[[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...     edge_dst=[[0, 1], [0, 0, 1, 1, 2, 2]],
     ...     node_feature=[
     ...         [[1.0, 0.0], [1.0, 0.0]],
     ...         [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
@@ -129,8 +153,8 @@ class GraphTensor(composite_tensor.CompositeTensor):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -145,12 +169,12 @@ class GraphTensor(composite_tensor.CompositeTensor):
     >>> graph_tensor.shape
     TensorShape([2, None, 2])
 
-    Add, update and remove nested fields of ``GraphTensor``:
+    Add, update and remove data from ``GraphTensor``:
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -175,17 +199,17 @@ class GraphTensor(composite_tensor.CompositeTensor):
     >>> graph_tensor = graph_tensor.remove(['node_random_feature'])
     >>> graph_tensor
     GraphTensor(
-      edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
       edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
+      edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
       node_feature=<tf.Tensor: shape=(5, 2), dtype=float32>,
       graph_indicator=<tf.Tensor: shape=(5,), dtype=int32>)
 
-    Use spec of ``GraphTensor`` in model:
+    Use spec of ``GraphTensor`` in ``keras.Sequential`` model:
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -209,8 +233,8 @@ class GraphTensor(composite_tensor.CompositeTensor):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -232,22 +256,25 @@ class GraphTensor(composite_tensor.CompositeTensor):
 
     '''
 
-    __slots__ = ['_data', '_spec']
+    __slots__ = ('_data', '_spec')
 
     def __init__(
         self,
-        data: Optional[NestedArrays] = None,
-        spec: Optional[NestedTensorSpecs] = None,
-        **data_kwargs # allows to pass data as keyword arguments
+        data: Optional[GraphData] = None,
+        spec: Optional[GraphTensorDataSpec] = None,
+        **data_kwargs 
     ) -> None:
+        
         super().__init__()
 
         if data is None:
             data = {}
 
         data.update(data_kwargs)
-        data = _maybe_convert_to_tensors(
-            data, check_keys=True, check_values=True)
+
+        data = _convert_to_tensors(
+            data, check_keys=True, check_values=True
+        )
 
         if spec is None:
             spec = tf.nest.map_structure(tf.type_spec_from_value, data)
@@ -259,115 +286,140 @@ class GraphTensor(composite_tensor.CompositeTensor):
         self._spec = GraphTensorSpec(spec)
         self._data = data
 
-    # TODO: modify spec accordingly
-    def update(self, new_data: NestedArrays) -> 'GraphTensor':
-        '''Updates existing data fields or adds new data fields.
+    # TODO: should spec be modified?
+    def update(self, new_data: GraphData) -> 'GraphTensor':
+        '''Updates existing data or adds new data to GraphTensor instance.
 
-        Constraints are put on the update method: new data needs to
-        match the size of existing data (e.g., same number of nodes or edges).
+        Constraints are put on the update method: 
+            - New data needs to match the size of existing data (i.e., it has 
+              to have the same number of nodes or edges as the existing data).
+            - Furthermore, names of new data need to prepend either 'node' (if 
+              associated with nodes) or 'edge' (if associated with edges) to 
+              allow the GraphTensor to keep track of what data belong to which. 
 
         Args:
             new_data (dict):
-                Nested fields. A dictionary of tensors (``tf.Tensor`` or
-                ``tf.RaggedTensor``), numpy arrays, lists or tuples.
+                Nested data. Specifically, a dictionary of tensors (either 
+                ``tf.Tensor`` or ``tf.RaggedTensor``), `np.array`s, ``list``s 
+                or ``tuple``s.
 
         Returns:
-            An updated ``GraphTensor`` based on 'new_data'.
+            An updated ``GraphTensor`` instance.
 
         '''
-
-        new_data = _maybe_convert_to_tensors(new_data, check_values=True)
-
-        data = self._data.copy()
-
-        def convert_tensor(
+        def convert_value(
             new_value: Union[tf.Tensor, tf.RaggedTensor],
             old_value: Union[tf.Tensor, tf.RaggedTensor],
         ) -> Union[tf.Tensor, tf.RaggedTensor]:
+            
             if (
                 isinstance(new_value, tf.RaggedTensor) and
                 isinstance(old_value, tf.Tensor)
             ):
                 new_value = new_value.flat_values
+                _check_shape(old_value, new_value)
             elif (
-                isinstance(new_value, tf.Tensor) and
+                isinstance(new_value, tf.Tensor) and  
                 isinstance(old_value, tf.RaggedTensor)
             ):
                 new_value = old_value.with_flat_values(new_value)
+                # No need to assert shape as the method will throw an error 
+                # if shapes are mismatching.
+                #
+                # Edge case: User updates this graph tensor instance with values 
+                #            from another completely different graph, though
+                #            with the same number of total nodes (or edges);
+                #            `with_flat_values()` will accept it, though
+                #            the resulting ragged dimensions (`row_lengths()`)
+                #            could be a mismatch between this graph tensor instance
+                #            and the other graph from which the values come from.
+                #            Although this is very rare, it is important that the 
+                #            user in that case converts the tf.Tensor values into 
+                #            tf.RaggedTensor values of correct ragged dimensions 
+                #            (correct `row_lengths()`).
             else:
                 new_value = new_value
+                _check_shape(old_value, new_value)
 
             return new_value
 
-        for k in list(new_data.keys()):
+        new_data = _convert_to_tensors(new_data, check_values=True)
 
-            if k in _non_updatable_fields:
-                raise ValueError(f'{k} cannot be updated.')
+        data = self._data.copy()
 
-            new_value = new_data.pop(k)
+        fields = list(new_data.keys())
 
-            # Make sure the new value has the same number of nodes or edges
-            # as the exisiting values of the graph tensor.
-            _assert_compatible_sizes(
-                new_value, data['node_feature'], data['edge_dst'])
+        for field in fields:
 
-            if k in data:
-                data[k] = convert_tensor(new_value, data[k])
+            # TODO: should we allow edge_src, edge_dst and graph_indicator to be updatable?
+            if field in _non_updatable_fields:
+                raise ValueError(f'{field} cannot be updated.')
+
+            new_value = new_data.pop(field)
+
+            if field in data:
+                data[field] = convert_value(new_value, data[field])
             else:
-                if 'node' not in k and 'edge' not in k:
+                if not field.startswith('node') and not field.startswith('edge'):
                     raise ValueError(
-                        'Please prepend `node_` or `edge_` to the new fields added, ' + 
+                        'Please prepend "node" or "edge" to the new data added, ' + 
                         'depending on if they are associated with the nodes or edges ' + 
-                        'of the graph.')
-                data[k] = tf.cond(
-                    _compatible_sizes(new_value, data['node_feature']),
-                    lambda: convert_tensor(new_value, data['node_feature']),
-                    lambda: convert_tensor(new_value, data['edge_dst']))
+                        'of the graph respectively.'
+                    )
+                elif field.startswith('edge'):
+                    data[field] = convert_value(new_value, data['edge_src'])
+                else:
+                    data[field] = convert_value(new_value, data['node_feature'])
+
         return self.__class__(data)
 
-    # TODO: modify spec accordingly
+    # TODO: should spec be modified?
     def remove(
         self,
         fields: Union[str, List[str]]
     ) -> 'GraphTensor':
-        '''Removes data fields based on 'fields'.
+        '''Removes data from the ``GraphTensor`` instance.
 
         Args:
             fields (str, list[str]):
-                Data fields to be removed from the ``GraphTensor``.
-                Cannot remove 'edge_dst', 'edge_src' or 'graph_indicator'.
+                Data to be removed from the ``GraphTensor``. Currently, 
+                'edge_dst', 'edge_src' or 'graph_indicator' cannot be removed
+                from the ``GraphTensor`` instance.
 
         Returns:
-            GraphTensor: An updated graph tensor without fields specified
-            by 'fields'.
+            GraphTensor: An updated ``GraphTensor`` instance.
         '''
         data = self._data.copy()
+
         if isinstance(fields, str):
             fields = [fields]
+
         for field in fields:
+            
             if field in _non_updatable_fields:
                 raise ValueError(f'{field} cannot be removed.')
+        
             data.pop(field)
+
         return self.__class__(data)
 
     def merge(self) -> 'GraphTensor':
         '''Merges subgraphs into a single disjoint graph.
 
         Returns:
-            GraphTensor: A graph tensor
-            with nested tensors (``tf.Tensor``).
+            GraphTensor: A ``GraphTensor`` instance with nested "rectangular" tensors.
         '''
-        _assert_mergeable(self._data)
+        _check_mergeable(self._data)
 
         data = self._data.copy()
 
         increment = data['node_feature'].row_starts()
-        indices = data['edge_dst'].value_rowids()
+        indices = data['edge_src'].value_rowids()
         graph_indicator = data['node_feature'].value_rowids()
-        increment = tf.cast(increment, dtype=data['edge_dst'].dtype)
+        increment = tf.cast(increment, dtype=data['edge_src'].dtype)
         data = tf.nest.map_structure(lambda x: x.flat_values, data)
-        data['edge_dst'] += tf.gather(increment, indices)
         data['edge_src'] += tf.gather(increment, indices)
+        data['edge_dst'] += tf.gather(increment, indices)
         data['graph_indicator'] = graph_indicator
 
         return self.__class__(data)
@@ -376,25 +428,8 @@ class GraphTensor(composite_tensor.CompositeTensor):
         '''Separates the (single disjoint) graph into its subgraphs.
 
         Returns:
-            GraphTensor: A graph tensor
-            with nested ragged tensors (``tf.RaggedTensor``).
+            GraphTensor: A ``GraphTensor`` instance with nested ragged tensors.
         '''
-        _assert_separable(self._data)
-
-        data = self._data.copy()
-
-        if 'graph_indicator' not in data:
-            return self.__class__(
-                tf.nest.map_structure(
-                    lambda x: tf.RaggedTensor.from_row_starts(x, [0]),
-                    data))
-
-        data = _remove_intersubgraph_edges(data)
-
-        graph_indicator = data.pop('graph_indicator')
-        edge_dst = data.pop('edge_dst')
-        edge_src = data.pop('edge_src')
-        graph_indicator_edges = tf.gather(graph_indicator, edge_dst)
 
         def to_ragged_tensor(
             tensor: Union[tf.Tensor, tf.RaggedTensor],
@@ -406,31 +441,50 @@ class GraphTensor(composite_tensor.CompositeTensor):
             return tf.RaggedTensor.from_value_rowids(
                 tensor, graph_indicator, num_subgraphs)
         
+
+        _check_separable(self._data)
+
+        data = self._data.copy()
+
+        if 'graph_indicator' not in data:
+            return self.__class__(
+                tf.nest.map_structure(
+                    lambda x: tf.RaggedTensor.from_row_starts(x, [0]), data
+                )
+            )
+
+        data = _remove_intersubgraph_edges(data)
+
+        graph_indicator = data.pop('graph_indicator')
+        edge_src = data.pop('edge_src')
+        edge_dst = data.pop('edge_dst')
+        graph_indicator_edges = tf.gather(graph_indicator, edge_src)
         num_subgraphs = self.num_subgraphs
 
-        data_edges = {k: v for (k, v) in data.items() if 'edge' in k}
-        # TODO: "not 'edge'" because of 'positional_encoding'. 
-        #       Change to 'node_position' ?
-        data_nodes = {k: v for (k, v) in data.items() if not 'edge' in k}
+        edge_data, node_data = {}, {}
+        for key, value in data.items():
+            if key.startswith('edge'):
+                edge_data[key] = value
+            else:
+                node_data[key] = value
 
-        data_edges = tf.nest.map_structure(
+        edge_data = tf.nest.map_structure(
             lambda x: to_ragged_tensor(
-                x, graph_indicator_edges, num_subgraphs), data_edges)
-        data_nodes = tf.nest.map_structure(
+                x, graph_indicator_edges, num_subgraphs), edge_data)
+        
+        node_data = tf.nest.map_structure(
             lambda x: to_ragged_tensor(
-                x, graph_indicator, num_subgraphs), data_nodes)   
+                x, graph_indicator, num_subgraphs), node_data)   
 
         decrement = tf.gather(
-            data_nodes['node_feature'].row_starts(), graph_indicator_edges)
-        decrement = tf.cast(decrement, dtype=edge_dst.dtype)
-        data_edges['edge_dst'] = tf.RaggedTensor.from_value_rowids(
-            edge_dst - decrement, graph_indicator_edges, num_subgraphs)
-        data_edges['edge_src'] = tf.RaggedTensor.from_value_rowids(
+            node_data['node_feature'].row_starts(), graph_indicator_edges)
+        decrement = tf.cast(decrement, dtype=edge_src.dtype)
+        edge_data['edge_src'] = tf.RaggedTensor.from_value_rowids(
             edge_src - decrement, graph_indicator_edges, num_subgraphs)
-
-        data_nodes.update(data_edges)
-
-        return self.__class__(data_nodes)
+        edge_data['edge_dst'] = tf.RaggedTensor.from_value_rowids(
+            edge_dst - decrement, graph_indicator_edges, num_subgraphs)
+        
+        return self.__class__({**node_data, **edge_data})
 
     @property
     def _type_spec(self) -> 'GraphTensorSpec':
@@ -450,7 +504,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
     def unspecific_spec(self):
         '''Unspecific spec of ``GraphTensor``.
 
-        Specifically, ``shape[0]`` of each nested spec is set to ``None``.
+        Specifically, ``shape[0]`` for all nested data specs are set to ``None``.
 
         It is recommended to use the ``unspecific_spec`` instead of ``spec``,
         especially when using the ``tf.saved_model`` API.
@@ -492,18 +546,17 @@ class GraphTensor(composite_tensor.CompositeTensor):
         elif isinstance(self._data['node_feature'], tf.RaggedTensor):
             return self._data['node_feature'].nrows()
         else:
-            return tf.constant(1, dtype=self._data['edge_dst'].dtype)
+            return tf.constant(1, dtype=self._data['edge_src'].dtype)
 
     def __getattr__(self, name: str) -> Union[tf.Tensor, tf.RaggedTensor, Any]:
-        '''Extract data fields as an attribute.
+        '''Extract any nested data as an attribute.
 
         Args:
             name (str):
-                The data fields to be extracted.
+                The data to be extracted. E.g. ``graph_tensor.node_feature``
 
         Returns:
-            Data fields based on 'name'.
-            Either a ``tf.Tensor`` or ``tf.RaggedTensor``.
+            Specific ``tf.Tensor`` or ``tf.RaggedTensor`` data from ``GraphTensor`` instance.
         '''
         if name in object.__getattribute__(self, '_data'):
             return self._data[name]
@@ -513,16 +566,18 @@ class GraphTensor(composite_tensor.CompositeTensor):
         self,
         index: Union[str, int, List[int]]
     ) -> Union[tf.RaggedTensor, tf.Tensor, 'GraphTensor']:
-        '''Extract a data field or subgraphs via indexing.
+        '''Extract any nested data or subgraphs via indexing.
 
         Args:
             index (str, int, list[int]):
-                If str, extracts a data field of ``GraphTensor``; if int or
-                list[int], extracts specific subgraph(s) of ``GraphTensor``.
+                If ``str``, extracts specific data from ``GraphTensor`` instance; 
+                if ``int`` or ``list[int]``, extracts specific subgraph(s) of 
+                ``GraphTensor`` instance.
 
         Returns:
-            Either a ``tf.Tensor`` or ``tf.RaggedTensor`` (if index is a str)
-            or a ``GraphTensor`` (if index is a int or list[int]).
+            Either specific ``tf.Tensor`` or ``tf.RaggedTensor`` data (if index 
+            is a ``str``); or a ``GraphTensor`` instance (if index is an ``int`` 
+            or ``list[int]``).
         '''
         if isinstance(index, str):
             return self._data[index]
@@ -531,10 +586,10 @@ class GraphTensor(composite_tensor.CompositeTensor):
         return tf.gather(self, index)
 
     def __iter__(self):
-        # Makes GraphTensor iterable
         if not tf.executing_eagerly():
             raise ValueError(
-                'Can only iterate over `GraphTensor` in eager mode.')
+                'Can only iterate over `GraphTensor` in eager mode.'
+            )
         return _Iterator(self, limit=self.num_subgraphs)
 
     def __repr__(self) -> str:
@@ -546,6 +601,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
                     '{}=<tf.RaggedTensor: '.format(key) +
                     'shape={}, '.format(value.shape) +
                     'dtype={}>'.format(value.dtype.name)
+                    # TODO: include e.g. ragged_rank?
                 )
             elif isinstance(self._data[key], tf.Tensor):
                 fields.append(
@@ -563,11 +619,11 @@ class GraphTensor(composite_tensor.CompositeTensor):
 @type_spec.register('molgraph.tensors.graph_tensor.GraphTensorSpec')
 class GraphTensorSpec(type_spec.BatchableTypeSpec):
 
-    __slots__ = ['_data_spec', '_shape', '_dtype']
+    __slots__ = ('_data_spec', '_shape', '_dtype')
 
     def __init__(
         self,
-        data_spec: NestedTensorSpecs,
+        data_spec: GraphTensorDataSpec,
         shape: Optional[tf.TensorShape] = None,
         dtype: Optional[tf.DType] = None
     ) -> None:
@@ -616,7 +672,7 @@ class GraphTensorSpec(type_spec.BatchableTypeSpec):
 
     def _serialize(
         self
-    ) -> Tuple[NestedTensorSpecs, tf.TensorShape, tf.DType]:
+    ) -> Tuple[GraphTensorDataSpec, tf.TensorShape, tf.DType]:
         # ExtensionType API
         return (self._data_spec, self._shape, self._dtype)
 
@@ -624,7 +680,7 @@ class GraphTensorSpec(type_spec.BatchableTypeSpec):
     def _deserialize(
         cls,
         serialization: Tuple[
-            NestedTensorSpecs,
+            GraphTensorDataSpec,
             Union[tf.TensorShape, None],
             Union[tf.DType, None]
         ]
@@ -634,15 +690,15 @@ class GraphTensorSpec(type_spec.BatchableTypeSpec):
         return cls(data_spec, shape, dtype)
 
     @property
-    def _component_specs(self) -> NestedTensorSpecs:
+    def _component_specs(self) -> GraphTensorDataSpec:
         # ExtensionType API
         return self._data_spec
 
-    def _to_components(self, value: GraphTensor) -> NestedTensors:
+    def _to_components(self, value: GraphTensor) -> GraphTensorData:
         # ExtensionType API
         return value._data.copy()
 
-    def _from_components(self, components: NestedTensors) -> GraphTensor:
+    def _from_components(self, components: GraphTensorData) -> GraphTensor:
         # ExtensionType API
         return self.value_type(components, self._data_spec)
 
@@ -673,173 +729,163 @@ class GraphTensorSpec(type_spec.BatchableTypeSpec):
         return self
 
 
-def _remove_intersubgraph_edges(data: NestedTensors) -> NestedTensors:
-    '''Removes edges that connects two different subgraphs.
+def _assert(test: bool, message: str) -> None:
+    'Helper function to make assert statements.'
+    assert_op = tf.Assert(tf.reduce_all(test), [message])
+    if hasattr(assert_op, 'mark_used'):
+        assert_op.mark_used()
 
-    Applied only when graph_tensor.separate() is called
-    '''
-    subgraphs_dst = tf.gather(data['graph_indicator'], data['edge_dst'])
-    subgraphs_src = tf.gather(data['graph_indicator'], data['edge_src'])
-    mask = tf.where((subgraphs_dst - subgraphs_src) == 0, True, False)
-    data['edge_dst'] = tf.boolean_mask(data['edge_dst'], mask)
-    data['edge_src'] = tf.boolean_mask(data['edge_src'], mask)
-    for key in data.keys():
-        if key.startswith('edge') and key != 'edge_dst' and key != 'edge_src':
-            data[key] = tf.boolean_mask(data[key], mask)
-    return data
+def _check_shape(
+    a: Union[tf.Tensor, tf.RaggedTensor],
+    b: Union[tf.Tensor, tf.RaggedTensor],
+) -> None:
+    'Assert that a and b have the same number of nodes (or edges)'
 
-def _maybe_convert_to_tensors(
-    data: NestedArrays,
+    _assert(type(a) == type(b), ['a and b need to be the same type'])
+
+    if isinstance(a, tf.Tensor):
+        _assert(
+            test=(tf.shape(a)[0] == tf.shape(b)[0]), 
+            message=(
+                'The shape of input `a` does not match the shape of input `b`'
+            )
+        )
+    else:
+        _assert(
+            test=(tf.shape(a)[:2] == tf.shape(b)[:2]), 
+            message=(
+                'The shape of input `a` does not match the shape of input `b`'
+            )
+        )
+
+def _check_tensor_types(data: GraphTensorData) -> None:
+    'Assert that all graph data are of the same tensor type.'
+    tests = [isinstance(x, tf.Tensor) for x in data.values()]
+    same_types = all(tests) or not any(tests)
+    _assert(
+        same_types, (
+            f'Nested tensors are not the same type. ' +
+             'Found both `tf.Tensor`s and `tf.RaggedTensor`s'
+        )
+    )
+
+def _check_tensor_ranks(data: GraphTensorData) -> None:
+    'Assert that all graph data have the expected rank.'
+    for key, value in data.items():
+        max_rank = 1 if isinstance(value, tf.Tensor) else 2
+        if key in ['edge_dst', 'edge_src', 'graph_indicator']:
+            _assert(tf.rank(value) <= max_rank, '')
+        elif key in ['node_feature', 'edge_feature']:
+            _assert(tf.rank(value) <= max_rank+1, '')
+        else:
+            _assert(tf.rank(value) <= max_rank+1, '')
+
+
+def _check_data_keys(data: GraphData) -> None:
+    'Assert that required graph data exist.'
+    for req_field in _required_fields:
+        _assert(
+            req_field in data, 
+            f'`data` requires `{req_field}` field'
+        )
+
+def _check_data_values(data: GraphData) -> None:
+    'Assert that all inputted graph data have the expected type'
+    for key, value in data.items():
+        _assert(
+            isinstance(value, _allowable_input_types), (
+                f'Field `{key}` is needs to be a `tf.Tensor`, ' +
+                '`tf.RaggedTensor`, `np.ndarray`, `list` or `tuple`'
+            )
+        )
+
+def _check_mergeable(data: GraphTensorData) -> None:
+    'Assert that all nested tensors are ragged.'
+    all_ragged = all([
+        isinstance(x, tf.RaggedTensor) for x in data.values()
+    ])
+    _assert(all_ragged, (
+            'All data values need to be `tf.RaggedTensor`s to be merged.'
+        )
+    )
+
+def _check_separable(data: GraphTensorData) -> None:
+    'Assert that all nested tensors are non-ragged'
+    all_non_ragged = all([
+        isinstance(x, tf.Tensor) for x in data.values()
+    ])
+    _assert(all_non_ragged, (
+            'All data values need to be `tf.Tensor`s to be separated.'
+        )
+    )
+
+def _convert_to_tensors(
+    data: GraphData,
     check_values: bool = False,
     check_keys: bool = False,
-) -> NestedTensors:
-    'Converts data values to tensors'
-
-    if check_values:
-        _check_data_values(data)
+) -> GraphTensorData:
+    'Converts graph data (possibly ``np.array``s, ``list``s or ``tuple``s) to tensors.'
 
     if check_keys:
         _check_data_keys(data)
 
-    def _is_rectangular(x):
-        'Checks if tensor is rectangular (non-ragged)'
-        lengths = set()
-        for xi in x:
-            if not isinstance(xi, (tf.Tensor, np.ndarray, list, tuple)):
-                lengths.add(0)
-            else:
-                lengths.add(len(xi))
-        return len(lengths) <= 1
+    if check_values:
+        _check_data_values(data)
 
-    def maybe_convert(x):
-        'Convert to tensor or ragged tensor if needed'
-        if tf.is_tensor(x):
-            if isinstance(x, tf.Tensor):
-                return x
-            elif isinstance(x, tf.RaggedTensor):
-                _check_ragged_rank(x)
-                return x
-            else:
-                raise ValueError(
-                    'Tensor needs to be either `tf.Tensor` or `tf.RaggedTensor`.')
-        if _is_rectangular(x):
-            return tf.convert_to_tensor(x)
-        # TODO: slow; implement something like "fast_convert_to_ragged()"
-        return tf.ragged.constant(x, ragged_rank=1) 
+    def to_tensor(x):
+        if not tf.is_tensor(x):
+            try:
+                return tf.convert_to_tensor(x)
+            except:
+                # TODO: slow; implement something like ``fast_convert_to_ragged()```
+                return tf.ragged.constant(x, ragged_rank=1)
+        else:
+            return x
+        
+    data = {k: to_tensor(v) for (k, v) in data.items()}
 
-    data = {k: maybe_convert(v) for (k, v) in data.items()}
     _check_tensor_types(data)
+    _check_tensor_ranks(data)
+
     return data
 
-def _check_data_keys(data: NestedArrays):
-    'Asserts that necessary fields exist in the graph (tensor)'
-    for req_field in _required_fields:
-        assert_op = tf.Assert(
-            req_field in data, 
-            [f'`data` requires `{req_field}` field'])
-        _maybe_mark_used(assert_op)
-    return
-
-def _check_data_values(data: NestedArrays):
-    'Asserts that the values of the data fields are of correct type'
-    for key, value in data.items():
-        assert_op = tf.Assert(
-            isinstance(value, _allowable_input_types),
-            [
-                f'Field `{key}` is needs to be a `tf.Tensor`, ' +
-                '`tf.RaggedTensor`, `np.ndarray`, `list` or `tuple`'
-            ]
-        )
-        _maybe_mark_used(assert_op)
-    return
-
-def _check_tensor_types(data: NestedTensors):
-    'Asserts that all nested values of data are of the same tensor type'
-    tests = [isinstance(x, tf.Tensor) for x in data.values()]
-    same_types = all(tests) or not any(tests)
-    assert_op = tf.Assert(
-        same_types, [
-            f'Nested tensors are not the same type. ' +
-             'Found both `tf.Tensor`s and `tf.RaggedTensor`s'])
-    _maybe_mark_used(assert_op)
-    return
-
-def _check_ragged_rank(x: tf.RaggedTensor):
-    assert_op = tf.Assert(
-        tf.math.equal(x.ragged_rank, 1),
-        ['Ragged rank of field needs to be 1.'])
-    _maybe_mark_used(assert_op)
-    return
-
-def _compatible_sizes(
-    a: Union[tf.Tensor, tf.RaggedTensor],
-    b: Union[tf.Tensor, tf.RaggedTensor],
-) -> bool:
-    'Checks if the two inputs have the same number of nodes or edges'
-    def _get_size(x):
-        'Get number of nodes or edges'
-        if isinstance(x, tf.RaggedTensor):
-            x = x.flat_values
-        return tf.shape(x)[0]
-    return _get_size(a) == _get_size(b)
-
-def _assert_compatible_sizes(
-    target: Union[tf.Tensor, tf.RaggedTensor],
-    *comparators: Union[tf.Tensor, tf.RaggedTensor]
-):
-    assert_op = tf.Assert(
-        tf.math.reduce_any(
-            tf.nest.map_structure(
-                lambda comparator: _compatible_sizes(target, comparator),
-                comparators
-            )
-        ), [
-            'At least one of the added fields does not match ' +
-            'the size of the existing fields. Namely, one of the ' +
-            'added fields did not have the same numeber of ' +
-            'nodes or edges as the existig fields'
-        ]
-    )
-    _maybe_mark_used(assert_op)
-    return
-
 def _maybe_add_graph_indicator(
-    data: NestedTensors,
-    spec: NestedTensorSpecs,
-) -> NestedTensors:
-    'Maybe adds `graph_indicator` to data and spec.'
+    data: GraphTensorData,
+    spec: GraphTensorDataSpec,
+) -> GraphTensorData:
+    'Adds a `graph_indicator` if necessary.'
     if (
-        'graph_indicator' not in data and
-        isinstance(data['node_feature'], tf.Tensor) and
-        not isinstance(spec['node_feature'], tf.RaggedTensorSpec)
+        'graph_indicator' not in data 
+        and isinstance(data['node_feature'], tf.Tensor) 
+        and not isinstance(spec['node_feature'], tf.RaggedTensorSpec)
     ):
         data['graph_indicator'] = tf.zeros(
             tf.shape(data['node_feature'])[0],
-            dtype=data['edge_dst'].dtype)
+            dtype=data['edge_src'].dtype)
         spec['graph_indicator'] = tf.type_spec_from_value(
             data['graph_indicator'])
-        if isinstance(spec['edge_dst'], tf.RaggedTensorSpec):
+        if isinstance(spec['edge_src'], tf.RaggedTensorSpec):
             x = spec['graph_indicator']
             spec['graph_indicator'] = tf.RaggedTensorSpec(
-                x.shape, x.dtype, spec['edge_dst'].ragged_rank, spec['edge_dst'].row_splits_dtype
+                x.shape, x.dtype, spec['edge_src'].ragged_rank, spec['edge_src'].row_splits_dtype
             )
     return data, spec
 
-def _assert_mergeable(data: NestedTensors):
-    'Asserts that all nested tensors are ragged.'
-    assert_op = tf.Assert(
-        all([isinstance(x, tf.RaggedTensor) for x in data.values()]),
-        [f'All data values need to be `tf.RaggedTensor`s to be merged'])
-    _maybe_mark_used(assert_op)
-    return
+def _remove_intersubgraph_edges(data: GraphTensorData) -> GraphTensorData:
+    '''Removes edges that connects two different subgraphs.
 
-def _assert_separable(data: NestedTensors):
-    'Asserts that all nested tensors are non-ragged'
-    assert_op = tf.Assert(
-        all([isinstance(x, tf.Tensor) for x in data.values()]),
-        [f'All data values need to be `tf.Tensor`s to be separated'])
-    _maybe_mark_used(assert_op)
-    return
+    Applied only when graph_tensor.separate() is called, 
+    wherein we are "forced" to remove them.
+    '''
+    subgraphs_src = tf.gather(data['graph_indicator'], data['edge_src'])
+    subgraphs_dst = tf.gather(data['graph_indicator'], data['edge_dst'])
+    # Fine the intersubgraph edges:
+    mask = tf.where((subgraphs_dst - subgraphs_src) == 0, True, False)
+    # Remove these edges (including data that is associated with edges):
+    for key in data.keys():
+        if key.startswith('edge'):
+            data[key] = tf.boolean_mask(data[key], mask)
+    return data
 
 def _slice_to_tensor(slice_obj: slice, limit: int) -> tf.Tensor:
     '''Converts slice to a tf.range, which can subsequently be used with
@@ -852,10 +898,10 @@ def _slice_to_tensor(slice_obj: slice, limit: int) -> tf.Tensor:
     stop = slice_obj.stop
     step = slice_obj.step
 
-    assert_op = tf.Assert(
+    _assert(
         step is None or not (step < 0 or step == 0),
-        ['Slice step cannot be negative or zero.'])
-    _maybe_mark_used(assert_op)
+        'Slice step cannot be negative or zero.'
+    )
 
     limit = tf.convert_to_tensor(limit)
 
@@ -892,10 +938,30 @@ def _slice_to_tensor(slice_obj: slice, limit: int) -> tf.Tensor:
 
     return tf.range(start, stop, step)
 
-def _maybe_mark_used(assert_op):
-    if hasattr(assert_op, 'mark_used'):
-        assert_op.mark_used()
-    return
+
+# Make GraphTensor iterable:
+
+class _Iterator:
+
+    __slots__ = ['_iterable', '_index', '_limit']
+
+    def __init__(self, iterable: GraphTensor, limit: int) -> None:
+        self._iterable = iterable
+        self._limit = limit
+        self._index = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._index == self._limit:
+            raise StopIteration
+        result = self._iterable[self._index]
+        self._index += 1
+        return result
+
+
+# Override default tensorflow implemenations for GraphTensor:
 
 @tf.experimental.dispatch_for_api(tf.shape)
 def graph_tensor_tf_shape(
@@ -938,7 +1004,6 @@ def graph_tensor_gather(
 
     return params
 
-
 @tf.experimental.dispatch_for_api(tf.concat)
 def graph_tensor_concat(
     values: List[GraphTensor],
@@ -955,11 +1020,11 @@ def graph_tensor_concat(
         raise ValueError(
             f'axis=0 is required for `{values[0].__class__.__name__}`s.')
 
-    def fast_ragged_stack(component_data, dtype):
-        row_lengths = [len(x) for x in component_data]
-        component_data_concat = tf.concat(component_data, axis=0)
+    def fast_ragged_stack(inputs, dtype):
+        row_lengths = [len(x) for x in inputs]
+        inputs_concat = tf.concat(inputs, axis=0)
         return tf.RaggedTensor.from_row_lengths(
-            component_data_concat, tf.cast(row_lengths, dtype))
+            inputs_concat, tf.cast(row_lengths, dtype))
 
     structure = values[0]._data
 
@@ -977,7 +1042,7 @@ def graph_tensor_concat(
     flat_sequence = tf.nest.map_structure(
         lambda x: tf.nest.flatten(x, expand_composites=True), values)
     
-    dtype = values[0]['edge_dst'].dtype
+    dtype = values[0]['edge_src'].dtype
 
     if ragged:
         # Keep only values (resulting from tf.nest.flatten)
@@ -1006,6 +1071,53 @@ def graph_tensor_concat(
         return values
 
     return values.merge()
+
+@tf.experimental.dispatch_for_api(tf.stack)
+def graph_tensor_stack(
+    values: List[GraphTensor],
+    axis: int = 0,
+    name: str = 'stack'
+) -> GraphTensor:
+    '''Stacks list of graph tensors into a ragged GraphTensor.
+
+    Note: tf.stack(list_of_graph_tensors) only works (and make sense) 
+    if the graph data is non-ragged (namely, tf.Tensor types).
+    '''
+
+    if axis is not None and axis != 0:
+        raise ValueError(
+            f'axis=0 is required for `{values[0].__class__.__name__}`s.')
+
+    def fast_ragged_stack(inputs, dtype):
+        row_lengths = [len(x) for x in inputs]
+        inputs_concat = tf.concat(inputs, axis=0)
+        return tf.RaggedTensor.from_row_lengths(
+            inputs_concat, tf.cast(row_lengths, dtype))
+
+    structure = values[0]._data
+
+    ragged = tf.nest.map_structure(
+        lambda x: isinstance(x['node_feature'], tf.RaggedTensor), values)
+
+    if sum(ragged) > 0:
+        raise ValueError(
+            'Found ragged tensors. Can only stack non-ragged tensors.')
+
+    flat_sequence = tf.nest.map_structure(
+        lambda x: tf.nest.flatten(x, expand_composites=True), values)
+    
+    dtype = values[0]['edge_src'].dtype
+
+    flat_sequence = list(zip(*flat_sequence))
+
+    flat_sequence_stacked = [
+        fast_ragged_stack(x, dtype) for x in flat_sequence
+    ]
+
+    values = tf.nest.pack_sequence_as(
+        structure, flat_sequence_stacked)
+
+    return GraphTensor(values)
 
 
 @tf.experimental.dispatch_for_api(tf.matmul)
@@ -1047,8 +1159,9 @@ def _mask_nodes(
     # Get edge mask: 
     # edges where edge_dst AND edge_src exist in `keep_nodes` will be kept
     edge_mask = tf.logical_and(
-        tf.reduce_any(tf.expand_dims(tensor.edge_dst, -1) == keep_nodes, -1),
-        tf.reduce_any(tf.expand_dims(tensor.edge_src, -1) == keep_nodes, -1))
+        tf.reduce_any(tf.expand_dims(tensor.edge_src, -1) == keep_nodes, -1),
+        tf.reduce_any(tf.expand_dims(tensor.edge_dst, -1) == keep_nodes, -1)
+    )
     
     # Decrement (node) indices in edge_dst and edge_src:
     # as nodes are completely dropped, indices needs to be 
@@ -1061,33 +1174,25 @@ def _mask_nodes(
         updates=decr)
     
     # Apply mask and decrement to edges
-    edge_dst = tf.boolean_mask(tensor.edge_dst, edge_mask)
-    edge_dst -= tf.gather(decr, edge_dst)
     edge_src = tf.boolean_mask(tensor.edge_src, edge_mask)
     edge_src -= tf.gather(decr, edge_src)
+    edge_dst = tf.boolean_mask(tensor.edge_dst, edge_mask)
+    edge_dst -= tf.gather(decr, edge_dst)
     
-    # Obtain components of the GraphTensor
+    # Obtain data of the GraphTensor
     data = tensor._data.copy()
     
     # Add new (masked) edge_dst and edge_src
-    data['edge_dst'] = edge_dst
     data['edge_src'] = edge_src
+    data['edge_dst'] = edge_dst
     
-    # Apply masks on the rest of the components and add to data
-    # Both components associated with edges and nodes will be masked
-    data['graph_indicator'] = tf.boolean_mask(
-        data['graph_indicator'], node_mask)
-    if 'positional_encoding' in data:
-        data['positional_encoding'] = tf.boolean_mask(
-            data['positional_encoding'], node_mask)
-    already_masked = [
-        'edge_dst', 'edge_src', 'graph_indicator', 'positional_encoding',
-    ]
+    # Apply masks on the rest of the data and add to data dict
+    # Both data associated with edges and nodes will be masked
     for key in data.keys():
-        if key not in already_masked:
+        if key not in ['edge_src', 'edge_dst']: # if not yet masked
             if key.startswith('edge'):
                  data[key] = tf.boolean_mask(data[key], edge_mask)
-            elif key.startswith('node'):
+            else:
                  data[key] = tf.boolean_mask(data[key], node_mask)  
                 
     return GraphTensor(**data)
@@ -1096,14 +1201,16 @@ def _mask_edges(
     tensor: GraphTensor, 
     edge_mask: tf.Tensor
 ) -> GraphTensor:
-    # Obtain components of the GraphTensor
+    # Obtain data of the GraphTensor
     data = tensor._data.copy()
-    # Mask all components associated with edges
+    # Mask all data associated with edges
     for key in data.keys():
         if key.startswith('edge'):
              data[key] = tf.boolean_mask(data[key], edge_mask)   
     return GraphTensor(**data)
 
+# TODO: Allow tf.boolean_mask(graph_tensor, mask) to mask graphs,
+#       by specifying axis='graph'?
 @tf.experimental.dispatch_for_api(tf.boolean_mask)
 def graph_tensor_boolean_mask(
     tensor: GraphTensor, mask, axis=None,
@@ -1147,7 +1254,6 @@ def graph_tensor_boolean_mask(
         return tensor.separate()
     return tensor
 
-
 @tf.experimental.dispatch_for_unary_elementwise_apis(GraphTensor)
 def graph_tensor_unary_elementwise_op_handler(api_func, x):
     '''Allows all unary elementwise operations (such as `tf.math.abs`)
@@ -1156,8 +1262,8 @@ def graph_tensor_unary_elementwise_op_handler(api_func, x):
     return x.update({'node_feature': api_func(x.node_feature)})
 
 @tf.experimental.dispatch_for_binary_elementwise_apis(
-    Union[GraphTensor, tf.Tensor],
-    Union[GraphTensor, tf.Tensor])
+    Union[GraphTensor, tf.Tensor], Union[GraphTensor, tf.Tensor]
+)
 def graph_tensor_binary_elementwise_op_handler(api_func, x, y):
     '''Allows all binary elementwise operations (such as `tf.math.add`)
     to handle graph tensors.
@@ -1180,22 +1286,4 @@ def graph_tensor_binary_elementwise_op_handler(api_func, x, y):
     return api_func(x_values, y_values)
 
 
-class _Iterator:
-    'Iterator for the graph tensors'
 
-    __slots__ = ['_iterable', '_index', '_limit']
-
-    def __init__(self, iterable: GraphTensor, limit: int) -> None:
-        self._iterable = iterable
-        self._limit = limit
-        self._index = 0
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self._index == self._limit:
-            raise StopIteration
-        result = self._iterable[self._index]
-        self._index += 1
-        return result

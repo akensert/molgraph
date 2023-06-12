@@ -1,11 +1,10 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras import initializers
-from tensorflow.keras import regularizers
-from tensorflow.keras import constraints
-from tensorflow.keras import activations
-
+from keras import layers
+from keras import initializers
+from keras import regularizers
+from keras import constraints
+from keras import activations
 from keras.utils import tf_utils
 
 from abc import ABC, abstractmethod
@@ -291,7 +290,7 @@ class BaseLayer(layers.Layer, ABC):
         equation: str,
         output_shape: Shape,
         activation: Activation = None,
-    ) -> layers.experimental.EinsumDense:
+    ) -> layers.EinsumDense:
 
         if self._use_bias:
             bias_axes = equation.split('->')[-1][1:]
@@ -300,7 +299,7 @@ class BaseLayer(layers.Layer, ABC):
         else:
             bias_axes = None
 
-        return layers.experimental.EinsumDense(
+        return layers.EinsumDense(
             equation,
             output_shape,
             activation=activation,

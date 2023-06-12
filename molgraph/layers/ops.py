@@ -8,8 +8,8 @@ from typing import Tuple
 def propagate_node_features(
     *,
     node_feature: tf.Tensor,
-    edge_dst: tf.Tensor,
     edge_src: tf.Tensor,
+    edge_dst: tf.Tensor,
     edge_weight: Optional[tf.Tensor] = None,
     mode: str = 'sum'
 ) -> tf.Tensor:
@@ -18,11 +18,11 @@ def propagate_node_features(
     Args:
         node_feature (tf.Tensor):
             Node features of graph tensor.
-        edge_dst (tf.Tensor):
-            Destination node indices of graph tensor. Entry i corresponds
-            to row i in node_feature.
         edge_src (tf.Tensor):
             Source node indices of graph tensor. Entry i corresponds
+            to row i in node_feature.
+        edge_dst (tf.Tensor):
+            Destination node indices of graph tensor. Entry i corresponds
             to row i in node_feature.
         edge_weight (tf.Tensor):
             Edge weights associated with edge_dst and edge_src.
@@ -93,8 +93,8 @@ def softmax_edge_weights(
 
 def compute_edge_weights_from_degrees(
     *,
-    edge_dst: tf.Tensor,
     edge_src: tf.Tensor,
+    edge_dst: tf.Tensor,
     edge_feature: Optional[tf.Tensor] = None,
     mode: Optional[str] = 'symmetric',
 ) -> tf.Tensor:
@@ -104,10 +104,10 @@ def compute_edge_weights_from_degrees(
     for the neighborhood aggregation (``propagate_node_features``).
 
     Args:
-        edge_dst (tf.Tensor):
-            Destination node indices.
         edge_src (tf.Tensor):
             Source node indices.
+        edge_dst (tf.Tensor):
+            Destination node indices.
         edge_feature (tf.Tensor):
             Edge features associated with edge_dst and edge_src.
         mode (str):
@@ -122,7 +122,7 @@ def compute_edge_weights_from_degrees(
     else:
         edge_feature = tf.expand_dims(edge_feature, axis=1)
 
-    def true_fn(edge_dst, edge_src, edge_feature, mode):
+    def true_fn(edge_src, edge_dst, edge_feature, mode):
         'If edges exist, call this function.'
         # divide_no_nan makes sense? or tf.where(deg) -> .. * edge_feature
         degree = tf.math.unsorted_segment_sum(
@@ -130,7 +130,7 @@ def compute_edge_weights_from_degrees(
 
         if mode == 'symmetric':
             # symmetric norm (in matrix notation: A' = D^{-0.5} @ A @ D^{-0.5})
-            adjacency = tf.stack([edge_dst, edge_src], axis=1)
+            adjacency = tf.stack([edge_src, edge_dst], axis=1)
             degree = tf.sqrt(tf.reduce_prod(tf.gather(degree, adjacency), 1))
             edge_weight = tf.math.divide_no_nan(1., degree)
         else:
@@ -148,8 +148,8 @@ def compute_edge_weights_from_degrees(
         return edge_weight
 
     return tf.cond(
-        tf.greater(tf.shape(edge_dst)[0], 0),
-        lambda: true_fn(edge_dst, edge_src, edge_feature, mode),
+        tf.greater(tf.shape(edge_src)[0], 0),
+        lambda: true_fn(edge_src, edge_dst, edge_feature, mode),
         lambda: false_fn(edge_feature)
     )
 

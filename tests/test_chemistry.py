@@ -65,8 +65,8 @@ def test_molecular_encoders():
          [0., 1., 0., 0., 0.],
          [0., 0., 1., 0., 0.],
          [0., 0., 1., 0., 0.]], dtype=tf.float32)
-    edge_dst = tf.constant([0, 0, 1, 1, 1, 2, 3, 4], dtype=tf.int32)
-    edge_src = tf.constant([1, 4, 0, 2, 3, 1, 1, 0], dtype=tf.int32)
+    edge_src = tf.constant([0, 0, 1, 1, 1, 2, 3, 4], dtype=tf.int32)
+    edge_dst = tf.constant([1, 4, 0, 2, 3, 1, 1, 0], dtype=tf.int32)
 
     # Define atomic encoders
     atom_encoder = Featurizer([
@@ -92,10 +92,11 @@ def test_molecular_encoders():
 
     assert tf.reduce_all(graph_tensor[1].node_feature == node_feature)
     assert tf.reduce_all(graph_tensor[1].edge_feature == edge_feature)
-    assert tf.reduce_all(graph_tensor[1].edge_dst == edge_dst)
     assert tf.reduce_all(graph_tensor[1].edge_src == edge_src)
+    assert tf.reduce_all(graph_tensor[1].edge_dst == edge_dst)
 
     assert tf.reduce_all(graph_tensor.merge()[1].node_feature == node_feature)
     assert tf.reduce_all(graph_tensor.merge()[1].edge_feature == edge_feature)
-    assert tf.reduce_all(graph_tensor.merge()[1].edge_dst == edge_dst)
     assert tf.reduce_all(graph_tensor.merge()[1].edge_src == edge_src)
+    assert tf.reduce_all(graph_tensor.merge()[1].edge_dst == edge_dst)
+    

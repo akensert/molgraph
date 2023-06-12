@@ -16,8 +16,8 @@ class NodeReadout(keras.layers.Layer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
+    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
     ...         'node_feature': [
     ...             [1.0, 0.0],
     ...             [1.0, 0.0],
@@ -52,7 +52,6 @@ class NodeReadout(keras.layers.Layer):
     >>> gnn_model.output_shape
     (None, 1)
 
-
     Args:
         target (str):
             Specifies which component to aggregate. Default to 'edge_state' which is the
@@ -64,6 +63,7 @@ class NodeReadout(keras.layers.Layer):
             if ``apply_transform=True``. If None is passed, ``units`` is set to ``input_shape[-1]``
             and ``activation`` is set to ``relu``. Default to None.
     '''
+
     def __init__(
         self, 
         target: str = 'edge_state', 
