@@ -93,9 +93,9 @@ class MaskedBinaryCrossentropy(MaskedLoss):
         return tf.cond(
             gamma != 0.0,
             lambda: keras.backend.binary_focal_crossentropy(
-                y_true, y_pred, gamma, self._from_logits),
+                y_true, y_pred, gamma=gamma, from_logits=self._from_logits),
             lambda: keras.backend.binary_crossentropy(
-                y_true, y_pred, self._from_logits))
+                y_true, y_pred, from_logits=self._from_logits))
 
     def get_config(self):
         base_config = super().get_config()
