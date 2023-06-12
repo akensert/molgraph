@@ -1,10 +1,10 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras import initializers
-from tensorflow.keras import regularizers
-from tensorflow.keras import constraints
-from tensorflow.keras import activations
+from keras import layers
+from keras import initializers
+from keras import regularizers
+from keras import constraints
+from keras import activations
 
 from typing import Union
 from typing import Callable
@@ -148,7 +148,7 @@ class LaplacianPositionalEncoding(layers.Layer):
             kernel_constraint=self.kernel_constraint,
             bias_constraint=self.bias_constraint)
 
-    def call(self, tensor: GraphTensor) -> GraphTensor:
+    def call(self, tensor: GraphTensor, training: Optional[bool] = None) -> GraphTensor:
         '''Defines the computation from inputs to outputs.
 
         This method should not be called directly, but indirectly
@@ -184,7 +184,8 @@ class LaplacianPositionalEncoding(layers.Layer):
         else:
             positional_encoding = tensor.positional_encoding
 
-        positional_encoding = random_sign_flip(positional_encoding)
+        if training:
+            positional_encoding = random_sign_flip(positional_encoding)
         node_feature = tensor.node_feature + self.projection(positional_encoding)
         return tensor_orig.update({'node_feature': node_feature})
 
@@ -222,7 +223,7 @@ class LaplacianPositionalEncoding(layers.Layer):
 
 
 def compute_normalized_laplacian(adjacency, num_nodes):
-    degree = tf.math.bincount(adjacency[:, 0])
+    degree = tf.math.bincount(adjacency[:, 1])
     degree = tf.gather(degree, adjacency)
     adjacency_norm = tf.reduce_prod(tf.cast(degree, tf.float32), 1) ** -0.5
     laplacian_norm = tf.scatter_nd(
@@ -242,7 +243,7 @@ def compute_eigen_vectors(laplacian, target_dim):
 def compute_positional_encoding(tensor, target_dim):
 
     num_nodes = tf.shape(tensor.node_feature)[0]
-    adjacency = tf.stack([tensor.edge_dst, tensor.edge_src], axis=1)
+    adjacency = tf.stack([tensor.edge_src, tensor.edge_dst], axis=1)
 
     laplacian_norm = compute_normalized_laplacian(adjacency, num_nodes)
 
