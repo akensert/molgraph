@@ -71,10 +71,10 @@ class GatherIncident(keras.layers.Layer):
         node_feature_dst = tf.gather(tensor.node_feature, tensor.edge_dst)
         if self.concat:
             node_feature_incident = tf.concat([
-                node_feature_dst, node_feature_src], axis=1)
+                node_feature_src, node_feature_dst], axis=1)
         else:
             node_feature_incident = tf.stack([
-                node_feature_dst, node_feature_src], axis=1)
+                node_feature_src, node_feature_dst], axis=1)
         tensor_orig = tensor_orig.update({
             'node_feature_incident': node_feature_incident})
         return tensor_orig.node_feature_incident

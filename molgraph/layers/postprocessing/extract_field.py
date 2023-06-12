@@ -63,5 +63,5 @@ class ExtractField(keras.layers.Layer):
 
     def get_config(self):
         base_config = super().get_config()
-        base_config.update({'field': field})
+        base_config.update({'field': self.field})
         return base_config
