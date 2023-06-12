@@ -14,8 +14,8 @@ class GatherIncident(keras.layers.Layer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'node_feature': [
     ...             [[1.0, 0.0], [2.0, 0.0]],
     ...             [[3.0, 0.0], [4.0, 0.0], [0.0, 5.0]]
@@ -29,14 +29,14 @@ class GatherIncident(keras.layers.Layer):
     ... ])
     >>> model(graph_tensor)
     <tf.Tensor: shape=(8, 4), dtype=float32, numpy=
-    array([[1., 0., 2., 0.],
-           [2., 0., 1., 0.],
-           [3., 0., 4., 0.],
-           [3., 0., 0., 5.],
+    array([[2., 0., 1., 0.],
+           [1., 0., 2., 0.],
            [4., 0., 3., 0.],
-           [4., 0., 0., 5.],
+           [0., 5., 3., 0.],
+           [3., 0., 4., 0.],
            [0., 5., 4., 0.],
-           [0., 5., 3., 0.]], dtype=float32)>
+           [4., 0., 0., 5.],
+           [3., 0., 0., 5.]], dtype=float32)>
 
     Args:
         concat (bool):
@@ -76,8 +76,8 @@ class GatherIncident(keras.layers.Layer):
             node_feature_incident = tf.stack([
                 node_feature_src, node_feature_dst], axis=1)
         tensor_orig = tensor_orig.update({
-            'node_feature_incident': node_feature_incident})
-        return tensor_orig.node_feature_incident
+            'edge_feature_incident': node_feature_incident})
+        return tensor_orig.edge_feature_incident
 
     def get_config(self):
         base_config = super().get_config()
