@@ -1,6 +1,8 @@
 import tensorflow as tf
 from tensorflow import keras
 
+from typing import Optional
+
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
@@ -14,8 +16,8 @@ class DotProductIncident(keras.layers.Layer):
 
     >>> graph_tensor = molgraph.GraphTensor(
     ...     data={
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
+    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
     ...         'node_feature': [
     ...             [[2.0, 0.0], [2.0, 0.0]],
     ...             [[3.0, 0.0], [3.0, 0.0], [0.0, 3.0]]
@@ -27,16 +29,32 @@ class DotProductIncident(keras.layers.Layer):
     ...     molgraph.layers.DotProductIncident()
     ... ])
     >>> model(graph_tensor)
-    <tf.RaggedTensor [[4.0, 4.0], [9.0, 0.0, 9.0, 0.0, 0.0, 0.0]]>
+    GraphTensor(
+      edge_src=<tf.RaggedTensor: shape=(2, None), dtype=int32>,
+      edge_dst=<tf.RaggedTensor: shape=(2, None), dtype=int32>,
+      node_feature=<tf.RaggedTensor: shape=(2, None, 2), dtype=float32>,
+      edge_score=<tf.RaggedTensor: shape=(2, None, 1), dtype=float32>)
 
     Args:
         apply_sigmoid (bool):
             Whether to apply a sigmoid activaton on the edge scores. 
             Default to False.
+        data_field (str, None):
+            Name of the data added to the GraphTensor instance. If None,
+            the output will be a ``tf.Tensor`` or ``tf.RaggedTensor`` 
+            containing the dot product between incident node features.
+            If str, a GraphTensor instance with a new data field "data_field"
+            will be outputted. Default to "edge_score".
     '''
-    def __init__(self, apply_sigmoid: bool = False, **kwargs):
+    def __init__(
+        self, 
+        apply_sigmoid: bool = False, 
+        data_field: Optional[str] = 'edge_score',
+        **kwargs
+    ):
         super().__init__(**kwargs)
         self._apply_sigmoid = apply_sigmoid
+        self._data_field = data_field
 
     def call(self, tensor: GraphTensor) -> GraphTensor:
         '''Defines the computation from inputs to outputs.
@@ -63,11 +81,16 @@ class DotProductIncident(keras.layers.Layer):
         edge_score = tf.reduce_sum(
             tf.reduce_prod(node_feature_incident, axis=1), axis=1, keepdims=True)
         if self._apply_sigmoid:
-            return tensor_orig.update({'edge_score': tf.nn.sigmoid(edge_score)})
-        return tensor_orig.update({'edge_score': edge_score})
+            edge_score = tf.nn.sigmoid(edge_score)
+        if self._data_field is None:
+            return edge_score
+        return tensor_orig.update({self._data_field: edge_score})
 
     def get_config(self):
         config = super().get_config()
-        config.update({'apply_sigmoid', self._apply_sigmoid})
+        config.update({
+            'apply_sigmoid': self._apply_sigmoid,
+            'data_field': self._data_field,
+        })
         return config
     
