@@ -6,6 +6,10 @@ from molgraph.models.mpnn import MPNN
 from molgraph.models.dmpnn import DMPNN
 from molgraph.models.dgin import DGIN
 
+from molgraph.models.pretraining.autoencoders import GraphAutoEncoder
+from molgraph.models.pretraining.autoencoders import GraphVariationalAutoEncoder
 
 # aliases
 VanillaSaliencyMapping = SaliencyMapping
+GVAE = GraphVAE = GraphVariationalAutoEncoder 
+GAE = GraphAE = GraphAutoEncoder

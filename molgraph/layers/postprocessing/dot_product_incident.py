@@ -74,6 +74,7 @@ class DotProductIncident(keras.layers.Layer):
         tensor_orig = tensor
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()
+        
         adjacency = tf.stack([
             tensor.edge_src, tensor.edge_dst], axis=1)
         node_feature_incident = tf.gather(
