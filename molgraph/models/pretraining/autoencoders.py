@@ -180,6 +180,7 @@ class GraphAutoEncoder(keras.Model):
 
 
 # TODO: instead of beta_initial/end/incr, pass a scheduler?
+@keras.utils.register_keras_serializable(package='molgraph')
 class GraphVariationalAutoEncoder(GraphAutoEncoder):
     '''Graph Variational AutoEncoder (GAE) based on Kipf and Welling [#]_.
     
