@@ -11,6 +11,8 @@ from typing import Union
 from typing import Any
 from typing import Type
 
+from typing import Optional
+from typing import Tuple
 
 
 _allowable_input_types = (
@@ -1116,6 +1118,8 @@ def graph_tensor_stack(
 
     values = tf.nest.pack_sequence_as(
         structure, flat_sequence_stacked)
+
+    del values['graph_indicator']
 
     return GraphTensor(values)
 
