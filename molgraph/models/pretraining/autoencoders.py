@@ -3,7 +3,7 @@ from tensorflow import keras
 from keras import layers
 
 from typing import Optional
-# from typing import Optional
+from typing import Any
 
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.layers.postprocessing.dot_product_incident import DotProductIncident
@@ -32,6 +32,33 @@ class GraphAutoEncoder(keras.Model):
             instance, if there are twice as many negative edges, should
             each negative edge be weighted 0.5 for the loss?
     
+    **Example:**
+
+    >>> # Obtain GraphTensor instance
+    >>> atom_encoder = molgraph.chemistry.Featurizer([
+    ...     molgraph.chemistry.features.Symbol({'C', 'N', 'O', 'P', 'Na'}),
+    ...     molgraph.chemistry.features.Hybridization(),
+    ... ])
+    >>> bond_encoder = molgraph.chemistry.Featurizer([
+    ...     molgraph.chemistry.features.BondType(),
+    ...     molgraph.chemistry.features.Rotatable()
+    ... ])
+    >>> encoder = molgraph.chemistry.MolecularGraphEncoder(atom_encoder, bond_encoder)
+    >>> dataset = molgraph.chemistry.datasets.get('esol', splitter=None)
+    >>> graph_tensor = encoder(dataset['x'])
+    >>> # Obtain GraphAutoEncoder model
+    >>> encoder = tf.keras.Sequential([
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     molgraph.layers.GATv2Conv(128),
+    ...     molgraph.layers.GATv2Conv(128),
+    ...     molgraph.layers.GATv2Conv(128),
+    ... ])
+    >>> decoder = molgraph.layers.DotProductIncident(apply_sigmoid=True)
+    >>> gae = molgraph.models.GraphAutoEncoder(encoder, decoder)
+    >>> gae.compile('adam', loss=molgraph.losses.LinkBinaryCrossentropy())
+    >>> gae.fit(graph_tensor, batch_size=32, epochs=50, verbose=0)
+    >>> reconstruction_loss = gae.evaluate(graph_tensor, verbose=0)
+
     References:
         .. [#] https://arxiv.org/pdf/1611.07308.pdf
     
@@ -179,6 +206,103 @@ class GraphAutoEncoder(keras.Model):
         })
 
 
+    def fit(
+        self, 
+        x, 
+        y: Any = None, 
+        batch_size: Optional[int] = None, 
+        epochs: int = 1, 
+        *args, 
+        **kwargs
+    ):
+        '''Trains the autoencoder for a fixed number of epochs.
+
+        Args:
+            x (GraphTensor, tf.data.Dataset):
+                The input data. Either a `GraphTensor` instance or a 
+                `tf.data.Dataset` of `GraphTensor`s.
+            y (None):
+                Target data, which will be ignored as the target can
+                be obtained from `x`.
+            batch_size (int, None):
+                Number of samples per gradient update. If `None`,
+                32 will be used. Default to `None`.
+            epochs (int):
+                Number of iterations over all subgraphs (molecular graphs)
+                of the `GraphTensor` instance or `tf.data.Dataset` instance.
+                Default to 1.
+            *args: 
+                See tf.keras.Model.fit documentaton.
+            **kwargs:
+                See tf.keras.Model.fit documentation.
+        
+        Returns:
+            A `History` object containing e.g. training loss values
+            and metric values.
+        '''
+        return super().fit(
+            x=x, y=None, batch_size=batch_size, epochs=epochs, *args, **kwargs)
+
+    def evaluate(
+        self, 
+        x, 
+        y: Any = None, 
+        batch_size: Optional[int] = None, 
+        *args, 
+        **kwargs
+    ):
+        '''Evaluates the autoencoder.
+
+        Args:
+            x (GraphTensor, tf.data.Dataset):
+                The input data; either a `GraphTensor` instance or a 
+                `tf.data.Dataset` of `GraphTensor`s.
+            y (None):
+                Target data; which will be ignored as the target can
+                be obtained from `x`.
+            batch_size (int, None):
+                Number of samples per batch of computation. If `None`,
+                32 will be used. Default to `None`.
+            *args: 
+                See tf.keras.Model.evaluate documentaton.
+            **kwargs:
+                See tf.keras.Model.evaluate documentation.
+        
+        Returns:
+            Average loss values (e.g. reconstruction loss and kl loss).
+        '''
+        return super().evaluate(
+            x=x, y=None, batch_size=batch_size, *args, **kwargs)
+    
+    def predict(
+        self, 
+        x, 
+        batch_size: Optional[int] = None, 
+        *args, 
+        **kwargs
+    ):
+        '''Generates outputs of the autoencoder.
+
+        Args:
+            x (GraphTensor, tf.data.Dataset):
+                The input data; either a `GraphTensor` instance or a 
+                `tf.data.Dataset` of `GraphTensor`s.
+            batch_size (int, None):
+                Number of samples per batch of computation. If `None`,
+                32 will be used. Default to `None`.
+            *args: 
+                See tf.keras.Model.evaluate documentaton.
+            **kwargs:
+                See tf.keras.Model.evaluate documentation.
+        
+        Returns:
+            A dictionary of `GraphTensor` instances, including an encoded
+            `GraphTensor` as well as decoded `GraphTensor`s.
+        '''
+        return super().predict(
+            x=x, batch_size=batch_size, *args, **kwargs)
+
+      
 # TODO: instead of beta_initial/end/incr, pass a scheduler?
 @keras.utils.register_keras_serializable(package='molgraph')
 class GraphVariationalAutoEncoder(GraphAutoEncoder):
@@ -207,6 +331,34 @@ class GraphVariationalAutoEncoder(GraphAutoEncoder):
             placeholder
         beta_incr (float):
             placeholder
+    
+    **Example:**
+
+    >>> # Obtain GraphTensor instance
+    >>> atom_encoder = molgraph.chemistry.Featurizer([
+    ...     molgraph.chemistry.features.Symbol({'C', 'N', 'O', 'P', 'Na'}),
+    ...     molgraph.chemistry.features.Hybridization(),
+    ... ])
+    >>> bond_encoder = molgraph.chemistry.Featurizer([
+    ...     molgraph.chemistry.features.BondType(),
+    ...     molgraph.chemistry.features.Rotatable()
+    ... ])
+    >>> encoder = molgraph.chemistry.MolecularGraphEncoder(atom_encoder, bond_encoder)
+    >>> dataset = molgraph.chemistry.datasets.get('esol', splitter=None)
+    >>> graph_tensor = encoder(dataset['x'])
+    >>> # Obtain the encoder of GVAE
+    >>> encoder_inputs = tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec)
+    >>> encoder_x = molgraph.layers.GATv2Conv(128, name='shared_conv')(encoder_inputs)
+    >>> encoder_x_mean = molgraph.layers.GATv2Conv(128, name='loc_conv')(encoder_x)
+    >>> encoder_x_log_var = molgraph.layers.GATv2Conv(128, name='log_var_conv')(encoder_x)
+    >>> encoder = tf.keras.Model(encoder_inputs, [encoder_x_mean, encoder_x_log_var])
+    >>> # Obtain the decoder of GVAE
+    >>> decoder = molgraph.layers.DotProductIncident(apply_sigmoid=True)
+    >>> # Obtain, train and evaluate GVAE model
+    >>> gvae = molgraph.models.GraphVariationalAutoEncoder(encoder, decoder)
+    >>> gvae.compile('adam', loss=molgraph.losses.LinkBinaryCrossentropy())
+    >>> gvae.fit(graph_tensor, batch_size=32, epochs=50, verbose=0)
+    >>> total_loss, rec_loss, kl_loss = gae.evaluate(graph_tensor, verbose=0)
     
     References:
         .. [#] https://arxiv.org/pdf/1611.07308.pdf

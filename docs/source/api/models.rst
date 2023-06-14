@@ -47,3 +47,19 @@ SmoothGradSaliencyMapping
 ===========================
 .. autoclass:: molgraph.models.SmoothGradSaliencyMapping(tensorflow.keras.Model)
   :members: predict, get_config, from_config
+
+
+***************************
+Pretraining
+***************************
+
+GraphAutoEncoder
+===========================
+.. autoclass:: molgraph.models.GraphAutoEncoder(tensorflow.keras.Model)
+  :members: fit, evaluate, predict, get_config, from_config
+
+GraphVariationalAutoEncoder
+===========================
+.. autoclass:: molgraph.models.GraphVariationalAutoEncoder(tensorflow.keras.Model)
+  :members: fit, evaluate, predict, get_config, from_config
+
