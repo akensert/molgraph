@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from abc import ABC
 from abc import abstractmethod
+import math
 from typing import Union
 from typing import Any
 from typing import Callable
@@ -355,7 +356,9 @@ class CrippenLogPContribution(Feature):
     def __call__(self, atom: Chem.Atom) -> float:
         mol = atom.GetOwningMol()
         val = Crippen._GetAtomContribs(mol)[atom.GetIdx()][0]
-        return val if val is not None else 0.0
+        if math.isnan(val) or val is None:
+            return 0.0
+        return val
 
 
 @atom_features.register(name='crippen_molar_refractivity_contribution')
@@ -363,7 +366,9 @@ class CrippenMolarRefractivityContribution(Feature):
     def __call__(self, atom: Chem.Atom) -> float:
         mol = atom.GetOwningMol()
         val = Crippen._GetAtomContribs(mol)[atom.GetIdx()][1]
-        return val if val is not None else 0.0
+        if math.isnan(val) or val is None:
+            return 0.0
+        return val
 
 
 @atom_features.register(name='tpsa_contribution')
@@ -371,7 +376,9 @@ class TPSAContribution(Feature):
     def __call__(self, atom: Chem.Atom) -> float:
         mol = atom.GetOwningMol()
         val = rdMolDescriptors._CalcTPSAContribs(mol)[atom.GetIdx()]
-        return val if val is not None else 0.0
+        if math.isnan(val) or val is None:
+            return 0.0
+        return val
 
 
 @atom_features.register(name='labute_asa_contribution')
@@ -379,7 +386,9 @@ class LabuteASAContribution(Feature):
     def __call__(self, atom: Chem.Atom) -> float:
         mol = atom.GetOwningMol()
         val = rdMolDescriptors._CalcLabuteASAContribs(mol)[0][atom.GetIdx()]
-        return val if val is not None else 0.0
+        if math.isnan(val) or val is None:
+            return 0.0
+        return val
 
 
 @atom_features.register(name='gasteiger_charge')
@@ -388,7 +397,9 @@ class GasteigerCharge(Feature):
         mol = atom.GetOwningMol()
         rdPartialCharges.ComputeGasteigerCharges(mol)
         val = atom.GetDoubleProp('_GasteigerCharge')
-        return val if val is not None else 0.0
+        if math.isnan(val) or val is None:
+            return 0.0
+        return val
 
 
 @bond_features.register(name='bond_type')
