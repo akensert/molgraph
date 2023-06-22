@@ -412,18 +412,31 @@ def _validate_features(features: List[Feature]):
     dummy_bond = dummy_mol.GetBondWithIdx(0)
     try:
         # Check if features are atom features
-        _ = [f(dummy_atom) for f in features]
-        feature_type = 'atom'
-    except:
+        for f in features:
+            atom_feature_name = f.__class__.__name__
+            _ = f(dummy_atom)
+        else:
+            atom_feature_name = ''
+            feature_type = 'atom'
+    except Exception as e_atom:
         try:
             # Check if features are bond features
-            _ = [f(dummy_bond) for f in features]
-            feature_type = 'bond'
-        except:
+            for f in features:
+                bond_feature_name = f.__class__.__name__
+                _ = f(dummy_bond)
+            else:
+                bond_feature_name = ''
+                feature_type = 'bond'
+        except Exception as e_bond:
+            error_atom_message = f'{type(e_atom).__name__}: {str(e_atom)}'
+            error_bond_message = f'{type(e_bond).__name__}: {str(e_bond)}'
             feature_type = None
 
     if feature_type is None:
-        raise ValueError('Invalid `features`.')
+        raise ValueError(
+            'Could not compute atom or bond features:\n\t'
+            f'- [atom] {atom_feature_name} raised {error_atom_message}\n\t'
+            f'- [bond] {bond_feature_name} raised {error_bond_message}')
 
     return feature_type
 
