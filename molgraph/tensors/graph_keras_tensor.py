@@ -21,13 +21,13 @@ class GraphKerasTensor(keras_tensor.KerasTensor):
 
 
 tensor_graph_operators = [
-    '__getitem__', 
+    '__getitem__', '__getattr__', 
 ]
 for o in tensor_graph_operators:
     GraphKerasTensor._overload_operator(GraphTensor, o)
 
 tensor_graph_properties = [
-    '_data', 'unspecific_spec',
+    '_data', '_spec',
 ]
 for p in tensor_graph_properties:
     core._delegate_property(GraphKerasTensor, p)

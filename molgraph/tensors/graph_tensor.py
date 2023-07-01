@@ -511,20 +511,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
         It is recommended to use the ``unspecific_spec`` instead of ``spec``,
         especially when using the ``tf.saved_model`` API.
         '''
-        def modify_spec(x):
-            if isinstance(x, tf.RaggedTensorSpec):
-                return tf.RaggedTensorSpec(
-                    shape=tf.TensorShape([None]).concatenate(x.shape[1:]),
-                    dtype=x.dtype,
-                    row_splits_dtype=x.row_splits_dtype,
-                    ragged_rank=x.ragged_rank,
-                    flat_values_spec=x.flat_values_spec)
-            return tf.TensorSpec(
-                shape=tf.TensorShape([None]).concatenate(x.shape[1:]),
-                dtype=x.dtype)
-
-        return GraphTensorSpec(
-            tf.nest.map_structure(modify_spec, self._spec._data_spec))
+        return _unspecify_batch_shape(self._type_spec)
 
     @property
     def shape(self) -> tf.TensorShape:
@@ -549,7 +536,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
             return self._data['node_feature'].nrows()
         else:
             return tf.constant(1, dtype=self._data['edge_src'].dtype)
-
+        
     def __getattr__(self, name: str) -> Union[tf.Tensor, tf.RaggedTensor, Any]:
         '''Extract any nested data as an attribute.
 
@@ -729,7 +716,7 @@ class GraphTensorSpec(type_spec.BatchableTypeSpec):
     def _to_legacy_output_classes(self):
         # Legacy method of ExtensionType API
         return self
-
+    
 
 def _assert(test: bool, message: str) -> None:
     'Helper function to make assert statements.'
@@ -889,6 +876,23 @@ def _remove_intersubgraph_edges(data: GraphTensorData) -> GraphTensorData:
             data[key] = tf.boolean_mask(data[key], mask)
     return data
 
+def _unspecify_batch_shape(graph_tensor_spec: GraphTensorSpec):
+
+    def fn(spec):
+        if isinstance(spec, tf.RaggedTensorSpec):
+            return tf.RaggedTensorSpec(
+                shape=tf.TensorShape([None]).concatenate(spec.shape[1:]),
+                dtype=spec.dtype,
+                row_splits_dtype=spec.row_splits_dtype,
+                ragged_rank=spec.ragged_rank,
+                flat_values_spec=spec.flat_values_spec)
+        return tf.TensorSpec(
+            shape=tf.TensorShape([None]).concatenate(spec.shape[1:]),
+            dtype=spec.dtype)
+    
+    return graph_tensor_spec.__class__(
+        tf.nest.map_structure(fn, graph_tensor_spec._data_spec))
+    
 def _slice_to_tensor(slice_obj: slice, limit: int) -> tf.Tensor:
     '''Converts slice to a tf.range, which can subsequently be used with
     tf.gather to gather subgraphs.
@@ -971,9 +975,18 @@ def graph_tensor_tf_shape(
     out_type=tf.dtypes.int32,
     name=None
 ):
-    return tf.shape(
-        input=input.node_feature, out_type=out_type, name=name)
+    node_feature = input.node_feature
 
+    # TODO: Hopefully, therse two lines can be removed in the future.
+    # As of now, this is necessary to allow ragged GraphTensor 
+    # to be used with keras.Model.predict. If DynamicRaggedShape 
+    # is returned, this will throw an error: tf.shape(tensor)[1:]
+    if isinstance(node_feature, tf.RaggedTensor):
+        node_feature = node_feature.flat_values
+
+    return tf.shape(
+        input=node_feature, out_type=out_type, name=name)
+        
 @tf.experimental.dispatch_for_api(tf.gather)
 def graph_tensor_gather(
     params: GraphTensor,
@@ -1023,7 +1036,7 @@ def graph_tensor_concat(
             f'axis=0 is required for `{values[0].__class__.__name__}`s.')
 
     def fast_ragged_stack(inputs, dtype):
-        row_lengths = [len(x) for x in inputs]
+        row_lengths = [tf.shape(x)[0] for x in inputs]
         inputs_concat = tf.concat(inputs, axis=0)
         return tf.RaggedTensor.from_row_lengths(
             inputs_concat, tf.cast(row_lengths, dtype))
@@ -1091,7 +1104,7 @@ def graph_tensor_stack(
             f'axis=0 is required for `{values[0].__class__.__name__}`s.')
 
     def fast_ragged_stack(inputs, dtype):
-        row_lengths = [len(x) for x in inputs]
+        row_lengths = [tf.shape(x)[0] for x in inputs]
         inputs_concat = tf.concat(inputs, axis=0)
         return tf.RaggedTensor.from_row_lengths(
             inputs_concat, tf.cast(row_lengths, dtype))
