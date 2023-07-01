@@ -165,8 +165,8 @@ class EmbeddingLookup(layers.StringLookup):
                 The number of steps of adaption. If None, the number of
                 samples divided by the batch_size is used. Default to None.
         '''
-        if not isinstance(data,  GraphTensor):
-            data = data = data.map(
+        if not isinstance(data, GraphTensor):
+            data = data.map(
                 lambda x: getattr(x, self.feature))
         else:
             data = getattr(data, self.feature)
@@ -214,6 +214,13 @@ class EmbeddingLookup(layers.StringLookup):
             experimental_autocast=False
         )
 
+    def compute_output_shape(
+        self, 
+        input_shape: tf.TensorShape
+    ) -> tf.TensorShape:
+        return tf.TensorShape(
+            input_shape[:-1]).concatenate([self.output_dim])
+    
     @classmethod
     def from_config(cls, config):
         vocabulary_size = config.pop('vocabulary_size')

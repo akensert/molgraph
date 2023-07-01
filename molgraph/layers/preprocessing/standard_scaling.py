@@ -175,7 +175,7 @@ class StandardScaling(layers.PreprocessingLayer):
                 samples divided by the batch_size is used. Default to None.
         '''
         if not isinstance(data,  GraphTensor):
-            data = data = data.map(
+            data = data.map(
                 lambda x: getattr(x, self.feature))
         else:
             data = getattr(data, self.feature)
