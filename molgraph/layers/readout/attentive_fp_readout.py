@@ -5,9 +5,8 @@ from typing import Optional
 from typing import Tuple
 from typing import TypeVar
 
-from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.layers.attentional.gat_conv import GATConv
-
+from molgraph.tensors.graph_tensor import GraphTensor
 
 Config = TypeVar('Config', bound=dict)
 
@@ -168,7 +167,7 @@ def _add_virtual_super_nodes(
     virtual_node_state = tf.reduce_sum(
         node_feature, axis=1, keepdims=True)
     
-    # -> (batch_size, None, node_dim)
+    # -> (batch_size, 1 + None, node_dim)
     node_feature = tf.concat([
         virtual_node_state, node_feature], axis=1)
     
