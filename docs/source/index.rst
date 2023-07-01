@@ -1,7 +1,7 @@
 Welcome to MolGraph!
 =======================
 
-*This is an early release; things are still being updated and added. Hence, API compatibility may break in the future.*
+*This project is a work in progress; things are still being updated, added, and experimented with. Hence, API compatibility may break in the future.*
 
 **What is MolGraph?** A light-weight Python package for applying graph neural networks (GNNs) on molecular graphs.
 It is built with, and aims to be highly compatible with,
@@ -31,6 +31,7 @@ graph.
   api/chemistry
   api/layers
   api/models
+  api/losses
 
 
 .. toctree::
