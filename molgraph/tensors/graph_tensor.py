@@ -977,7 +977,7 @@ def graph_tensor_tf_shape(
 ):
     node_feature = input.node_feature
 
-    # TODO: Hopefully, therse two lines can be removed in the future.
+    # TODO: Hopefully, these two lines can be removed in the future.
     # As of now, this is necessary to allow ragged GraphTensor 
     # to be used with keras.Model.predict. If DynamicRaggedShape 
     # is returned, this will throw an error: tf.shape(tensor)[1:]
