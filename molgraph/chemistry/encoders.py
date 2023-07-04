@@ -163,27 +163,6 @@ class Featurizer:
         return f'Featurizer(features={self.features})'
 
 
-class AtomicFeaturizer(Featurizer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        warn(f'{self.__class__.__name__} will be deprecated in the near future, use `Featurizer` instead.',
-            DeprecationWarning, stacklevel=2)
-
-
-class AtomFeaturizer(Featurizer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        warn(f'{self.__class__.__name__} will be deprecated in the near future, use `Featurizer` instead.',
-            DeprecationWarning, stacklevel=2)
-
-
-class BondFeaturizer(Featurizer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        warn(f'{self.__class__.__name__} will be deprecated in the near future, use `Featurizer` instead.',
-            DeprecationWarning, stacklevel=2)
-
-
 class Tokenizer:
 
     '''Atomic tokenizer.
@@ -278,27 +257,6 @@ class Tokenizer:
 
     def __repr__(self) -> str:
         return f'Tokenizer(features={self.features})'
-
-
-class AtomicTokenizer(Tokenizer):
-    def __init__(self, features):
-        super().__init__(features)
-        warn(f'{self.__class__.__name__} will be deprecated in the near future, use `Tokenizer` instead.',
-            DeprecationWarning, stacklevel=2)
-
-
-class AtomTokenizer(Tokenizer):
-    def __init__(self, features):
-        super().__init__(features)
-        warn(f'{self.__class__.__name__} will be deprecated in the near future, use `Tokenizer` instead.',
-            DeprecationWarning, stacklevel=2)
-
-
-class BondTokenizer(Tokenizer):
-    def __init__(self, features):
-        super().__init__(features)
-        warn(f'{self.__class__.__name__} will be deprecated in the near future, use `Tokenizer` instead.',
-            DeprecationWarning, stacklevel=2)
 
 
 class Encoding(ABC):
