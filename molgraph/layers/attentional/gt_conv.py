@@ -179,10 +179,6 @@ class GTConv(gnn_layer.GNNLayer):
             kwargs.get('use_edge_features', True)
         )
 
-        if units is None:
-            raise ValueError(
-                'Since version 0.4.0, `units` need to be specified.')
-        
         super().__init__(
             units=units,
             update_step=_FeedForwardNetwork(
@@ -296,7 +292,7 @@ class _FeedForwardNetwork(layers.Layer):
 
     def __init__(
         self, 
-        units: int, 
+        units: Optional[int] = None, 
         normalization: Union[None, str, bool] = 'layer_norm',
         activation: Union[Callable[[tf.Tensor], tf.Tensor], str, None] = None,
         residual: bool = True,
@@ -330,10 +326,6 @@ class _FeedForwardNetwork(layers.Layer):
         self._kernel_constraint = constraints.get(kernel_constraint)
         self._bias_constraint = constraints.get(bias_constraint)
 
-        self.projection_1 = self._get_dense()
-        self.projection_2 = self._get_dense()
-        self.projection_3 = self._get_dense()
-
         if self._dropout:
             self.dropout_1 = layers.Dropout(self._dropout)
             self.dropout_2 = layers.Dropout(self._dropout)
@@ -345,6 +337,17 @@ class _FeedForwardNetwork(layers.Layer):
             self.normalization_1 = layers.LayerNormalization()
             self.normalization_2 = layers.LayerNormalization()
             
+    def build(self, input_shape: tf.TensorShape) -> None:
+        
+        super().build(input_shape)
+
+        if self._units is None:
+            self._units = input_shape[-1]
+
+        self.projection_1 = self._get_dense()
+        self.projection_2 = self._get_dense()
+        self.projection_3 = self._get_dense()
+
     def call(
         self, 
         inputs: tf.Tensor, 

@@ -126,15 +126,6 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
         **kwargs
     ) -> None:
 
-        if units is None:
-              warn(
-                (
-                    '`units` needs to be specified. In the near future, '
-                    'unspecified `units` (`units=None`) will throw an error.'
-                ), 
-                DeprecationWarning, 
-                stacklevel=2
-            )          
         if kwargs.get('batch_norm', None) is not None:
             warn(
                 (
