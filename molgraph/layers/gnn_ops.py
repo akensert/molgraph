@@ -17,20 +17,22 @@ def propagate_node_features(
 
     Args:
         node_feature (tf.Tensor):
-            Node features of graph tensor.
+            Node features of `GraphTensor` instance.
         edge_src (tf.Tensor):
-            Source node indices of graph tensor. Entry i corresponds
-            to row i in node_feature.
+            Source node indices of `GraphTensor` instance. Entry i 
+            corresponds to row i in `node_feature`.
         edge_dst (tf.Tensor):
-            Destination node indices of graph tensor. Entry i corresponds
-            to row i in node_feature.
+            Destination node indices of `GraphTensor` instance. Entry i 
+            corresponds to row i in `node_feature`.
         edge_weight (tf.Tensor):
-            Edge weights associated with edge_dst and edge_src.
+            Edge weights associated with `edge_dst` and `edge_src`.
+        mode (str):
+            The type of aggregation to be performed, either of 'sum', 'mean',
+            'min' or 'max'. If None, 'sum' will be used. Default to 'sum'.
 
     Returns:
-        tf.Tensor: Updated node features via neighborhood aggregation.
+        tf.Tensor: Updated node features.
     '''
-
     num_segments = tf.shape(node_feature)[0]
     node_feature = tf.gather(node_feature, edge_src)
     if edge_weight is not None:
@@ -44,6 +46,7 @@ def propagate_node_features(
         node_feature = tf.where(node_feature <= -65500., 0., node_feature)
     elif mode == 'min':
         node_feature = tf.where(node_feature >= 65500., 0., node_feature)
+
     return node_feature
 
 def softmax_edge_weights(
@@ -59,16 +62,18 @@ def softmax_edge_weights(
 
     Args:
         edge_weight (tf.Tensor):
-            A vector of edge weights
+            Edge weights associated with `edge_src` and `edge_dst` of the
+            `GraphTensor` instance.
         edge_dst (tf.Tensor):
-            A vector of destination node indices (corresponding to edge_weight)
+            Destination node indices (corresponding to `edge_weight`) of the
+            `GraphTensor` instance.
         exponentiate (bool):
-            Whether the edge_weights should be exponentiated. Default to True.
+            Whether `edge_weight` should be exponentiated. Default to True.
         clip_values (tuple):
-            If exponentiation, clip values before it.
+            If exponentiation, clip values before it, for stability.
 
     Returns:
-        tf.Tensor: New, normalized, edge weights.
+        tf.Tensor: Normalized edge weights.
     '''
 
     def true_fn(edge_weight, edge_dst, exponentiate, clip_values):
@@ -157,25 +162,33 @@ def reduce_features(
     *,
     feature: tf.Tensor,
     mode: Optional[str],
-    output_units: Optional[int],
+    output_units: Optional[int] = None,
+    axis: int = 1,
 ) -> tf.Tensor:
-    '''Reduces dimension of node (or edge) features.
+    '''Reduces dimension of features. 
+    
+    Useful to concatenate, sum or average heads of GATConv or GTConv.
 
     Args:
         feature (tf.Tensor):
             The features to be reduced. Either node or edge features.
         mode (str, None):
-            The type of reduction to be performed. Either of 'concat', 'sum'
-            'mean' or None. If None, 'mean' is performed.
+            The type of reduction to be performed. Either of 'concat', 
+            'sum', 'mean' or None. If None, 'mean' is performed.
         output_units (int, None):
-            The output dimension (outermost dimension) after reshaping. Only
-            relevant if ``mode='concat'``.
+            The output dimension (innermost dimension) after reshaping. Only
+            relevant if ``mode='concat'``. If None, dim is inferred from the
+            two innermost dimensions. Default to None,
+        axis (int):
+            Axis to reduce. Default to 1.
 
     Returns:
-        tf.Tensor: Reduced features. If initially a rank 3 tensor, now a rank 2 tensor.
+        tf.Tensor: Reduced features (rank 3 -> rank 2).
     '''
     if mode == 'concat':
+        if output_units is None:
+            output_units = tf.reduce_prod(feature.shape[1:])
         return tf.reshape(feature, (-1, output_units))
     elif mode == 'sum':
-        return tf.reduce_sum(feature, axis=1)
-    return tf.reduce_mean(feature, axis=1)
+        return tf.reduce_sum(feature, axis=axis)
+    return tf.reduce_mean(feature, axis=axis)

@@ -1,10 +1,11 @@
 # graph neural network layers
+from molgraph.layers.gnn_layer import GNNLayer
+
 from molgraph.layers.attentional.gatv2_conv import GATv2Conv
 from molgraph.layers.attentional.gat_conv import GATConv
 from molgraph.layers.attentional.gated_gcn_conv import GatedGCNConv
 from molgraph.layers.attentional.gt_conv import GTConv
 from molgraph.layers.attentional.gmm_conv import GMMConv
-
 from molgraph.layers.attentional.attentive_fp_conv import AttentiveFPConv
 
 from molgraph.layers.convolutional.gcn_conv import GCNConv
@@ -59,10 +60,11 @@ from molgraph.layers.preprocessing.masking import NodeFeatureMasking
 from molgraph.layers.preprocessing.masking import EdgeFeatureMasking
 
 # layer ops
-from molgraph.layers.ops import compute_edge_weights_from_degrees
-from molgraph.layers.ops import propagate_node_features
-from molgraph.layers.ops import reduce_features
-from molgraph.layers.ops import softmax_edge_weights
+from molgraph.layers import gnn_ops as ops # alias
+from molgraph.layers.gnn_ops import compute_edge_weights_from_degrees
+from molgraph.layers.gnn_ops import propagate_node_features
+from molgraph.layers.gnn_ops import reduce_features
+from molgraph.layers.gnn_ops import softmax_edge_weights
 
 # Aliases
 Readout = PoolReadout = SegmentPoolReadout = SegmentPoolingReadout

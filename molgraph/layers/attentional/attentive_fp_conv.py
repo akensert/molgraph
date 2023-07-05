@@ -1,19 +1,19 @@
 import tensorflow as tf
 from tensorflow import keras
+
 from keras import initializers
 from keras import regularizers
 from keras import constraints
 
+
 from typing import Optional
 from typing import Callable
 from typing import Union
-from typing import TypeVar
 
 from molgraph.tensors.graph_tensor import GraphTensor
+from molgraph.tensors.graph_tensor import GraphTensorSpec
+
 from molgraph.layers.attentional.gat_conv import GATConv
-
-
-Config = TypeVar('Config', bound=dict)
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
@@ -183,8 +183,9 @@ class AttentiveFPConv(GATConv):
             'mean' or None. If set to None, 'mean' is used. Default to 'concat'.
         self_projection (bool):
             Whether to apply self projection. Default to True.
-        batch_norm: (bool):
-            Whether to apply batch normalization to the output. Default to True.
+        normalization: (None, str, bool):
+            Whether to apply layer normalization to the output. If batch 
+            normalization is desired, pass 'batch_norm'. Default to True.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -214,6 +215,15 @@ class AttentiveFPConv(GATConv):
             Constraint function applied to the kernels. Default to None.
         bias_constraint (tf.keras.constraints.Constraint, None):
             Constraint function applied to the biases. Default to None.
+        **kwargs: Valid (optional) keyword arguments are:
+        
+            *   `name` (str): Name of the layer instance.
+            *   `update_step` (tf.keras.layers.Layer): Applies post-processing 
+                step on the output (produced by `_call`). If passed, 
+                `normalization`, `residual`, `activation` and `dropout` 
+                parameters will be ignored. If None, a default post-processing 
+                step will be used (taking into consideration the aforementioned 
+                parameters). Default to None. 
 
     References:
         .. [#] https://pubs.acs.org/doi/10.1021/acs.jmedchem.9b00959
@@ -227,7 +237,7 @@ class AttentiveFPConv(GATConv):
         num_heads: int = 8,
         merge_mode: Optional[str] = 'concat',
         self_projection: bool = True,
-        batch_norm: bool = True,
+        normalization: Union[None, str, bool] = 'layer_norm',
         residual: bool = True,
         dropout: Optional[float] = None,
         attention_activation: Union[
@@ -247,10 +257,11 @@ class AttentiveFPConv(GATConv):
         super().__init__(
             units=units,
             use_edge_features=apply_initial_node_projection,
+            update_edge_features=False,
             num_heads=num_heads,
             merge_mode=merge_mode,
             self_projection=self_projection,
-            batch_norm=batch_norm,
+            normalization=normalization,
             residual=residual,
             dropout=dropout,
             attention_activation=attention_activation,
@@ -270,20 +281,24 @@ class AttentiveFPConv(GATConv):
         self.gru_cell = gru_cell
         self._built = False
 
-    def subclass_build(self, node_feature_shape, edge_feature_shape):
-
-        if self.apply_initial_node_projection or self.units != node_feature_shape[-1]:
+    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
+        
+        node_feature_shape = graph_tensor_spec.node_feature.shape
+        node_dim = node_feature_shape[-1]
+        
+        if self.apply_initial_node_projection or self.units != node_dim:
             self.initial_projection = self.get_dense(self.units, 'leaky_relu')
             node_feature_shape = node_feature_shape[:-1] + [self.units]
         else:
             self.initial_projection = None
 
-        super().subclass_build(node_feature_shape, edge_feature_shape)
+        # Build GATConv
+        super()._build(graph_tensor_spec)
 
         if not isinstance(self.gru_cell, tf.keras.layers.GRUCell):
             self.gru_cell = tf.keras.layers.GRUCell(self.units)
 
-    def subclass_call(self, tensor: GraphTensor) -> GraphTensor:
+    def _call(self, tensor: GraphTensor) -> GraphTensor:
 
         if self.initial_projection is not None:
             tensor = tensor.update({
@@ -292,7 +307,8 @@ class AttentiveFPConv(GATConv):
 
         node_feature_state = tensor.node_feature
 
-        tensor = super().subclass_call(tensor)
+        # Call GATConv
+        tensor = super()._call(tensor)
         
         node_feature_state, _ = self.gru_cell(
             inputs=tensor.node_feature,
@@ -300,7 +316,7 @@ class AttentiveFPConv(GATConv):
         )
         return tensor.update({'node_feature': node_feature_state})
     
-    def get_config(self) -> Config:
+    def get_config(self) -> dict:
         config = super().get_config()
         config.update({
             'apply_initial_node_projection': self.apply_initial_node_projection,

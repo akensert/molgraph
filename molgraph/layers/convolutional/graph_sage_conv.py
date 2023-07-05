@@ -11,13 +11,13 @@ from typing import Callable
 from typing import Union
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import BaseLayer
-from molgraph.layers.ops import propagate_node_features
+from molgraph.tensors.graph_tensor import GraphTensorSpec
 
+from molgraph.layers import gnn_layer
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class GraphSageConv(BaseLayer):
+class GraphSageConv(gnn_layer.GNNLayer):
 
     '''Graph sage convolution layer (GraphSage)
 
@@ -83,8 +83,9 @@ class GraphSageConv(BaseLayer):
             features. Default to True.
         self_projection (bool):
             Whether to apply self projection. Default to True.
-        batch_norm: (bool):
-            Whether to apply batch normalization to the output. Default to True.
+        normalization: (None, str, bool):
+            Whether to apply layer normalization to the output. If batch 
+            normalization is desired, pass 'batch_norm'. Default to True.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -110,6 +111,15 @@ class GraphSageConv(BaseLayer):
             Constraint function applied to the kernels. Default to None.
         bias_constraint (tf.keras.constraints.Constraint, None):
             Constraint function applied to the biases. Default to None.
+        **kwargs: Valid (optional) keyword arguments are:
+
+            *   `name` (str): Name of the layer instance.
+            *   `update_step` (tf.keras.layers.Layer): Applies post-processing 
+                step on the output (produced by `_call`). If passed, 
+                `normalization`, `residual`, `activation` and `dropout` 
+                parameters will be ignored. If None, a default post-processing 
+                step will be used (taking into consideration the aforementioned 
+                parameters). Default to None.
 
     References:
         .. [#] https://arxiv.org/pdf/1706.02216.pdf
@@ -123,7 +133,7 @@ class GraphSageConv(BaseLayer):
         aggregation_mode: str = 'mean',
         normalize: bool = True,
         self_projection: bool = True,
-        batch_norm: bool = True,
+        normalization: Union[None, str, bool] = 'layer_norm',
         residual: bool = True,
         dropout: Optional[float] = None,
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = 'relu',
@@ -139,7 +149,7 @@ class GraphSageConv(BaseLayer):
     ):
         super().__init__(
             units=units,
-            batch_norm=batch_norm,
+            normalization=normalization,
             residual=residual,
             dropout=dropout,
             activation=activation,
@@ -151,18 +161,15 @@ class GraphSageConv(BaseLayer):
             activity_regularizer=activity_regularizer,
             kernel_constraint=kernel_constraint,
             bias_constraint=bias_constraint,
+            use_edge_features=kwargs.pop('use_edge_features', False),
             **kwargs)
 
         self.aggregation_mode = aggregation_mode
-        self.normalize = normalize if not batch_norm else False
+        self.normalize = normalize if not normalization else False
         self.apply_self_projection = self_projection
         self.activation = activations.get('relu')
 
-    def subclass_build(
-        self,
-        node_feature_shape: Optional[tf.TensorShape] = None,
-        edge_feature_shape: Optional[tf.TensorShape] = None
-    ) -> None:
+    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
 
         if self.aggregation_mode == 'max':
             self.node_src_projection = self.get_dense(self.units)
@@ -174,32 +181,30 @@ class GraphSageConv(BaseLayer):
 
         self.node_projection = self.get_dense(self.units)
 
-    def subclass_call(self, tensor: GraphTensor) -> GraphTensor:
+    def _call(self, tensor: GraphTensor) -> GraphTensor:
+        
+        node_feature_residual = tensor.node_feature
 
-        if self.aggregation_mode == 'max':
-            node_feature = self.node_src_projection(tensor.node_feature)
-            node_feature = self.activation(node_feature)
-            node_feature = propagate_node_features(
-                node_feature=node_feature,
-                edge_src=tensor.edge_src,
-                edge_dst=tensor.edge_dst,
-                mode=self.aggregation_mode)
-        elif self.aggregation_mode == 'lstm':
+        if self.aggregation_mode == 'lstm':
             node_feature = self.lstm_aggregate(
                 tensor.node_feature, tensor.edge_src, tensor.edge_dst)
         else:
-            node_feature = propagate_node_features(
-                node_feature=tensor.node_feature,
-                edge_src=tensor.edge_src,
-                edge_dst=tensor.edge_dst,
-                mode=self.aggregation_mode)
+            if self.aggregation_mode == 'max':
+                node_feature = self.node_src_projection(tensor.node_feature)
+                node_feature = self.activation(node_feature)
+            else:
+                node_feature = tensor.node_feature
 
-        node_feature = tf.concat([node_feature, tensor.node_feature], axis=-1)
+            tensor = tensor.update({'node_feature': node_feature})
+            tensor = tensor.propagate(mode=self.aggregation_mode)
+            
+        node_feature = tf.concat([
+            tensor.node_feature, node_feature_residual], axis=-1)
 
         node_feature = self.node_projection(node_feature)
 
         if self.apply_self_projection:
-            node_feature += self.self_projection(tensor.node_feature)
+            node_feature += self.self_projection(node_feature_residual)
 
         if self.normalize:
             node_feature = self.activation(node_feature)

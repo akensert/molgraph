@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
+
 from keras import initializers
 from keras import regularizers
 from keras import constraints
@@ -10,15 +11,14 @@ from typing import Callable
 from typing import Union
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import BaseLayer
-from molgraph.layers.ops import softmax_edge_weights
-from molgraph.layers.ops import propagate_node_features
-from molgraph.layers.ops import reduce_features
+from molgraph.tensors.graph_tensor import GraphTensorSpec
 
+from molgraph.layers import gnn_layer
+from molgraph.layers import gnn_ops 
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class GATConv(BaseLayer):
+class GATConv(gnn_layer.GNNLayer):
 
     '''Multi-head graph attention layer (GAT).
 
@@ -91,8 +91,6 @@ class GATConv(BaseLayer):
     Args:
         units (int, None):
             Number of output units.
-        use_edge_features (bool):
-            Whether or not to use edge features. Default to True.
         num_heads (int):
             Number of attention heads. Default to 8.
         merge_mode (str):
@@ -100,8 +98,9 @@ class GATConv(BaseLayer):
             'mean' or None. If set to None, 'mean' is used. Default to 'concat'.
         self_projection (bool):
             Whether to apply self projection. Default to True.
-        batch_norm: (bool):
-            Whether to apply batch normalization to the output. Default to True.
+        normalization: (None, str, bool):
+            Whether to apply layer normalization to the output. If batch 
+            normalization is desired, pass 'batch_norm'. Default to True.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -131,6 +130,23 @@ class GATConv(BaseLayer):
             Constraint function applied to the kernels. Default to None.
         bias_constraint (tf.keras.constraints.Constraint, None):
             Constraint function applied to the biases. Default to None.
+        **kwargs: Valid (optional) keyword arguments are:
+
+            *   `name` (str): Name of the layer instance.
+            *   `update_step` (tf.keras.layers.Layer): Applies post-processing 
+                step on the output (produced by `_call`). If passed, 
+                `normalization`, `residual`, `activation` and `dropout` 
+                parameters will be ignored. If None, a default post-processing 
+                step will be used (taking into consideration the aforementioned 
+                parameters). Default to None.
+            *   `use_edge_features`: Whether or not to use edge features. 
+                Only relevant if edge features exist. If None, and edge 
+                features exist, it will be set to True. Default to None.
+            *   `update_edge_features` (bool): Specifies whether edge features 
+                should be updated along with node features, including the 
+                post-processing step. Only relevant if edge features exist. 
+                It is important that GNN layers which updates its edge features
+                for the next layer sets this to True. Default to False. 
 
     References:
         .. [#] https://arxiv.org/pdf/1710.10903.pdf
@@ -141,11 +157,10 @@ class GATConv(BaseLayer):
     def __init__(
         self,
         units: Optional[int] = 128,
-        use_edge_features: bool = True,
         num_heads: int = 8,
         merge_mode: Optional[str] = 'concat',
         self_projection: bool = True,
-        batch_norm: bool = True,
+        normalization: Union[None, str, bool] = 'layer_norm',
         residual: bool = True,
         dropout: Optional[float] = None,
         attention_activation: Union[
@@ -162,11 +177,12 @@ class GATConv(BaseLayer):
         **kwargs
     ):
         kwargs['update_edge_features'] = (
-            kwargs.get('update_edge_features', True) and use_edge_features
+            kwargs.get('update_edge_features', True) and 
+            kwargs.get('use_edge_features', True)
         )
         super().__init__(
             units=units,
-            batch_norm=batch_norm,
+            normalization=normalization,
             residual=residual,
             dropout=dropout,
             activation=activation,
@@ -180,18 +196,13 @@ class GATConv(BaseLayer):
             bias_constraint=bias_constraint,
             **kwargs)
 
-        self.use_edge_features = use_edge_features
         self.num_heads = num_heads
         self.merge_mode = merge_mode
         self.apply_self_projection = self_projection
         self.activation = activations.get('elu')
         self.attention_activation = activations.get(attention_activation)
 
-    def subclass_build(
-        self,
-        node_feature_shape: Optional[tf.TensorShape] = None,
-        edge_feature_shape: Optional[tf.TensorShape] = None
-    ) -> None:
+    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
 
         if self.merge_mode == 'concat':
             if not self.units or (self.units % self.num_heads != 0):
@@ -199,10 +210,7 @@ class GATConv(BaseLayer):
                     '`merge_mode` was set to `concat` and hence ' +
                     ' need `units` to be divisble by `num_heads`')
             self.units //= self.num_heads
-
-        self.use_edge_features = (
-            self.use_edge_features and edge_feature_shape is not None
-        )
+            
         if self.use_edge_features:
 
             self.edge_projection = self.get_einsum_dense(
@@ -225,7 +233,12 @@ class GATConv(BaseLayer):
         if self.merge_mode == 'concat':
             self.units *= self.num_heads
 
-    def subclass_call(self, tensor: GraphTensor) -> GraphTensor:
+    def _call(self, tensor: GraphTensor) -> GraphTensor:
+
+        if self.apply_self_projection:
+            node_feature_residual = self.self_projection(tensor.node_feature)
+        else:
+            node_feature_residual = None
 
         # Edge dependent (i.e., `tensor.edge_src is not None`), from here
         node_feature = self.node_projection(tensor.node_feature)
@@ -236,44 +249,32 @@ class GATConv(BaseLayer):
 
         if self.use_edge_features:
             edge_feature = self.edge_projection(tensor.edge_feature)
-            attention_feature = tf.concat([attention_feature, edge_feature], axis=-1)
+            attention_feature = tf.concat([
+                attention_feature, edge_feature], axis=-1)
 
             if self.update_edge_features:
                 edge_feature = self.edge_out_projection(attention_feature)
-                edge_feature = reduce_features(
-                    feature=edge_feature,
+                edge_feature = gnn_ops.reduce_features(
+                    feature=edge_feature, 
                     mode=self.merge_mode,
                     output_units=self.units)
                 tensor = tensor.update({'edge_feature': edge_feature})
 
         edge_weights = self.attention_projection(attention_feature)
         edge_weights = self.attention_activation(edge_weights)
-        edge_weights = softmax_edge_weights(
-            edge_weight=edge_weights,
-            edge_dst=tensor.edge_dst)
 
-        node_feature = propagate_node_features(
-            node_feature=node_feature,
-            edge_src=tensor.edge_src,
-            edge_dst=tensor.edge_dst,
-            edge_weight=edge_weights)
-
-        if self.apply_self_projection:
-            node_feature += self.self_projection(tensor.node_feature)
-
-        node_feature = self.activation(node_feature)
-
-        node_feature = reduce_features(
-            feature=node_feature,
-            mode=self.merge_mode,
-            output_units=self.units)
-
-        return tensor.update({'node_feature': node_feature})
+        tensor = tensor.update({
+            'node_feature': node_feature, 'edge_weight': edge_weights})
+        
+        return tensor.propagate(
+            activation=self.activation,
+            normalize=True, 
+            reduction=self.merge_mode,
+            residual=node_feature_residual)
 
     def get_config(self):
         base_config = super().get_config()
         config = {
-            'use_edge_features': self.use_edge_features,
             'num_heads': self.num_heads,
             'merge_mode': self.merge_mode,
             'self_projection': self.apply_self_projection,

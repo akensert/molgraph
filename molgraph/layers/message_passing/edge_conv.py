@@ -1,6 +1,8 @@
 import tensorflow as tf
 from tensorflow import keras
+
 from keras.utils import tf_utils
+
 from keras import initializers
 from keras import regularizers
 from keras import constraints
@@ -10,12 +12,8 @@ from typing import Optional
 from typing import Callable
 from typing import Union
 from typing import Type
-from typing import TypeVar
 
 from molgraph.tensors.graph_tensor import GraphTensor
-
-
-Config = TypeVar('Config', bound=dict)
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
@@ -219,7 +217,7 @@ class EdgeConv(tf.keras.layers.Layer):
 
         # EdgeConv requires edge features, so if edge features do not exist,
         # we force edge features by initializing them as ones vector
-        if not hasattr(tensor, 'edge_feature'):
+        if tensor.edge_feature is None:
             tensor = tensor.update({
                 'edge_feature': tf.ones(
                     shape=[tf.shape(tensor.edge_src)[0], 1], dtype=tf.float32)})
@@ -248,7 +246,7 @@ class EdgeConv(tf.keras.layers.Layer):
         return tensor_orig.update({'edge_state': edge_state_update})
 
     @classmethod
-    def from_config(cls: Type['EdgeConv'], config: Config) -> 'EdgeConv':
+    def from_config(cls: Type['EdgeConv'], config: dict) -> 'EdgeConv':
         initialize_edge_state = config.pop('initialize_edge_state') 
         layer = cls(**config)
         if initialize_edge_state is None:
@@ -257,7 +255,7 @@ class EdgeConv(tf.keras.layers.Layer):
             layer._build(initialize_edge_state)
         return layer
     
-    def get_config(self) -> Config:
+    def get_config(self) -> dict:
         base_config = super().get_config()
         config = {
             'units': self.units,

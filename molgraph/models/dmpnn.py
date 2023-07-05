@@ -5,7 +5,7 @@ from typing import Tuple
 from typing import Union
 from typing import Callable
 
-from molgraph.tensors import GraphTensor
+from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.layers.message_passing.edge_conv import edge_message_step
 
 
@@ -127,7 +127,7 @@ class DMPNN(keras.models.Model):
         
         # MPNN requires edge features, if edge features do not exist,
         # we initialize a ones vector.
-        if not hasattr(tensor, 'edge_feature'):
+        if tensor.edge_feature is None:
             tensor = tensor.update({
                 'edge_feature': tf.ones(
                     shape=[tf.shape(tensor.edge_dst)[0], 1],

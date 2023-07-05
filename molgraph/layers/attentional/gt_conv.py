@@ -11,15 +11,13 @@ from typing import Callable
 from typing import Union
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import BaseLayer
-from molgraph.layers.ops import softmax_edge_weights
-from molgraph.layers.ops import propagate_node_features
-from molgraph.layers.ops import reduce_features
-
+from molgraph.tensors.graph_tensor import GraphTensorSpec
+from molgraph.layers import gnn_layer
+from molgraph.layers import gnn_ops
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class GTConv(BaseLayer):
+class GTConv(gnn_layer.GNNLayer):
 
     '''Graph transformer layer
 
@@ -102,7 +100,7 @@ class GTConv(BaseLayer):
             'mean' or None. If set to None, 'mean' is used. Default to 'concat'.
         self_projection (bool):
             Whether to apply self projection. Default to True.
-        norm_mode (str, None):
+        normalization (str, None):
             The type of normalization to use for the output. Either of
             'batch_norm', 'layer_norm' or None. Default to 'layer_norm'.
         residual: (bool)
@@ -132,6 +130,24 @@ class GTConv(BaseLayer):
             Constraint function applied to the kernels. Default to None.
         bias_constraint (tf.keras.constraints.Constraint, None):
             Constraint function applied to the biases. Default to None.
+        **kwargs: Valid (optional) keyword arguments are:
+
+            *   `name` (str): Name of the layer instance.
+            *   `name` (str): Name of the layer instance.
+            *   `update_step` (tf.keras.layers.Layer): Applies post-processing 
+                step on the output (produced by `_call`). If passed, 
+                `normalization`, `residual`, `activation` and `dropout` 
+                parameters will be ignored. If None, a default post-processing 
+                step will be used (taking into consideration the aforementioned 
+                parameters). Default to None.
+            *   `use_edge_features`: Whether or not to use edge features. 
+                Only relevant if edge features exist. If None, and edge 
+                features exist, it will be set to True. Default to None.
+            *   `update_edge_features` (bool): Specifies whether edge features 
+                should be updated along with node features, including the 
+                post-processing step. Only relevant if edge features exist. 
+                It is important that GNN layers which updates its edge features
+                for the next layer sets this to True. Default to False. 
 
     References:
         .. [#] https://arxiv.org/pdf/2012.09699.pdf
@@ -141,11 +157,10 @@ class GTConv(BaseLayer):
     def __init__(
         self,
         units: Optional[int] = 128,
-        use_edge_features: bool = True,
         num_heads: int = 8,
         merge_mode: Optional[str] = 'concat',
         self_projection: bool = True,
-        norm_mode: Optional[str] = 'layer_norm',
+        normalization: Union[None, bool, str] = 'layer_norm',
         residual: bool = True,
         dropout: Optional[float] = None,
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = 'relu',
@@ -160,19 +175,32 @@ class GTConv(BaseLayer):
         **kwargs
     ):
         kwargs['update_edge_features'] = (
-            kwargs.get('update_edge_features', True) and use_edge_features
+            kwargs.get('update_edge_features', True) and 
+            kwargs.get('use_edge_features', True)
         )
-        kwargs.pop("batch_norm", None)
-        kwargs.pop("residual", None)
-        kwargs.pop("dropout", None)
-        kwargs.pop("activation", None)
 
+        if units is None:
+            raise ValueError(
+                'Since version 0.4.0, `units` need to be specified.')
+        
         super().__init__(
             units=units,
-            batch_norm=None,
-            residual=None,
-            dropout=None,
-            activation=None,
+            update_step=_FeedForwardNetwork(
+                units=units,
+                normalization=normalization,
+                activation=activation,
+                residual=residual,
+                dropout=dropout,
+                use_bias=use_bias,
+                kernel_initializer=kernel_initializer,
+                bias_initializer=bias_initializer,
+                kernel_regularizer=kernel_regularizer,
+                bias_regularizer=bias_regularizer,
+                activity_regularizer=activity_regularizer,
+                kernel_constraint=kernel_constraint,
+                bias_constraint=bias_constraint,
+            ),
+            residual=residual,
             use_bias=use_bias,
             kernel_initializer=kernel_initializer,
             bias_initializer=bias_initializer,
@@ -183,197 +211,218 @@ class GTConv(BaseLayer):
             bias_constraint=bias_constraint,
             **kwargs)
 
-        self.use_edge_features = use_edge_features
         self.num_heads = num_heads
         self.merge_mode = merge_mode
         self.apply_self_projection = self_projection
-        self.norm_mode = norm_mode
-        self.residual = residual
-        self.dropout = dropout
-        self.activation = activation
 
-        self.output_units = self.units
-
-    def subclass_build(
-        self,
-        node_feature_shape: Optional[tf.TensorShape] = None,
-        edge_feature_shape: Optional[tf.TensorShape] = None
-    ) -> None:
-
-        if self.units != self.node_dim and self.residual:
-            self.node_resample = self.get_dense(self.units)
-
-        self.use_edge_features = (
-            self.use_edge_features and edge_feature_shape is not None
-        )
-        if self.use_edge_features:
-            if self.units != self.edge_dim and self.residual:
-                self.edge_resample = self.get_dense(self.units)
-
-        if not self.output_units:
-            self.output_units = self.units
+    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
 
         if self.merge_mode == 'concat':
             if not self.units or (self.units % self.num_heads != 0):
                 raise ValueError(
                     "`merge_mode` was set to `concat` and hence " +
                     " need `units` to be divisble by `num_heads`")
-            self.units //= self.num_heads
+            units_head = self.units // self.num_heads
+        else:
+            units_head = self.units
 
         self.query_projection = self.get_einsum_dense(
-            'ij,jkh->ihk', (self.num_heads, self.units))
+            'ij,jkh->ihk', (self.num_heads, units_head))
 
         self.key_projection = self.get_einsum_dense(
-            'ij,jkh->ihk', (self.num_heads, self.units))
+            'ij,jkh->ihk', (self.num_heads, units_head))
 
         self.value_projection = self.get_einsum_dense(
-            'ij,jkh->ihk', (self.num_heads, self.units))
+            'ij,jkh->ihk', (self.num_heads, units_head))
 
         if self.apply_self_projection:
             self.self_projection = self.get_einsum_dense(
-                'ij,jkh->ihk', (self.num_heads, self.units))
-
-        # feed forward network for node features
-        self.node_projection_1 = self.get_dense(self.output_units)
-        self.node_projection_2 = self.get_dense(self.output_units)
-        self.node_projection_3 = self.get_dense(self.output_units)
-        self.node_activation = activations.get(self.activation)
-
-        if self.dropout:
-            self.node_dropout_1 = layers.Dropout(self.dropout)
-            self.node_dropout_2 = layers.Dropout(self.dropout)
-
-        if self.norm_mode == 'batch_norm':
-            self.node_normalization_1 = layers.BatchNormalization()
-            self.node_normalization_2 = layers.BatchNormalization()
-        elif self.norm_mode == 'layer_norm':
-            self.node_normalization_1 = layers.LayerNormalization()
-            self.node_normalization_2 = layers.LayerNormalization()
+                'ij,jkh->ihk', (self.num_heads, units_head))
 
         if self.use_edge_features:
-
             self.edge_gate_projection = self.get_einsum_dense(
-                'ij,jkh->ihk', (self.num_heads, self.units))
+                'ij,jkh->ihk', (self.num_heads, units_head))
 
-            # feed forward network for edge features
-            if self.update_edge_features:
-                self.edge_projection_1 = self.get_dense(self.output_units)
-                self.edge_projection_2 = self.get_dense(self.output_units)
-                self.edge_projection_3 = self.get_dense(self.output_units)
-                self.edge_activation = activations.get(self.activation)
+    def _call(self, tensor: GraphTensor) -> GraphTensor:
 
-                if self.dropout:
-                    self.edge_dropout_1 = layers.Dropout(self.dropout)
-                    self.edge_dropout_2 = layers.Dropout(self.dropout)
+        if self.apply_self_projection:
+            node_feature_residual = self.self_projection(tensor.node_feature)
+        else:
+            node_feature_residual = None
 
-                if self.norm_mode == 'batch_norm':
-                    self.edge_normalization_1 = layers.BatchNormalization()
-                    self.edge_normalization_2 = layers.BatchNormalization()
-                elif self.norm_mode == 'layer_norm':
-                    self.edge_normalization_1 = layers.LayerNormalization()
-                    self.edge_normalization_2 = layers.LayerNormalization()
-
-        if self.merge_mode == 'concat':
-            self.units *= self.num_heads
-
-    def subclass_call(self, tensor: GraphTensor) -> GraphTensor:
-
-        value = self.value_projection(tensor.node_feature)
-
-        # Edge dependent. In rare cases, we input a graph with a single
-        # node and no edges; below would throw an error in such cases.
-
-        # Apply linear transformation to node and edge features
         key = self.key_projection(tensor.node_feature)
         query = self.query_projection(tensor.node_feature)
+        value = self.value_projection(tensor.node_feature)
 
-        # Gather self nodes' queries and corresponding neighbor nodes' keys
         key = tf.gather(key, tensor.edge_src)
         query = tf.gather(query, tensor.edge_dst)
-        # tf.gather(value, edge_src) will be run inside self.propagate_features(..)
 
         attention_score = query * key
 
-        # Rescale the attention scores
         attention_score = attention_score / tf.math.sqrt(float(self.units))
 
         if self.use_edge_features:
             edge_gate = self.edge_gate_projection(tensor.edge_feature)
             attention_score *= edge_gate
-
             if self.update_edge_features:
-                edge_feature = self.feed_forward_network(
-                    'edge', attention_score, tensor.edge_feature)
+                edge_feature = gnn_ops.reduce_features(
+                    feature=attention_score, 
+                    mode=self.merge_mode, 
+                    output_units=self.units)
                 tensor = tensor.update({'edge_feature': edge_feature})
 
-        attention_score = softmax_edge_weights(
-            edge_weight=attention_score,
-            edge_dst=tensor.edge_dst)
-
-        node_feature = propagate_node_features(
-            node_feature=value,
-            edge_src=tensor.edge_src,
-            edge_dst=tensor.edge_dst,
-            edge_weight=attention_score)
-
-        if self.apply_self_projection:
-            node_feature += self.self_projection(tensor.node_feature)
-
-        node_feature = self.feed_forward_network(
-            'node', node_feature, tensor.node_feature)
-
-        return tensor.update({'node_feature': node_feature})
-
-    def feed_forward_network(self, feature_type, feature, feature_residual):
-
-        feature = reduce_features(
-            feature=feature,
-            mode=self.merge_mode,
-            output_units=self.units)
-
-        if self.dropout:
-            feature = getattr(self, f'{feature_type}_dropout_1')(feature)
-
-        feature = getattr(self, f'{feature_type}_projection_1')(feature)
-
-        if self.residual:
-            if hasattr(self, f'{feature_type}_resample'):
-                feature_residual = getattr(
-                    self, f'{feature_type}_resample')(feature_residual)
-            feature += feature_residual
-
-        if self.norm_mode:
-            feature = getattr(self, f'{feature_type}_normalization_1')(feature)
-
-        feature_residual = feature
-
-        feature = getattr(self, f'{feature_type}_projection_2')(feature)
-        feature = getattr(self, f'{feature_type}_activation')(feature)
-
-        if self.dropout:
-            feature = getattr(self, f'{feature_type}_dropout_2')(feature)
-
-        feature = getattr(self, f'{feature_type}_projection_3')(feature)
-
-        if self.residual:
-            feature += feature_residual
-
-        if self.norm_mode:
-            feature = getattr(self, f'{feature_type}_normalization_2')(feature)
-
-        return feature
-
+        tensor = tensor.update({
+            'node_feature': value, 'edge_weight': attention_score})
+        
+        return tensor.propagate(
+            normalize=True, 
+            reduction=self.merge_mode,
+            residual=node_feature_residual)
+    
     def get_config(self):
         base_config = super().get_config()
         config = {
-            'use_edge_features': self.use_edge_features,
             'num_heads': self.num_heads,
             'merge_mode': self.merge_mode,
             'self_projection': self.apply_self_projection,
-            'norm_mode': self.norm_mode,
-            'residual': self.residual,
-            'dropout': self.dropout,
-            'activation': activations.serialize(self.activation),
         }
         base_config.update(config)
         return base_config
+
+
+class _FeedForwardNetwork(layers.Layer):
+
+    'Feed-forward network (FFN) of the graph transformer layer.'
+
+    def __init__(
+        self, 
+        units: int, 
+        normalization: Union[None, str, bool] = 'layer_norm',
+        activation: Union[Callable[[tf.Tensor], tf.Tensor], str, None] = None,
+        residual: bool = True,
+        dropout: Optional[float] = None,
+        use_bias: bool = False,
+        kernel_initializer: Union[str, initializers.Initializer, None] = None,
+        bias_initializer: Union[str, initializers.Initializer, None] = None,
+        kernel_regularizer: Optional[regularizers.Regularizer] = None,
+        bias_regularizer: Optional[regularizers.Regularizer] = None,
+        activity_regularizer: Optional[regularizers.Regularizer] = None,
+        kernel_constraint: Optional[constraints.Constraint] = None,
+        bias_constraint: Optional[constraints.Constraint] = None,
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self._units = units
+        self._residual = residual
+        self._normalization = normalization
+        self._dropout = dropout
+        self._activation = activations.get(activation)
+        self._use_bias = use_bias
+        if kernel_initializer is None:
+            kernel_initializer = initializers.TruncatedNormal(stddev=0.005)
+        self._kernel_initializer = initializers.get(kernel_initializer)
+        if bias_initializer is None:
+            bias_initializer = initializers.Constant(0.)
+        self._bias_initializer = initializers.get(bias_initializer)
+        self._kernel_regularizer = regularizers.get(kernel_regularizer)
+        self._bias_regularizer = regularizers.get(bias_regularizer)
+        self._activity_regularizer = regularizers.get(activity_regularizer)
+        self._kernel_constraint = constraints.get(kernel_constraint)
+        self._bias_constraint = constraints.get(bias_constraint)
+
+        self.projection_1 = self._get_dense()
+        self.projection_2 = self._get_dense()
+        self.projection_3 = self._get_dense()
+
+        if self._dropout:
+            self.dropout_1 = layers.Dropout(self._dropout)
+            self.dropout_2 = layers.Dropout(self._dropout)
+
+        if self._normalization.startswith('batch'):
+            self.normalization_1 = layers.BatchNormalization()
+            self.normalization_2 = layers.BatchNormalization()
+        elif self._normalization:
+            self.normalization_1 = layers.LayerNormalization()
+            self.normalization_2 = layers.LayerNormalization()
+            
+    def call(
+        self, 
+        inputs: tf.Tensor, 
+        states: tf.Tensor
+    ) -> tf.Tensor:
+        
+        x = inputs
+        x_residual = states
+
+        if self._dropout:
+            x = self.dropout_1(x)
+
+        x = self.projection_1(x)
+
+        if self._residual:
+            x += x_residual
+
+        if self._normalization:
+            x = self.normalization_1(x)
+
+        x_residual = x
+
+        x = self.projection_2(x)
+        x = self._activation(x)
+
+        if self._dropout:
+            x = self.dropout_2(x)
+
+        x = self.projection_3(x)
+
+        if self._residual:
+            x += x_residual
+
+        if self._normalization:
+            x = self.normalization_2(x)
+
+        return x
+    
+    def get_config(self) -> dict:
+        config = super().get_config()
+        config.update({
+            'units': self._units,
+            'normalization': self._normalization,
+            'activation': activations.serialize(self._activation),
+            'residual': self._residual,
+            'dropout': self._dropout,
+            'use_bias': self._use_bias,
+            'kernel_initializer':
+                initializers.serialize(self._kernel_initializer),
+            'bias_initializer':
+                initializers.serialize(self._bias_initializer),
+            'kernel_regularizer':
+                regularizers.serialize(self._kernel_regularizer),
+            'bias_regularizer':
+                regularizers.serialize(self._bias_regularizer),
+            'activity_regularizer':
+                regularizers.serialize(self._activity_regularizer),
+            'kernel_constraint':
+                constraints.serialize(self._kernel_constraint),
+            'bias_constraint':
+                constraints.serialize(self._bias_constraint),
+        })
+        return config
+    
+    def _get_dense(self):
+        common_kwargs = dict(
+            units=self._units,
+            activation=None,
+            use_bias=self._use_bias,
+            kernel_regularizer=self._kernel_regularizer,
+            bias_regularizer=self._bias_regularizer,
+            activity_regularizer=self._activity_regularizer,
+            kernel_constraint=self._kernel_constraint,
+            bias_constraint=self._bias_constraint)
+        kernel_initializer = self._kernel_initializer.__class__.from_config(
+            self._kernel_initializer.get_config())
+        bias_initializer = self._bias_initializer.__class__.from_config(
+            self._bias_initializer.get_config())
+        common_kwargs["kernel_initializer"] = kernel_initializer
+        common_kwargs["bias_initializer"] = bias_initializer
+        return layers.Dense(**common_kwargs)

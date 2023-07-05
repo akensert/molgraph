@@ -1,8 +1,10 @@
 import tensorflow as tf
 from tensorflow import keras
+
 from keras import initializers
 from keras import regularizers
 from keras import constraints
+
 import math
 
 from typing import Optional
@@ -10,12 +12,13 @@ from typing import Callable
 from typing import Union
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import BaseLayer
+from molgraph.tensors.graph_tensor import GraphTensorSpec
 
+from molgraph.layers import gnn_layer
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class MPNNConv(BaseLayer):
+class MPNNConv(gnn_layer.GNNLayer):
 
     """Message passing neural network layer (MPNN)
 
@@ -135,8 +138,9 @@ class MPNNConv(BaseLayer):
             of the update step (GRU step or Dense step). Default to None.
         self_projection (bool):
             Whether to apply self projection. Default to True.
-        batch_norm: (bool):
-            Whether to apply batch normalization to the output. Default to True.
+        normalization: (None, str, bool):
+            Whether to apply layer normalization to the output. If batch 
+            normalization is desired, pass 'batch_norm'. Default to True.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -165,7 +169,16 @@ class MPNNConv(BaseLayer):
             Constraint function applied to the kernels. Default to None.
         bias_constraint (tf.keras.constraints.Constraint, None):
             Constraint function applied to the biases. Default to None.
+        **kwargs: Valid (optional) keyword arguments are:
 
+            *   `name` (str): Name of the layer instance.
+            *   `update_step` (tf.keras.layers.Layer): Applies post-processing 
+                step on the output (produced by `_call`). If passed, 
+                `normalization`, `residual`, `activation` and `dropout` 
+                parameters will be ignored. If None, a default post-processing 
+                step will be used (taking into consideration the aforementioned 
+                parameters). Default to None.
+                
     References:
         .. [#] https://arxiv.org/pdf/1704.01212.pdf
 
@@ -178,7 +191,7 @@ class MPNNConv(BaseLayer):
         update_fn: Optional[Union[
             keras.layers.GRUCell, keras.layers.Dense]] = None,
         self_projection: bool = True,
-        batch_norm: bool = True,
+        normalization: Union[None, str, bool] = 'layer_norm',
         residual: bool = True,
         dropout: Optional[float] = None,
         update_activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
@@ -195,7 +208,7 @@ class MPNNConv(BaseLayer):
     ):
         super().__init__(
             units=units,
-            batch_norm=batch_norm,
+            normalization=normalization,
             residual=residual,
             dropout=dropout,
             activation=activation,
@@ -207,6 +220,7 @@ class MPNNConv(BaseLayer):
             activity_regularizer=activity_regularizer,
             kernel_constraint=kernel_constraint,
             bias_constraint=bias_constraint,
+            use_edge_features=kwargs.pop('use_edge_features', True),
             **kwargs)
 
         self.update_fn = update_fn
@@ -220,17 +234,13 @@ class MPNNConv(BaseLayer):
         else:
             self.update_activation = update_activation
 
-    def subclass_build(
-        self,
-        node_feature_shape: tf.TensorShape,
-        edge_feature_shape: Optional[tf.TensorShape] = None
-    ) -> None:
+    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
      
         self.message_projection = self.get_dense(self.units * self.units)
 
         if self.update_fn is None:
             if self.update_mode.startswith('gru'):
-                common_kwargs = self.get_common_kwargs()
+                common_kwargs = self._get_common_kwargs()
                 common_kwargs['kernel_initializer'] = 'glorot_uniform'
                 common_kwargs['recurrent_initializer'] = 'orthogonal'
                 common_kwargs.pop('activity_regularizer', None)
@@ -241,10 +251,9 @@ class MPNNConv(BaseLayer):
             else:
                 self.update_fn = self.get_dense(
                     self.units, self.update_activation)
-        if (
-            self.units != node_feature_shape[-1] and
-            not hasattr(self, 'node_resample')
-        ):
+        
+        node_dim = graph_tensor_spec.node_feature.shape[-1]
+        if self.units != node_dim and not hasattr(self, 'node_resample'):
             self.node_resample = self.get_dense(self.units)
 
         if self.apply_self_projection:
@@ -252,7 +261,7 @@ class MPNNConv(BaseLayer):
         else:
             self.self_projection = None
 
-    def subclass_call(self, tensor: GraphTensor) -> GraphTensor:
+    def _call(self, tensor: GraphTensor) -> GraphTensor:
 
         if hasattr(self, 'node_resample'):
             tensor = tensor.update({
@@ -260,7 +269,7 @@ class MPNNConv(BaseLayer):
 
         # MPNN requires edge features, if edge features do not exist,
         # we force edge features by initializing them as ones vector
-        if not hasattr(tensor, 'edge_feature'):
+        if tensor.edge_feature is None:
             tensor = tensor.update({
                 'edge_feature': tf.ones(
                     shape=[tf.shape(tensor.edge_src)[0], 1], dtype=tf.float32)})

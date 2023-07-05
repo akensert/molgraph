@@ -1,8 +1,10 @@
 import tensorflow as tf
 from tensorflow import keras
+
 from keras import initializers
 from keras import regularizers
 from keras import constraints
+
 import numpy as np
 
 from typing import Optional
@@ -10,14 +12,15 @@ from typing import Callable
 from typing import Union
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import BaseLayer
-from molgraph.layers.ops import propagate_node_features
-from molgraph.layers.geometric import _radial_basis
+from molgraph.tensors.graph_tensor import GraphTensorSpec
 
+from molgraph.layers import gnn_layer
+
+from molgraph.layers.geometric import radial_basis
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class GCFConv(BaseLayer):
+class GCFConv(gnn_layer.GNNLayer):
 
     """(Graph) continuous filter convolution layer ((G)CFConv).
 
@@ -100,8 +103,9 @@ class GCFConv(BaseLayer):
             Default to 'auto'.
         self_projection (bool):
             Whether to apply self projection. Default to True.
-        batch_norm: (bool):
-            Whether to apply batch normalization to the output. Default to True.
+        normalization: (None, str, bool):
+            Whether to apply layer normalization to the output. If batch 
+            normalization is desired, pass 'batch_norm'. Default to True.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -127,6 +131,15 @@ class GCFConv(BaseLayer):
             Constraint function applied to the kernels. Default to None.
         bias_constraint (tf.keras.constraints.Constraint, None):
             Constraint function applied to the biases. Default to None.
+        **kwargs: Valid (optional) keyword arguments are:
+
+            *   `name` (str): Name of the layer instance.
+            *   `update_step` (tf.keras.layers.Layer): Applies post-processing 
+                step on the output (produced by `_call`). If passed, 
+                `normalization`, `residual`, `activation` and `dropout` 
+                parameters will be ignored. If None, a default post-processing 
+                step will be used (taking into consideration the aforementioned 
+                parameters). Default to None.
 
     References:
         .. [#] https://arxiv.org/pdf/1706.08566.pdf
@@ -141,7 +154,7 @@ class GCFConv(BaseLayer):
         distance_granularity: float = 0.1,
         rbf_stddev: Optional[Union[float, str]] = 'auto',
         self_projection: bool = True,
-        batch_norm: bool = True,
+        normalization: Union[None, str, bool] = 'layer_norm',
         residual: bool = True,
         dropout: Optional[float] = None,
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
@@ -157,7 +170,7 @@ class GCFConv(BaseLayer):
     ):
         super().__init__(
             units=units,
-            batch_norm=batch_norm,
+            normalization=normalization,
             residual=residual,
             dropout=dropout,
             activation=activation,
@@ -169,8 +182,9 @@ class GCFConv(BaseLayer):
             activity_regularizer=activity_regularizer,
             kernel_constraint=kernel_constraint,
             bias_constraint=bias_constraint,
+            use_edge_features=kwargs.pop('use_edge_features', True),
             **kwargs)
-
+        
         self.activation = shifted_softplus
         self.apply_self_projection = self_projection
         self.distance_min = distance_min
@@ -178,18 +192,14 @@ class GCFConv(BaseLayer):
         self.distance_granularity = distance_granularity
         self.rbf_stddev = rbf_stddev
 
-        self.rbf = _radial_basis.RadialBasis(
+        self.rbf = radial_basis.RadialBasis(
             self.distance_min,
             self.distance_max,
             self.distance_granularity,
             self.rbf_stddev
         )
 
-    def subclass_build(
-        self,
-        node_feature_shape: Optional[tf.TensorShape] = None,
-        edge_feature_shape: Optional[tf.TensorShape] = None
-    ) -> None:
+    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
 
         self.filter_generator_1 = self.get_dense(self.units, self.activation)
         self.filter_generator_2 = self.get_dense(self.units, self.activation)
@@ -201,7 +211,12 @@ class GCFConv(BaseLayer):
         if self.apply_self_projection:
             self.self_projection = self.get_dense(self.units)
 
-    def subclass_call(self, tensor: GraphTensor) -> GraphTensor:
+    def _call(self, tensor: GraphTensor) -> GraphTensor:
+
+        if self.apply_self_projection:
+            node_feature_residual = self.self_projection(tensor.node_feature)
+        else:
+            node_feature_residual = None
 
         cosine_weight = cosine_weight_from_distance(tensor.edge_feature),
         rbf_feature = self.rbf(tensor.edge_feature)
@@ -212,18 +227,15 @@ class GCFConv(BaseLayer):
 
         rbf_weight *= cosine_weight
 
-        node_feature = propagate_node_features(
-            node_feature=node_feature,
-            edge_src=tensor.edge_src,
-            edge_dst=tensor.edge_dst,
-            edge_weight=rbf_weight,
-            mode='mean')
-
-        if self.apply_self_projection:
-            node_feature += self.self_projection(tensor.node_feature)
+        tensor = tensor.update({
+            'node_feature': node_feature, 'edge_weight': rbf_weight})
+        
+        tensor = tensor.propagate(
+            mode='mean',
+            residual=node_feature_residual)
 
         node_feature = self.node_projection_3(
-            self.node_projection_2(node_feature))
+            self.node_projection_2(tensor.node_feature))
 
         return tensor.update({'node_feature': node_feature})
 

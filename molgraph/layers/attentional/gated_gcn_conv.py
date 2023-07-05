@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
+
 from keras import initializers
 from keras import regularizers
 from keras import constraints
@@ -10,14 +11,13 @@ from typing import Callable
 from typing import Union
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import BaseLayer
-from molgraph.layers.ops import softmax_edge_weights
-from molgraph.layers.ops import propagate_node_features
+from molgraph.tensors.graph_tensor import GraphTensorSpec
 
+from molgraph.layers import gnn_layer
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class GatedGCNConv(BaseLayer):
+class GatedGCNConv(gnn_layer.GNNLayer):
 
     '''Gated graph convolutional layer (GatedGCN).
 
@@ -94,8 +94,9 @@ class GatedGCNConv(BaseLayer):
             Whether or not to use edge features. Default to True.
         self_projection (bool):
             Whether to apply self projection. Default to True.
-        batch_norm: (bool):
-            Whether to apply batch normalization to the output. Default to True.
+        normalization: (None, str, bool):
+            Whether to apply layer normalization to the output. If batch 
+            normalization is desired, pass 'batch_norm'. Default to True.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -121,6 +122,23 @@ class GatedGCNConv(BaseLayer):
             Constraint function applied to the kernels. Default to None.
         bias_constraint (tf.keras.constraints.Constraint, None):
             Constraint function applied to the biases. Default to None.
+        **kwargs: Valid (optional) keyword arguments are:
+
+            *   `name` (str): Name of the layer instance.
+            *   `update_step` (tf.keras.layers.Layer): Applies post-processing 
+                step on the output (produced by `_call`). If passed, 
+                `normalization`, `residual`, `activation` and `dropout` 
+                parameters will be ignored. If None, a default post-processing 
+                step will be used (taking into consideration the aforementioned 
+                parameters). Default to None.
+            *   `use_edge_features`: Whether or not to use edge features. 
+                Only relevant if edge features exist. If None, and edge 
+                features exist, it will be set to True. Default to None.
+            *   `update_edge_features` (bool): Specifies whether edge features 
+                should be updated along with node features, including the 
+                post-processing step. Only relevant if edge features exist. 
+                It is important that GNN layers which updates its edge features
+                for the next layer sets this to True. Default to False. 
 
     References:
         .. [#] https://arxiv.org/pdf/2003.00982.pdf
@@ -133,9 +151,8 @@ class GatedGCNConv(BaseLayer):
     def __init__(
         self,
         units: Optional[int] = None,
-        use_edge_features: bool = True,
         self_projection: bool = True,
-        batch_norm: bool = True,
+        normalization: Union[None, str, bool] = 'layer_norm',
         residual: bool = True,
         dropout: Optional[float] = None,
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = 'relu',
@@ -150,11 +167,12 @@ class GatedGCNConv(BaseLayer):
         **kwargs
     ):
         kwargs['update_edge_features'] = (
-            kwargs.get('update_edge_features', True) and use_edge_features
+            kwargs.get('update_edge_features', True) and 
+            kwargs.get('use_edge_features', True)
         )
         super().__init__(
             units=units,
-            batch_norm=batch_norm,
+            normalization=normalization,
             residual=residual,
             dropout=dropout,
             activation=activation,
@@ -168,19 +186,11 @@ class GatedGCNConv(BaseLayer):
             bias_constraint=bias_constraint,
             **kwargs)
 
-        self.use_edge_features = use_edge_features
         self.gate_activation = activations.get('sigmoid')
         self.apply_self_projection = self_projection
 
-    def subclass_build(
-        self,
-        node_feature_shape: Optional[tf.TensorShape] = None,
-        edge_feature_shape: Optional[tf.TensorShape] = None
-    ) -> None:
+    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
 
-        self.use_edge_features = (
-            self.use_edge_features and edge_feature_shape is not None
-        )
         if self.use_edge_features:
             self.edge_gate_projection = self.get_dense(self.units)
 
@@ -191,7 +201,12 @@ class GatedGCNConv(BaseLayer):
         if self.apply_self_projection:
             self.self_projection = self.get_dense(self.units)
 
-    def subclass_call(self, tensor: GraphTensor) -> GraphTensor:
+    def _call(self, tensor: GraphTensor) -> GraphTensor:
+
+        if self.apply_self_projection:
+            node_feature_residual = self.self_projection(tensor.node_feature)
+        else:
+            node_feature_residual = None
 
         # Edge dependent (`tensor.edge_src is not None`), from here
         node_feature = self.node_projection(tensor.node_feature)
@@ -210,26 +225,18 @@ class GatedGCNConv(BaseLayer):
             tensor = tensor.update({'edge_feature': gate})
 
         gate = self.gate_activation(gate)
-        gate = softmax_edge_weights(
-            edge_weight=gate,
-            edge_dst=tensor.edge_dst,
+
+        tensor = tensor.update({
+            'node_feature': node_feature, 'edge_weight': gate})
+        
+        return tensor.propagate(
+            normalize=True, 
+            residual=node_feature_residual,
             exponentiate=False)
-
-        node_feature = propagate_node_features(
-            node_feature=node_feature,
-            edge_src=tensor.edge_src,
-            edge_dst=tensor.edge_dst,
-            edge_weight=gate)
-
-        if self.apply_self_projection:
-            node_feature += self.self_projection(tensor.node_feature)
-
-        return tensor.update({'node_feature': node_feature})
 
     def get_config(self):
         base_config = super().get_config()
         config = {
-            'use_edge_features': self.use_edge_features,
             'self_projection': self.apply_self_projection,
         }
         base_config.update(config)

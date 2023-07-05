@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
+
 from keras import initializers
 from keras import regularizers
 from keras import constraints
@@ -9,14 +10,14 @@ from typing import Callable
 from typing import Union
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import BaseLayer
-from molgraph.layers.ops import compute_edge_weights_from_degrees
-from molgraph.layers.ops import propagate_node_features
+from molgraph.tensors.graph_tensor import GraphTensorSpec
 
+from molgraph.layers import gnn_layer
+from molgraph.layers import gnn_ops
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class GCNIIConv(BaseLayer):
+class GCNIIConv(gnn_layer.GNNLayer):
 
     '''Graph convolutional 'via Initial residual and Identity mapping' layer (GCNII).
 
@@ -93,8 +94,9 @@ class GCNIIConv(BaseLayer):
             'symmetric', 'row' or None. If None, 'row' is used. Default to 'symmetric'.
         self_projection (bool):
             Whether to apply self projection. Default to True.
-        batch_norm: (bool):
-            Whether to apply batch normalization to the output. Default to True.
+        normalization: (None, str, bool):
+            Whether to apply layer normalization to the output. If batch 
+            normalization is desired, pass 'batch_norm'. Default to True.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -120,6 +122,16 @@ class GCNIIConv(BaseLayer):
             Constraint function applied to the kernels. Default to None.
         bias_constraint (tf.keras.constraints.Constraint, None):
             Constraint function applied to the biases. Default to None.
+        **kwargs: Valid (optional) keyword arguments are:
+
+            *   `name` (str): Name of the layer instance.
+            *   `update_step` (tf.keras.layers.Layer): Applies post-processing 
+                step on the output (produced by `_call`). If passed, 
+                `normalization`, `residual`, `activation` and `dropout` 
+                parameters will be ignored. If None, a default post-processing 
+                step will be used (taking into consideration the aforementioned 
+                parameters). Default to None.
+
 
     References:
         .. [#] https://arxiv.org/pdf/2007.02133v1.pdf
@@ -134,7 +146,7 @@ class GCNIIConv(BaseLayer):
         variant: bool = False,
         degree_normalization: str = 'symmetric',
         self_projection: bool = True,
-        batch_norm: bool = True,
+        normalization: Union[None, str, bool] = 'layer_norm',
         residual: bool = True,
         dropout: Optional[float] = None,
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = 'relu',
@@ -150,7 +162,7 @@ class GCNIIConv(BaseLayer):
     ):
         super().__init__(
             units=units,
-            batch_norm=batch_norm,
+            normalization=normalization,
             residual=residual,
             dropout=dropout,
             activation=activation,
@@ -162,6 +174,7 @@ class GCNIIConv(BaseLayer):
             activity_regularizer=activity_regularizer,
             kernel_constraint=kernel_constraint,
             bias_constraint=bias_constraint,
+            use_edge_features=kwargs.pop('use_edge_features', False),
             **kwargs)
 
         self.alpha = alpha
@@ -171,43 +184,37 @@ class GCNIIConv(BaseLayer):
         self.apply_self_projection = self_projection
         self.residual = residual
 
-    def subclass_build(
-        self,
-        node_feature_shape: tf.TensorShape,
-        edge_feature_shape: Optional[tf.TensorShape] = None
-    ) -> None:
+    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
 
         self.projection = self.get_dense(self.units)
 
-        if (
-            self.units != node_feature_shape[-1] and
-            not hasattr(self, 'node_resample')
-        ):
+        node_dim = graph_tensor_spec.node_feature.shape[-1]
+        
+        if self.units != node_dim and not hasattr(self, 'node_resample'):
             self.node_resample = self.get_dense(self.units)
 
         if self.apply_self_projection:
             self.self_projection = self.get_dense(self.units)
 
-    def subclass_call(self, tensor: GraphTensor) -> None:
+    def _call(self, tensor: GraphTensor) -> GraphTensor:
 
         if hasattr(self, 'node_resample'):
             tensor = tensor.update({
                 'node_feature': self.node_resample(tensor.node_feature)})
 
         if not hasattr(tensor, 'node_feature_initial'):
-            tensor = tensor.update({'node_feature_initial': tensor.node_feature})
+            tensor = tensor.update({
+                'node_feature_initial': tensor.node_feature})
 
-        edge_weight = compute_edge_weights_from_degrees(
+        edge_weight = gnn_ops.compute_edge_weights_from_degrees(
             edge_src=tensor.edge_src,
             edge_dst=tensor.edge_dst,
             edge_feature=None,
             mode=self.degree_normalization)
 
-        node_feature = propagate_node_features(
-            node_feature=tensor.node_feature,
-            edge_src=tensor.edge_src,
-            edge_dst=tensor.edge_dst,
-            edge_weight=edge_weight)
+        tensor_update = tensor.update({'edge_weight': edge_weight})
+        
+        node_feature = tensor_update.propagate().node_feature
 
         identity = (
             (1 - self.alpha) * node_feature +

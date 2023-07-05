@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
+
 from keras import initializers
 from keras import regularizers
 from keras import constraints
@@ -10,18 +11,19 @@ from typing import Callable
 from typing import Union
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import BaseLayer
-from molgraph.layers.ops import propagate_node_features
-from molgraph.layers.ops import reduce_features
+from molgraph.tensors.graph_tensor import GraphTensorSpec
+
+from molgraph.layers import gnn_layer
 
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class GMMConv(BaseLayer):
+class GMMConv(gnn_layer.GNNLayer):
 
     '''Multi-head graph gaussian mixture layer (MoNet)
 
-    Implementation is based on Dwivedi et al. (2022) [#]_ and Monti et al. (2016) [#]_.
+    Implementation is based on Dwivedi et al. (2022) [#]_ and 
+    Monti et al. (2016) [#]_.
 
     **Examples:**
 
@@ -84,8 +86,9 @@ class GMMConv(BaseLayer):
             Default to 2.
         self_projection (bool):
             Whether to apply self projection. Default to True.
-        batch_norm: (bool):
-            Whether to apply batch normalization to the output. Default to True.
+        normalization: (None, str, bool):
+            Whether to apply layer normalization to the output. If batch 
+            normalization is desired, pass 'batch_norm'. Default to True.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -111,6 +114,15 @@ class GMMConv(BaseLayer):
             Constraint function applied to the kernels. Default to None.
         bias_constraint (tf.keras.constraints.Constraint, None):
             Constraint function applied to the biases. Default to None.
+        **kwargs: Valid (optional) keyword arguments are:
+
+            *   `name` (str): Name of the layer instance.
+            *   `update_step` (tf.keras.layers.Layer): Applies post-processing 
+                step on the output (produced by `_call`). If passed, 
+                `normalization`, `residual`, `activation` and `dropout` 
+                parameters will be ignored. If None, a default post-processing 
+                step will be used (taking into consideration the aforementioned 
+                parameters). Default to None.
 
     References:
 
@@ -126,7 +138,7 @@ class GMMConv(BaseLayer):
         merge_mode: Optional[str] = 'sum',
         pseudo_coord_dim=2,
         self_projection: bool = True,
-        batch_norm: bool = True,
+        normalization: Union[None, str, bool] = 'layer_norm',
         residual: bool = True,
         dropout: Optional[float] = None,
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = 'relu',
@@ -142,7 +154,7 @@ class GMMConv(BaseLayer):
     ):
         super().__init__(
             units=units,
-            batch_norm=batch_norm,
+            normalization=normalization,
             residual=residual,
             dropout=dropout,
             activation=activation,
@@ -154,6 +166,7 @@ class GMMConv(BaseLayer):
             activity_regularizer=activity_regularizer,
             kernel_constraint=kernel_constraint,
             bias_constraint=bias_constraint,
+            use_edge_features=kwargs.pop('use_edge_features', False),
             **kwargs)
 
         self.num_kernels = num_kernels
@@ -161,11 +174,7 @@ class GMMConv(BaseLayer):
         self.pseudo_coord_dim = pseudo_coord_dim
         self.apply_self_projection = self_projection
 
-    def subclass_build(
-        self,
-        node_feature_shape: Optional[tf.TensorShape] = None,
-        edge_feature_shape: Optional[tf.TensorShape] = None
-    ) -> None:
+    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
 
         if self.merge_mode == 'concat':
             if not self.units or (self.units % self.num_kernels != 0):
@@ -197,28 +206,24 @@ class GMMConv(BaseLayer):
         if self.merge_mode == 'concat':
             self.units *= self.num_kernels
 
-    def subclass_call(self, tensor: GraphTensor) -> GraphTensor:
+    def _call(self, tensor: GraphTensor) -> GraphTensor:
+
+        if self.apply_self_projection:
+            node_feature_residual = self.self_projection(tensor.node_feature)
+        else:
+            node_feature_residual = None
 
         node_feature = self.node_projection(tensor.node_feature)
 
         edge_weights = self.compute_edge_weights(
             tensor.edge_dst, tensor.edge_src)
 
-        node_feature = propagate_node_features(
-            node_feature=node_feature,
-            edge_src=tensor.edge_src,
-            edge_dst=tensor.edge_dst,
-            edge_weight=edge_weights)
+        tensor = tensor.update({
+            'node_feature': node_feature, 'edge_weight': edge_weights})
 
-        if self.apply_self_projection:
-            node_feature += self.self_projection(tensor.node_feature)
-
-        node_feature = reduce_features(
-            feature=node_feature,
-            mode=self.merge_mode,
-            output_units=self.units)
-
-        return tensor.update({'node_feature': node_feature})
+        return tensor.propagate(
+            reduction=self.merge_mode,
+            residual=node_feature_residual)
 
     def compute_edge_weights(self, edge_dst, edge_src, clip_values=(-5, 5)):
         """Computes edge weights via Gaussian kernels"""

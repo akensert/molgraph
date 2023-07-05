@@ -1,6 +1,8 @@
 import tensorflow as tf
+
 from tensorflow.python.framework import composite_tensor
 from tensorflow.python.framework import type_spec
+
 import numpy as np
 
 from typing import Optional
@@ -11,8 +13,7 @@ from typing import Union
 from typing import Any
 from typing import Type
 
-from typing import Optional
-from typing import Tuple
+from molgraph.layers import gnn_ops
 
 
 _allowable_input_types = (
@@ -159,10 +160,9 @@ class GraphTensor(composite_tensor.CompositeTensor):
     ...         [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
     ...     ]
     ... )
-    >>> graph_tensor = graph_tensor.merge()
-    >>> # Now nested ragged tensors
-    >>> graph_tensor = graph_tensor.separate()
-    >>> # Now nested tensors
+    >>> graph_tensor = graph_tensor.merge()    # nesterd tensors
+    >>> graph_tensor = graph_tensor.separate() # nested ragged tensors
+    >>> graph_tensor = graph_tensor.merge()    # nested tensors
     >>> graph_tensor.shape
     TensorShape([5, 2])
 
@@ -466,6 +466,104 @@ class GraphTensor(composite_tensor.CompositeTensor):
         
         return self.__class__({**node_data, **edge_data})
     
+    def propagate(
+        self, 
+        mode: Optional[str] = 'sum',
+        normalize: bool = False,
+        reduction: Optional[str] = None,
+        residual: Optional[tf.Tensor] = None,
+        **kwargs,
+    ):
+        '''Propagates node features.
+
+        This is a helper method for passing information between nodes;
+        specifically, it aggregates information (features) from source
+        nodes to destination nodes. Roughly, this method uses three
+        :mod:`~molgraph.layers.gnn_ops` in sequence, the first and third 
+        being optional:
+
+        (1) normalizes edge weights via 
+            :func:`~molgraph.layers.gnn_ops.softmax_edge_weights`;
+        (2) propagates node features via 
+            :func:`~molgraph.layers.gnn_ops.propagate_node_features`;
+        (3) reduces aggregated node features via 
+            :func:`~molgraph.layers.gnn_ops.reduce_features`. 
+        
+        Args:
+            mode (str):
+                The type of aggregation to be performed, either of 'sum', 'mean',
+                'min' or 'max'. If None, 'sum' will be used. Default to 'sum'.
+            normalize (bool):
+                Whether the edge weights (if available) should be normalized 
+                (via softmax) before aggregation. Edge weights are usually the 
+                attention scores applied to each incoming (source) node feature.
+            reduction (None, str):
+                The type of reduction ("merging") to be performed if the node 
+                features span another dimension (e.g. when using multiple 
+                attention heads in :class:`~molgraph.layers.GATConv` or 
+                :class:`~molgraph.layers.GTConv`). Either of 'concat', 'mean', 
+                'sum' or None. Default to None. 
+            residual (None, tf.Tensor):
+                Residual node features to be added to the output of the 
+                aggregated node features. Default to None.
+            
+            **kwargs: Valid (optional) keyword arguments are:
+            
+                *   `activation`: The activation to be performed on the 
+                    aggregated node features. Default to None.
+                *   `exponentiate`: Whether to exponentiate edge weights before
+                    softmax (defualt to True).
+                *   `clip_values`: The clipping range that should be applied to
+                    the (potentially exponentiated) edge weights. For stability.
+                    (default to True).
+                *   `output_units`: the output dimension (innermost dimension) 
+                    after reshaping. Only relevant if ``reduction='concat'``. 
+                    Default to None.
+                *   `reduce_axis`: Axis to be reduced ("merged"). Ignored
+                    if None. Default to 1, which is the axis of the heads
+                    of :class:`~molgraph.layers.GATConv`, 
+                    :class:`~molgraph.layers.GTConv` etc.
+        '''
+        exponentiate = kwargs.get('exponentiate', True)
+        clip_values = kwargs.get('clip_values', (-5., 5.))
+        activation = kwargs.get('activation', None)
+        output_units = kwargs.get('output_units', None)
+        reduce_axis = kwargs.get('reduce_axis', 1)
+
+        edge_weight = self.edge_weight
+        if normalize and self.edge_weight is not None:
+
+            edge_weight = gnn_ops.softmax_edge_weights(
+                edge_weight=edge_weight, 
+                edge_dst=self.edge_dst, 
+                exponentiate=exponentiate,
+                clip_values=clip_values)
+            
+        node_feature = gnn_ops.propagate_node_features(
+            node_feature=self.node_feature,
+            edge_src=self.edge_src,
+            edge_dst=self.edge_dst,
+            edge_weight=edge_weight,
+            mode=mode)
+        
+        if residual is not None:
+            node_feature += residual
+
+        if activation is not None:
+            node_feature = activation(node_feature)
+
+        if reduction:
+            node_feature = gnn_ops.reduce_features(
+                feature=node_feature, 
+                mode=reduction,
+                output_units=output_units,
+                axis=reduce_axis)
+        
+        data = self._data.copy()
+        data['node_feature'] = node_feature
+        return self.__class__(data)
+
+            
     def is_ragged(self):
         '''Checks whether nested data are ragged.
         
@@ -531,8 +629,42 @@ class GraphTensor(composite_tensor.CompositeTensor):
         else:
             return tf.constant(1, dtype=self._data['edge_src'].dtype)
     
+    @property
+    def node_feature(self):
+        'Obtain `node_feature` from graph tensor instance.'
+        return self._data.get('node_feature', None) 
+    
+    @property
+    def edge_src(self):
+        'Obtain `edge_src` from graph tensor instance.'
+        return self._data.get('edge_src', None) 
+    
+    @property
+    def edge_dst(self):
+        'Obtain `edge_dst` from graph tensor instance.'
+        return self._data.get('edge_dst', None) 
+    
+    @property
+    def edge_feature(self):
+        'Obtain `edge_feature` from graph tensor instance.'
+        return self._data.get('edge_feature', None) 
+    
+    @property 
+    def edge_weight(self):
+        'Obtain `edge_weight` from graph tensor instance.'
+        return self._data.get('edge_weight', None) 
+    
+    @property
+    def graph_indicator(self):
+        'Obtain `graph_indicator` from graph tensor instance.'
+        return self._data.get('graph_indicator', None) 
+    
     def __getattr__(self, name: str) -> Union[tf.Tensor, tf.RaggedTensor, Any]:
         '''Access nested data as attributes.
+
+        Only called when attribute lookup has not found attribute `name` in
+        the usual places. Hence convenient when new data has been added to
+        the graph tensor and we want to access this data as an attribute.
 
         Args:
             name (str):
@@ -541,10 +673,14 @@ class GraphTensor(composite_tensor.CompositeTensor):
         Returns:
             If ``name`` in nested data, data is returned. Otherwise,
             attribute ``name`` of the graph tensor instance is returned.
+        
+        Raises:
+            AttributeError: if `name` does not exist in data.
         '''
         if name in object.__getattribute__(self, '_data'):
             return self._data[name]
-        return object.__getattribute__(self, name)
+        
+        _raise_attribute_error(self, name)
 
     def __getitem__(
         self,
@@ -561,6 +697,10 @@ class GraphTensor(composite_tensor.CompositeTensor):
         Returns:
             A :class:`~GraphTensor` instance with specified subgraphs, or a
             ``tf.Tensor`` or ``tf.RaggedTensor`` holding the specified data.
+        
+        Raises:
+            KeyError: if `index` (str) does not exist in data spec.
+            Indexerror: if `index` (int, list[int]) is out of range.
         '''
         if isinstance(index, str):
             return self._data[index]
@@ -609,7 +749,7 @@ class GraphTensorSpec(type_spec.BatchableTypeSpec):
         self,
         data_spec: GraphTensorDataSpec,
         shape: Optional[tf.TensorShape] = None,
-        dtype: Optional[tf.DType] = None
+        dtype: Optional[tf.DType] = None,
     ) -> None:
         super().__init__()
 
@@ -630,17 +770,80 @@ class GraphTensorSpec(type_spec.BatchableTypeSpec):
         # ExtensionType API
         return GraphTensor
     
-    def get_shape(self, field: str) -> tf.TensorShape:
-        'Shape of nested data spec.'
-        return self._data_spec[field].shape
+    @property
+    def node_feature(self):
+        'Obtain `node_feature` spec from graph tensor spec.'
+        return self._data_spec.get('node_feature', None) 
     
-    def get_dtype(self, field: str) -> tf.dtypes.DType:
-        'DType of nested data spec.'
-        return self._data_spec[field].dtype
+    @property
+    def edge_src(self):
+        'Obtain `edge_src` spec from graph tensor spec.'
+        return self._data_spec.get('edge_src', None) 
     
-    def has_field(self, field: str) -> bool:
-        'Checks if nested data spec exist.'
-        return field in self._data_spec
+    @property
+    def edge_dst(self):
+        'Obtain `edge_dst` spec from graph tensor spec.'
+        return self._data_spec.get('edge_dst', None) 
+    
+    @property
+    def edge_feature(self):
+        'Obtain `edge_feature` spec from graph tensor spec.'
+        return self._data_spec.get('edge_feature', None) 
+    
+    @property 
+    def edge_weight(self):
+        'Obtain `edge_weight` spec from graph tensor spec.'
+        return self._data_spec.get('edge_weight', None) 
+    
+    @property
+    def graph_indicator(self):
+        'Obtain `graph_indicator` spec from graph tensor spec.'
+        return self._data_spec.get('graph_indicator', None) 
+    
+    def __getattr__(self, name: str) -> Union[tf.Tensor, tf.RaggedTensor, Any]:
+        '''Access nested data spec as attributes.
+
+        Only called when attribute lookup has not found attribute `name` in
+        the usual places. Hence convenient when new data has been added to
+        the corresponding graph tensor and we want to access this data as 
+        an attribute.
+
+        Args:
+            name (str):
+                The data spec to be extracted; e.g., 
+                ``graph_tensor_spec.node_feature``
+
+        Returns:
+            If ``name`` in nested data spec, data spec is returned. Otherwise,
+            attribute ``name`` of the graph tensor instance is returned.
+        
+        Raises:
+            AttributeError: if `name` does not exist in data spec.
+        '''    
+        if name in object.__getattribute__(self, '_data'):
+            return self._data_spec[name]
+        
+        _raise_attribute_error(self, name)
+
+    def __getitem__(
+        self,
+        name: str
+    ) -> Union[tf.RaggedTensorSpec, tf.TensorSpec]:
+        '''Access nested data spec via indexing.
+
+        Args:
+            index (str):
+                The data spec to be extracted; e.g., 
+                ``graph_tensor_spec['node_feature']``
+
+        Returns:
+            ``tf.TensorSpec`` or ``tf.RaggedTensorSpec`` holding the 
+            specified data.
+
+        Raises:
+            KeyError: if `name` does not exist in data spec.
+        '''
+        return self._data_spec[name]
     
     @property
     def shape(self) -> tf.TensorShape:
@@ -724,6 +927,10 @@ class GraphTensorSpec(type_spec.BatchableTypeSpec):
         # Legacy method of ExtensionType API
         return self
     
+
+def _raise_attribute_error(instance, name):
+    class_name = instance.__class__.__name__
+    raise AttributeError(f'{class_name!r} object has no attribute {name!r}')
 
 def _assert(test: bool, message: str) -> None:
     'Helper function to make assert statements.'

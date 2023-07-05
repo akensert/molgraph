@@ -171,7 +171,7 @@ def _add_virtual_super_nodes(
     node_feature = tf.concat([
         virtual_node_state, node_feature], axis=1)
     
-    tensor = GraphTensor(
+    tensor = tensor.__class__(
         node_feature=node_feature,
         edge_src=edge_src,
         edge_dst=edge_dst)

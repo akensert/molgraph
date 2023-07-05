@@ -129,7 +129,7 @@ class MPNN(keras.layers.Layer):
         node_feature_updated = tensor.node_feature
         # MPNN requires edge features, if edge features do not exist,
         # we initialize a ones vector.
-        if not hasattr(tensor, 'edge_feature'):
+        if tensor.edge_feature is None:
             edge_feature = tf.ones(
                 shape=[tf.shape(edge_src)[0], 1],
                 dtype=node_feature_updated.dtype)

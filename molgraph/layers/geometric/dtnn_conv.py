@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
+
 from keras import initializers
 from keras import regularizers
 from keras import constraints
@@ -9,13 +10,15 @@ from typing import Callable
 from typing import Union
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.layers.base import BaseLayer
-from molgraph.layers.geometric import _radial_basis
+from molgraph.tensors.graph_tensor import GraphTensorSpec
 
+from molgraph.layers import gnn_layer
+
+from molgraph.layers.geometric import radial_basis
 
 
 @keras.utils.register_keras_serializable(package='molgraph')
-class DTNNConv(BaseLayer):
+class DTNNConv(gnn_layer.GNNLayer):
 
     """Deep Tensor Neural Network (DTNN).
 
@@ -96,8 +99,9 @@ class DTNNConv(BaseLayer):
             Default to 'auto'.
         self_projection (bool):
             Whether to apply self projection. Default to True.
-        batch_norm: (bool):
-            Whether to apply batch normalization to the output. Default to True.
+        normalization: (None, str, bool):
+            Whether to apply layer normalization to the output. If batch 
+            normalization is desired, pass 'batch_norm'. Default to True.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -123,7 +127,16 @@ class DTNNConv(BaseLayer):
             Constraint function applied to the kernels. Default to None.
         bias_constraint (tf.keras.constraints.Constraint, None):
             Constraint function applied to the biases. Default to None.
+        **kwargs: Valid (optional) keyword arguments are:
 
+            *   `name` (str): Name of the layer instance.
+            *   `update_step` (tf.keras.layers.Layer): Applies post-processing 
+                step on the output (produced by `_call`). If passed, 
+                `normalization`, `residual`, `activation` and `dropout` 
+                parameters will be ignored. If None, a default post-processing 
+                step will be used (taking into consideration the aforementioned 
+                parameters). Default to None.
+                
     References:
         .. [#] https://www.nature.com/articles/ncomms13890
     """
@@ -137,7 +150,7 @@ class DTNNConv(BaseLayer):
         distance_granularity: float = 0.1,
         rbf_stddev: Optional[Union[float, str]] = 'auto',
         self_projection: bool = True,
-        batch_norm: bool = True,
+        normalization: Union[None, str, bool] = 'layer_norm',
         residual: bool = True,
         dropout: Optional[float] = None,
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
@@ -153,7 +166,7 @@ class DTNNConv(BaseLayer):
     ):
         super().__init__(
             units=units,
-            batch_norm=batch_norm,
+            normalization=normalization,
             residual=residual,
             dropout=dropout,
             activation=activation,
@@ -165,6 +178,7 @@ class DTNNConv(BaseLayer):
             activity_regularizer=activity_regularizer,
             kernel_constraint=kernel_constraint,
             bias_constraint=bias_constraint,
+            use_edge_features=kwargs.pop('use_edge_features', True),
             **kwargs)
 
         self.apply_self_projection = self_projection
@@ -173,18 +187,15 @@ class DTNNConv(BaseLayer):
         self.distance_granularity = distance_granularity
         self.rbf_stddev = rbf_stddev
 
-        self.rbf = _radial_basis.RadialBasis(
+        self.rbf = radial_basis.RadialBasis(
             self.distance_min,
             self.distance_max,
             self.distance_granularity,
             self.rbf_stddev
         )
 
-    def subclass_build(
-        self,
-        node_feature_shape: Optional[tf.TensorShape] = None,
-        edge_feature_shape: Optional[tf.TensorShape] = None
-    ) -> None:
+    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
+        
         self.edge_projection = self.get_dense(self.units)
         self.node_projection_1 = self.get_dense(self.units)
         self.node_projection_2 = self.get_dense(self.units)
@@ -192,7 +203,7 @@ class DTNNConv(BaseLayer):
         if self.apply_self_projection:
             self.self_projection = self.get_dense(self.units)
 
-    def subclass_call(self, tensor: GraphTensor) -> GraphTensor:
+    def _call(self, tensor: GraphTensor) -> GraphTensor:
 
         num_segments = tf.shape(tensor.node_feature)[0]
 
