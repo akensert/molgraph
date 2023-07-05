@@ -397,7 +397,7 @@ class GasteigerCharge(Feature):
         mol = atom.GetOwningMol()
         rdPartialCharges.ComputeGasteigerCharges(mol)
         val = atom.GetDoubleProp('_GasteigerCharge')
-        if math.isnan(val) or val is None:
+        if val is None or not math.isfinite(val):
             return 0.0
         return val
 
