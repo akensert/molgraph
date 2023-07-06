@@ -1,3 +1,3 @@
 # Tests
 
-When developing new modules/features they are always tested. However, I'm currently working on implementing more extensive/proper unit testing. In this subdirectory you'll find the unit tests.
+When developing new modules/features they are always tested (to some extent, offline). However, I'm now working on implementing more extensive/systematic testing. Here in this subdirectory you'll find these (unit) tests.
