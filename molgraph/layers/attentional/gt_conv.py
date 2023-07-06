@@ -330,12 +330,13 @@ class _FeedForwardNetwork(layers.Layer):
             self.dropout_1 = layers.Dropout(self._dropout)
             self.dropout_2 = layers.Dropout(self._dropout)
 
-        if self._normalization.startswith('batch'):
-            self.normalization_1 = layers.BatchNormalization()
-            self.normalization_2 = layers.BatchNormalization()
-        elif self._normalization:
-            self.normalization_1 = layers.LayerNormalization()
-            self.normalization_2 = layers.LayerNormalization()
+        if self._normalization:
+            if str(self._normalization).startswith('batch'):
+                self.normalization_1 = layers.BatchNormalization()
+                self.normalization_2 = layers.BatchNormalization()
+            else:
+                self.normalization_1 = layers.LayerNormalization()
+                self.normalization_2 = layers.LayerNormalization()
             
     def build(self, input_shape: tf.TensorShape) -> None:
         

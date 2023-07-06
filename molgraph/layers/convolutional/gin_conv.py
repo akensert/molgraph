@@ -225,12 +225,11 @@ class GINConv(gnn_layer.GNNLayer):
             if edge_dim != node_dim:
                 self.edge_projection = self.get_dense(node_dim)
 
-        if self.normalization is None:
-            self.normalization = None
-        elif self.normalization.startswith('batch'):
-            self.normalization = layers.BatchNormalization()
-        else:
-            self.normalization = layers.LayerNormalization()
+        if self.normalization:
+            if str(self.normalization).startswith('batch'):
+                self.normalization_fn = layers.BatchNormalization()
+            else:
+                self.normalization_fn = layers.LayerNormalization()
 
         if self.apply_self_projection:
            self.self_projection = self.get_dense(self.units)
@@ -262,8 +261,8 @@ class GINConv(gnn_layer.GNNLayer):
         if self.apply_self_projection:
             node_feature += self.self_projection(tensor.node_feature)
 
-        if self.normalization is not None:
-            node_feature = self.normalization(node_feature)
+        if self.normalization:
+            node_feature = self.normalization_fn(node_feature)
 
         node_feature = self.activation(node_feature)
 

@@ -155,8 +155,10 @@ class DTNNConv(gnn_layer.GNNLayer):
         dropout: Optional[float] = None,
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
         use_bias: bool = True,
-        kernel_initializer: Union[str, initializers.Initializer, None] = None,
-        bias_initializer: Union[str, initializers.Initializer, None] = None,
+        kernel_initializer: Union[
+            str, initializers.Initializer, None] = 'glorot_uniform',
+        bias_initializer: Union[
+            str, initializers.Initializer, None] = 'zeros',
         kernel_regularizer: Optional[regularizers.Regularizer] = None,
         bias_regularizer: Optional[regularizers.Regularizer] = None,
         activity_regularizer: Optional[regularizers.Regularizer] = None,

@@ -159,8 +159,10 @@ class GCFConv(gnn_layer.GNNLayer):
         dropout: Optional[float] = None,
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
         use_bias: bool = True,
-        kernel_initializer: Union[str, initializers.Initializer, None] = None,
-        bias_initializer: Union[str, initializers.Initializer, None] = None,
+        kernel_initializer: Union[
+            str, initializers.Initializer, None] = 'glorot_uniform',
+        bias_initializer: Union[
+            str, initializers.Initializer, None] = 'zeros',
         kernel_regularizer: Optional[regularizers.Regularizer] = None,
         bias_regularizer: Optional[regularizers.Regularizer] = None,
         activity_regularizer: Optional[regularizers.Regularizer] = None,
@@ -218,7 +220,7 @@ class GCFConv(gnn_layer.GNNLayer):
         else:
             node_feature_residual = None
 
-        cosine_weight = cosine_weight_from_distance(tensor.edge_feature),
+        cosine_weight = cosine_weight_from_distance(tensor.edge_feature)
         rbf_feature = self.rbf(tensor.edge_feature)
         rbf_weight = self.filter_generator_2(
             self.filter_generator_1(rbf_feature))

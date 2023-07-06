@@ -212,9 +212,9 @@ class GCNIIConv(gnn_layer.GNNLayer):
             edge_feature=None,
             mode=self.degree_normalization)
 
-        tensor_update = tensor.update({'edge_weight': edge_weight})
+        tensor = tensor.update({'edge_weight': edge_weight})
         
-        node_feature = tensor_update.propagate().node_feature
+        node_feature = tensor.propagate().node_feature
 
         identity = (
             (1 - self.alpha) * node_feature +
@@ -224,7 +224,7 @@ class GCNIIConv(gnn_layer.GNNLayer):
         if self.variant:
             node_feature = tf.concat([
                 node_feature * (1 - self.alpha),
-                tensor.node_features_initial * self.alpha
+                tensor.node_feature_initial * self.alpha
             ], axis=1)
         else:
             node_feature = identity

@@ -29,6 +29,7 @@ class RadialBasis(keras.layers.Layer):
         self.centers = tf.expand_dims(self.centers, axis=0)
 
     def call(self, distances: tf.Tensor) -> tf.Tensor:
+        # distances are "edge_feature"
         if distances.shape.ndims < 2:
             distances = tf.expand_dims(distances, axis=1)
         return tf.math.exp(
@@ -38,10 +39,9 @@ class RadialBasis(keras.layers.Layer):
     def get_config(self):
         base_config = super().get_config()
         base_config.update({
-            'self_projection': self.apply_self_projection,
             'distance_min': self.distance_min,
             'distance_max': self.distance_max,
             'distance_granularity': self.distance_granularity,
-            'rbf_stddev': self.rbf_stddev
+            'stddev': self.stddev
         })
         return base_config
