@@ -1,3 +1,3 @@
 # Tests
 
-*Note: currently in the process of writing and improving unit testing for `MolGraph`, using `unittest`. Although much of the `MolGraph` software is, and has been (offline), tested (using `pytest`; see e.g. files), there is room for improvement.* 
+When developing new modules/features they are always tested. However, I'm currently working on implementing more extensive/proper unit testing. In this subdirectory you'll find the unit tests.
