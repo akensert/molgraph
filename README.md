@@ -58,7 +58,7 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 For a detailed list of changes, see the [CHANGELOG.md](https://github.com/akensert/molgraph/blob/main/CHANGELOG.md).
 
 **Important notes**
-- Since version **0.4.2**, default normalization for the GNN layers is layer normalization. This significantly improved the performance on some of the MoleculeNet datasets.
+- Since version **0.5.0**, default normalization for the GNN layers is layer normalization. This significantly improved the performance on some of the MoleculeNet datasets.
 
 ## Installation
 
