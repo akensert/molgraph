@@ -6,8 +6,9 @@ from tests.tensors._common import graph_tensor_123
 from tests.tensors._common import graph_tensor_4
 from tests.tensors._common import graph_tensor_5
 
-import tensorflow as tf
 import unittest
+
+import tensorflow as tf
 
 from molgraph.tensors.graph_tensor import GraphTensor
 

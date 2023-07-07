@@ -3,10 +3,10 @@ from tests.layers._common import BaseLayerTestCase
 import unittest
 
 import tensorflow as tf
+
 from keras import initializers
 from keras import regularizers
 from keras import constraints
-from keras import activations
 from keras import layers
 
 from molgraph.layers.message_passing.edge_conv import EdgeConv
@@ -90,6 +90,7 @@ PARAMETERS = [
     ),
 ]
 
+# TODO: Add tests
 class TestEdgeConv(unittest.TestCase):
     pass
 

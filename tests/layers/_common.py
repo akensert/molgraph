@@ -1,5 +1,7 @@
 import molgraph
+
 import tensorflow as tf
+
 import unittest
 
 from molgraph.chemistry import MolecularGraphEncoder

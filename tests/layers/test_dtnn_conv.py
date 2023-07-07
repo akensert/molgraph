@@ -3,10 +3,10 @@ from tests.layers._common import BaseGeometricLayerTestCase
 import unittest
 
 import tensorflow as tf
+
 from keras import initializers
 from keras import regularizers
 from keras import constraints
-from keras import activations
 from keras import layers
 
 from molgraph.layers.geometric.dtnn_conv import DTNNConv
