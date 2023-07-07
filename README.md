@@ -12,31 +12,54 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 
 ## Implementations
 
-- **Convolutional**
-    - GCNConv ([GCNConv](http://github.com/akensert/molgraph/tree/main/molgraph/layers/convolutional/gcn_conv.py))
-    - GCN(E)Conv ([GCNConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/convolutional/gcn_conv.py))
-    - GINConv ([GINConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/convolutional/gin_conv.py))
-    - GIN(E)Conv ([GINConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/convolutional/gin_conv.py))
-    - GCNIIConv ([GCNIIConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/convolutional/gcnii_conv.py))
-    - GraphSageConv ([GraphSageConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/convolutional/graph_sage_conv.py))
-- **Attentional**
-    - GATConv ([GATConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gat_conv.py))
-    - GAT(E)Conv ([GATConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gat_conv.py))
-    - GATv2Conv ([GATv2Conv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gatv2_conv.py))
-    - GAT(E)v2Conv ([GATv2Conv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gatv2_conv.py))
-    - GTConv ([GTConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gt_conv.py))
-    - GT(E)Conv ([GTConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gt_conv.py))
-    - GMMConv ([GMMConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gmm_conv.py))
-    - GatedGCNConv ([GatedGCNConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gated_gcn_conv.py))
-    - GatedGCN(E)Conv ([GatedGCNConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gated_gcn_conv.py))
-    - AttentiveFPConv ([AttentiveFPConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/attentive_fp_conv.py))
-- **Message-passing**
-    - MPNNConv ([MPNNConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/message_passing/mpnn_conv.py))
-    - EdgeConv ([EdgeConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/message_passing/edge_conv.py))
-- **Geometric**
-    - DTNNConv ([DTNNConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/geometric/dtnn_conv.py))
-    - GCFConv ([GCFConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/geometric/gcf_conv.py))
+- **Tensor**
+    - **GraphTensor**
+        - A composite tensor holding graph data.
+        - Has a ragged (multiple graphs) and a non-ragged state (single disjoint graph)
+        - Can conveniently go between both states (merge() and separate())
+        - Can propagate node information (features) based on edges (propagate())
+        - Can add, update and remove graph data (update(), remove())
+        - Has an associated GraphTensorSpec which it compatible with Keras and TensorFlow API.
+            - This includes keras.Sequential, keras.Functional, tf.data.Dataset, and tf.saved_model API.
+- **Layers**
     
+    - **Convolutional**
+        - GCNConv ([GCNConv](http://github.com/akensert/molgraph/tree/main/molgraph/layers/convolutional/gcn_conv.py))
+        - GINConv ([GINConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/convolutional/gin_conv.py))
+        - GCNIIConv ([GCNIIConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/convolutional/gcnii_conv.py))
+        - GraphSageConv ([GraphSageConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/convolutional/graph_sage_conv.py))
+    - **Attentional**
+        - GATConv ([GATConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gat_conv.py))
+        - GATv2Conv ([GATv2Conv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gatv2_conv.py))
+        - GTConv ([GTConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gt_conv.py))
+        - GMMConv ([GMMConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gmm_conv.py))
+        - GatedGCNConv ([GatedGCNConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/gated_gcn_conv.py))
+        - AttentiveFPConv ([AttentiveFPConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/attentional/attentive_fp_conv.py))
+    - **Message-passing**
+        - MPNNConv ([MPNNConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/message_passing/mpnn_conv.py))
+        - EdgeConv ([EdgeConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/message_passing/edge_conv.py))
+    - **Distance-geometric**
+        - DTNNConv ([DTNNConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/geometric/dtnn_conv.py))
+        - GCFConv ([GCFConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/geometric/gcf_conv.py))
+    - **Pre- and post-processing**
+        - In addition to the aforementioned GNN layers, there are also several other layers which improves model-building. See `readout/`, `preprocessing/`, `postprocessing/`, `positional_encoding/`.
+- **Models**
+    - Although model building is easy with MolGraph, there are some built-in GNN models:
+        - **DGIN**
+        - **DMPNN**
+        - **MPNN**
+    - And models for improved interpretability of GNNs:
+        - **SaliencyMapping**
+        - **IntegratedSaliencyMapping**
+        - **SmoothGradSaliencyMapping**
+        - **GradientActivationMapping** (Recommended)
+
+## Changelog
+For a detailed list of changes, see the [CHANGELOG.md](https://github.com/akensert/molgraph/blob/main/CHANGELOG.md).
+
+**Important notes**
+- Since version **0.4.0**, default normalization for the GNN layers is layer normalization. This significantly improved the performance on some of the MoleculeNet datasets.
+
 ## Installation
 
 Install via **pip**:
