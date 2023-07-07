@@ -18,6 +18,7 @@ class TestSavedModelAPI(unittest.TestCase):
     def test_saved_model(self):
         model = tf.keras.Sequential([
             tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+            gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.readout.segment_pool.SegmentPoolingReadout(),
@@ -38,6 +39,7 @@ class TestSavedModelAPI(unittest.TestCase):
     def test_saved_model_keras(self):
         model = tf.keras.Sequential([
             tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+            gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.readout.segment_pool.SegmentPoolingReadout(),
@@ -60,6 +62,7 @@ class TestSavedModelAPI(unittest.TestCase):
         
         model = tf.keras.Sequential([
             tf.keras.layers.Input(type_spec=graph_tensor_merged.unspecific_spec),
+            gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.readout.segment_pool.SegmentPoolingReadout(),
