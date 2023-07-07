@@ -1,14 +1,23 @@
+import logging
+import absl.logging
+from warnings import filterwarnings
+from rdkit import RDLogger
 import os
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-# from warnings import filterwarnings
+filterwarnings(
+    'ignore',
+    message=(
+        'Encoding a StructuredValue with type '
+        'molgraph.tensors.graph_tensor.GraphTensorSpec; '
+        'loading this StructuredValue will require that this '
+        'type be imported and registered.*'
+    )
+)
 
-# filterwarnings('ignore',
-#     message='Converting sparse IndexedSlices.*' +
-#             'to a dense Tensor of unknown shape. ' +
-#             'This may consume a large amount of memory.')
+absl.logging.set_verbosity(absl.logging.ERROR)
 
-import logging
 #logging.getLogger('tensorflow').setLevel(logging.ERROR)
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
@@ -22,6 +31,6 @@ def ignore_gradient_warning(record):
 
 logging.getLogger('tensorflow').addFilter(ignore_gradient_warning)
 
-from rdkit import RDLogger
-
 RDLogger.DisableLog("rdApp.*")
+
+
