@@ -6,13 +6,7 @@ from typing import Optional
 
 class MaskedLoss(keras.losses.Loss):
 
-    '''Masked loss for classification tasks with missing labels.
-
-    As masks cannot normally be passed as `sample_weights` in Keras,
-    a new base class (`MaskedLoss`, inherting from `keras.losses.Loss`)
-    was implemented. `MaskedLoss` simply uses `sample_weights` as masks,
-    instead of actual sample weights.
-    '''
+    'Base class for masked losses.'
 
     def __init__(
         self,
@@ -61,6 +55,11 @@ class MaskedLoss(keras.losses.Loss):
 
 @keras.utils.register_keras_serializable(package='molgraph.losses')
 class MaskedBinaryCrossentropy(MaskedLoss):
+    
+    '''Masked binary crossentropy loss. 
+    
+    Useful for multi-label classification with missing labels.
+    '''
 
     def __init__(
         self,
@@ -110,6 +109,11 @@ class MaskedBinaryCrossentropy(MaskedLoss):
 @keras.utils.register_keras_serializable(package='molgraph.losses')
 class MaskedHuber(MaskedLoss):
 
+    '''Masked huber loss. 
+    
+    Useful for multi-label regression with missing labels.
+    '''
+
     def __init__(
         self,
         delta: float = 1.0,
@@ -145,6 +149,11 @@ class MaskedHuber(MaskedLoss):
 @keras.utils.register_keras_serializable(package='molgraph.losses')
 class MaskedMeanSquaredError(MaskedLoss):
 
+    '''Masked mean squared error loss. 
+    
+    Useful for multi-label regression with missing labels.
+    '''
+
     def call(self, y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
         y_pred = tf.convert_to_tensor(y_pred)
         y_true = tf.cast(y_true, y_pred.dtype)
@@ -153,6 +162,11 @@ class MaskedMeanSquaredError(MaskedLoss):
 
 @keras.utils.register_keras_serializable(package='molgraph.losses')
 class MaskedMeanAbsoluteError(MaskedLoss):
+
+    '''Masked mean absolute error loss. 
+    
+    Useful for multi-label regression with missing labels.
+    '''
 
     def call(self, y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
         y_pred = tf.convert_to_tensor(y_pred)
