@@ -3,27 +3,79 @@ Layers
 ###########################
 
 ***************************
+GNN Layer
+***************************
+
+.. autoclass:: molgraph.layers.GNNLayer(tf.keras.layers.Layer)
+  :members: _call, _build, call, build_from_signature, propagate, 
+            compute_output_shape, compute_output_signature, 
+            get_dense, get_einsum_dense, get_kernel, get_bias
+
+***************************
+GNN ops
+***************************
+
+GNN ops are helper functions which makes it easier to code up a custom
+GNN layer. For example, a basic GCN layer can be coded up as follows:
+
+.. code-block::
+
+  import tensorflow as tf
+  from molgraph.layers import gnn_ops
+
+  class MyGCNConv(tf.keras.layers.Layer):
+
+    def __init__(self, units):
+        super().__init__()
+        self.units = units
+
+    def build(self, input_shape):
+        self.kernel = self.add_weight(
+            name='kernel',
+            shape=(input_shape[-1], self.units),
+            dtype=tf.float32,
+            trainable=True)
+        self.built = True
+
+    def call(self, graph_tensor):
+        graph_tensor_orig = graph_tensor
+        if isinstance(graph_tensor.node_feature, tf.RaggedTensor):
+            graph_tensor = graph_tensor.merge()
+        node_feature_transformed = tf.matmul(graph_tensor.node_feature, self.kernel)
+        node_feature_aggregated = gnn_ops.propagate_node_features(
+            node_feature=node_feature_transformed,
+            edge_dst=graph_tensor.edge_dst,
+            edge_src=graph_tensor.edge_src,
+            mode='mean')
+        return graph_tensor_orig.update({'node_feature': node_feature_aggregated})
+
+
+.. automodule:: molgraph.layers.gnn_ops
+  :members:
+  :member-order: bysource
+
+***************************
 Convolutional
 ***************************
 
 GCNConv
 ===========================
-.. autoclass:: molgraph.layers.GCNConv(molgraph.layers.BaseLayer)
+.. autoclass:: molgraph.layers.GCNConv(molgraph.layers.GNNLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GINConv
 ===========================
-.. autoclass:: molgraph.layers.GINConv(molgraph.layers.BaseLayer)
+.. autoclass:: molgraph.layers.GINConv(molgraph.layers.GNNLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GraphSageConv
 ===========================
-.. autoclass:: molgraph.layers.GraphSageConv(molgraph.layers.BaseLayer)
+.. autoclass:: molgraph.layers.GraphSageConv(molgraph.layers.GNNLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GCNIIConv
 ===========================
-.. autoclass:: molgraph.layers.GCNIIConv(molgraph.layers.BaseLayer)
+.. autoclass:: molgraph.layers.GCNIIConv(molgraph.layers.GNNLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 
@@ -33,34 +85,34 @@ Attentional
 
 GATConv
 ===========================
-.. autoclass:: molgraph.layers.GATConv(molgraph.layers.BaseLayer)
+.. autoclass:: molgraph.layers.GATConv(molgraph.layers.GNNLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GATv2Conv
 ===========================
-.. autoclass:: molgraph.layers.GATv2Conv(molgraph.layers.BaseLayer)
+.. autoclass:: molgraph.layers.GATv2Conv(molgraph.layers.GNNLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GatedGCNConv
 ===========================
-.. autoclass:: molgraph.layers.GatedGCNConv(molgraph.layers.BaseLayer)
+.. autoclass:: molgraph.layers.GatedGCNConv(molgraph.layers.GNNLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GMMConv
 ===========================
-.. autoclass:: molgraph.layers.GMMConv(molgraph.layers.BaseLayer)
+.. autoclass:: molgraph.layers.GMMConv(molgraph.layers.GNNLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GTConv
 ===========================
-.. autoclass:: molgraph.layers.GTConv(molgraph.layers.BaseLayer)
+.. autoclass:: molgraph.layers.GTConv(molgraph.layers.GNNLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 AttentiveFPConv
 ===========================
 .. autoclass:: molgraph.layers.AttentiveFPConv(molgraph.layers.GATConv)
-  :members: call, get_config, from_config, compute_output_shape
-
+  :members: call, build_from_signature, get_config, from_config, 
+            compute_output_shape, compute_output_signature
 
 
 ***************************
@@ -69,7 +121,7 @@ Message-passing
 
 MPNNConv
 ===========================
-  .. autoclass:: molgraph.layers.MPNNConv(molgraph.layers.BaseLayer)
+  .. autoclass:: molgraph.layers.MPNNConv(molgraph.layers.GNNLayer)
     :members: call, get_config, from_config, compute_output_shape
 
 EdgeConv
@@ -84,12 +136,12 @@ Geometric
 
 DTNNConv
 ===========================
-.. autoclass:: molgraph.layers.DTNNConv(molgraph.layers.BaseLayer)
+.. autoclass:: molgraph.layers.DTNNConv(molgraph.layers.GNNLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 GCFConv
 ===========================
-.. autoclass:: molgraph.layers.GCFConv(molgraph.layers.BaseLayer)
+.. autoclass:: molgraph.layers.GCFConv(molgraph.layers.GNNLayer)
   :members: call, get_config, from_config, compute_output_shape
 
 
@@ -215,46 +267,3 @@ ExtractField
   :members: call, get_config, from_config,
   :member-order: bysource
 
-
-***************************
-Layer ops
-***************************
-
-Layer ops are helper functions which makes it easier to code up a custom
-GNN layer. For example, a basic GCN layer can be coded up as follows:
-
-.. code-block::
-
-  import tensorflow as tf
-  from molgraph.layers import ops as layer_ops
-
-  class MyGCNConv(tf.keras.layers.Layer):
-
-    def __init__(self, units):
-        super().__init__()
-        self.units = units
-
-    def build(self, input_shape):
-        self.kernel = self.add_weight(
-            name='kernel',
-            shape=(input_shape[-1], self.units),
-            dtype=tf.float32,
-            trainable=True)
-        self.built = True
-
-    def call(self, graph_tensor):
-        graph_tensor_orig = graph_tensor
-        if isinstance(graph_tensor.node_feature, tf.RaggedTensor):
-            graph_tensor = graph_tensor.merge()
-        node_feature_transformed = tf.matmul(graph_tensor.node_feature, self.kernel)
-        node_feature_aggregated = layer_ops.propagate_node_features(
-            node_feature=node_feature_transformed,
-            edge_dst=graph_tensor.edge_dst,
-            edge_src=graph_tensor.edge_src,
-            mode='mean')
-        return graph_tensor_orig.update({'node_feature': node_feature_aggregated})
-
-
-.. automodule:: molgraph.layers.ops
-  :members:
-  :member-order: bysource

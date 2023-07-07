@@ -28,10 +28,10 @@ graph.
   :caption: API
 
   api/tensors
-  api/chemistry
   api/layers
   api/models
   api/losses
+  api/chemistry
 
 
 .. toctree::

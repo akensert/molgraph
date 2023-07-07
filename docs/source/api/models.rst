@@ -30,23 +30,27 @@ Interpretability
 
 GradientActivationMapping
 ===========================
-.. autoclass:: molgraph.models.GradientActivationMapping(tensorflow.keras.Model)
-  :members: predict, get_config, from_config
+.. autoclass:: molgraph.models.GradientActivationMapping(tensorflow.Module)
+  :members: build
+  :special-members: __call__
 
 SaliencyMapping
 ===========================
-.. autoclass:: molgraph.models.SaliencyMapping(tensorflow.keras.Model)
-  :members: predict, get_config, from_config
+.. autoclass:: molgraph.models.SaliencyMapping(tensorflow.Module)
+  :members: build
+  :special-members: __call__
 
 IntegratedSaliencyMapping
 ===========================
-.. autoclass:: molgraph.models.IntegratedSaliencyMapping(tensorflow.keras.Model)
-  :members: predict, get_config, from_config
+.. autoclass:: molgraph.models.IntegratedSaliencyMapping(tensorflow.Module)
+  :members: build
+  :special-members: __call__
 
 SmoothGradSaliencyMapping
 ===========================
-.. autoclass:: molgraph.models.SmoothGradSaliencyMapping(tensorflow.keras.Model)
-  :members: predict, get_config, from_config
+.. autoclass:: molgraph.models.SmoothGradSaliencyMapping(tensorflow.Module)
+  :members: build
+  :special-members: __call__
 
 
 ***************************
