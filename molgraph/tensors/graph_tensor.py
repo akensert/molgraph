@@ -293,7 +293,6 @@ class GraphTensor(composite_tensor.CompositeTensor):
 
         Returns:
             An updated ``GraphTensor`` instance.
-
         '''
         def convert_value(
             new_value: Union[tf.Tensor, tf.RaggedTensor],
@@ -530,40 +529,47 @@ class GraphTensor(composite_tensor.CompositeTensor):
         output_units = kwargs.get('output_units', None)
         reduce_axis = kwargs.get('reduce_axis', 1)
 
-        edge_weight = self.edge_weight
-        if normalize and self.edge_weight is not None:
+        if self.is_ragged():
+            data = self.merge()._data.copy()
+        else:
+            data = self._data.copy()
 
-            edge_weight = gnn_ops.softmax_edge_weights(
-                edge_weight=edge_weight, 
-                edge_dst=self.edge_dst, 
+        if normalize and 'edge_weight' in data:
+
+            data['edge_weight'] = gnn_ops.softmax_edge_weights(
+                edge_weight=data['edge_weight'], 
+                edge_dst=data['edge_dst'], 
                 exponentiate=exponentiate,
                 clip_values=clip_values)
             
-        node_feature = gnn_ops.propagate_node_features(
-            node_feature=self.node_feature,
-            edge_src=self.edge_src,
-            edge_dst=self.edge_dst,
-            edge_weight=edge_weight,
+        data['node_feature'] = gnn_ops.propagate_node_features(
+            node_feature=data['node_feature'],
+            edge_src=data['edge_src'],
+            edge_dst=data['edge_dst'],
+            edge_weight=data.get('edge_weight', None),
             mode=mode)
         
         if residual is not None:
-            node_feature += residual
+            if isinstance(residual, tf.RaggedTensor):
+                residual = residual.flat_values
+            data['node_feature'] += residual
 
         if activation is not None:
-            node_feature = activation(node_feature)
+            data['node_feature'] = activation(data['node_feature'])
 
         if reduction:
-            node_feature = gnn_ops.reduce_features(
-                feature=node_feature, 
+            data['node_feature'] = gnn_ops.reduce_features(
+                feature=data['node_feature'], 
                 mode=reduction,
                 output_units=output_units,
                 axis=reduce_axis)
         
-        data = self._data.copy()
-        data['node_feature'] = node_feature
-        return self.__class__(data)
+        graph_tensor = self.__class__(data)
 
-            
+        if not self.is_ragged():
+            return graph_tensor 
+        return graph_tensor.separate()
+
     def is_ragged(self):
         '''Checks whether nested data are ragged.
         
@@ -623,10 +629,12 @@ class GraphTensor(composite_tensor.CompositeTensor):
     @property
     def num_subgraphs(self):
         if 'graph_indicator' in self._data:
-            return tf.math.reduce_max(self._data['graph_indicator']) + 1
+            return tf.maximum(
+                tf.math.reduce_max(self._data['graph_indicator']) + 1, 0) 
         elif isinstance(self._data['node_feature'], tf.RaggedTensor):
             return self._data['node_feature'].nrows()
         else:
+            # TODO: return None?
             return tf.constant(1, dtype=self._data['edge_src'].dtype)
     
     @property
@@ -700,7 +708,8 @@ class GraphTensor(composite_tensor.CompositeTensor):
         
         Raises:
             KeyError: if `index` (str) does not exist in data spec.
-            Indexerror: if `index` (int, list[int]) is out of range.
+            tf.errors.InvalidArgumentError: if `index` (int, list[int]) is out 
+            of range.
         '''
         if isinstance(index, str):
             return self._data[index]
@@ -944,7 +953,8 @@ def _check_shape(
 ) -> None:
     'Assert that a and b have the same number of nodes (or edges)'
 
-    _assert(type(a) == type(b), ['a and b need to be the same type'])
+    if tf.executing_eagerly():
+        _assert(type(a) == type(b), ['a and b need to be the same type'])
 
     if isinstance(a, tf.Tensor):
         _assert(
@@ -1493,12 +1503,13 @@ def graph_tensor_unary_elementwise_op_handler(api_func, x):
     return x.update({'node_feature': api_func(x.node_feature)})
 
 @tf.experimental.dispatch_for_binary_elementwise_apis(
-    Union[GraphTensor, tf.Tensor], Union[GraphTensor, tf.Tensor]
+    Union[GraphTensor, tf.Tensor, float], Union[GraphTensor, tf.Tensor, float]
 )
 def graph_tensor_binary_elementwise_op_handler(api_func, x, y):
     '''Allows all binary elementwise operations (such as `tf.math.add`)
     to handle graph tensors.
     '''
+
     if isinstance(x, GraphTensor):
         x_values = x.node_feature
     else:
