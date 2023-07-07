@@ -17,9 +17,6 @@
 
 ### Major features and improvements
 
-- `molgraph.models`
-    - Added pretraining model `molgraph.models.pretraining.MGM` (Masked Graph Modeling). This model allows the users to pretrain their encoder GNNs by randomly masking node and/or edge features and predicting them. For now, only works with tokenized node and/or edge features (via `chemistry.Tokenizer`). (There is room to further improved the model in the future.)
-    - Added pretraining models `molgraph.models.pretraining.GAE` and `molgraph.models.pretrainined.VGAE`. Note: these were released earlier but are now more complete. (There is room to further improved the models in the future.)
 - `molgraph.layers`
     - Allows derived GNN layers (inherting from `GNNLayer`) to optionally pass `update_step` to override the default update step (`_DefaultUpdateStep` in `gnn_layer.py`). The custom `update_step` should be a `keras.layers.Layer` which takes as input both the updated node (or edge) features ("inputs") as well as the previous node (or edge) features ("states"/residuals). One example of GNN layer which supplies a custom `update_step` ( `_FeedForwardNetwork`) is the `molgraph.layers.GTConv`.
 - `molgraph.tensors`
