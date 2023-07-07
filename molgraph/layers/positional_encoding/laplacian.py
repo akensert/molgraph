@@ -205,7 +205,7 @@ class LaplacianPositionalEncoding(layers.Layer):
     def get_config(self):
         base_config = super().get_config()
         config = {
-            'dim': self.dim,
+            'dim': self._target_dim,
             'activation': activations.serialize(self.activation),
             'use_bias': self.use_bias,
             'kernel_initializer': initializers.serialize(self.kernel_initializer),
