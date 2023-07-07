@@ -1,6 +1,6 @@
-# MolGraph 0.4.0
+# MolGraph 0.4.1
 
-## Version 0.4.0 (2023-07-07)
+## Version 0.4.1 (2023-07-07)
 
 ### Breaking changes
 
@@ -41,7 +41,7 @@
     - Saliency and gradient activation mappings now works with `tf.saved_model` API.
     - Saliency and gradient activation mappings now work well with both ragged and non-ragged GraphTensor, as well as an optional label (for multi-label and multi-class classification). Note that these modules automatically sets an `input_signature` for `__call__` upon first call. 
 
-## Version <0.4.0 (202X-XX-XX)
+## Version <0.4.1 (202X-XX-XX)
 ### \[...\]
 
 
