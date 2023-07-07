@@ -70,4 +70,4 @@ Now run your first program with **MolGraph**:
     gam_model = models.GradientActivationMapping(
         model=gnn_model, layer_names=['gat_conv_1', 'gat_conv_2'])
 
-    maps = gam_model.predict(x_train)
+    maps = gam_model(x_train)
