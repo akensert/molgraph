@@ -13,3 +13,8 @@ from molgraph.models.pretraining.autoencoders import GraphVariationalAutoEncoder
 VanillaSaliencyMapping = SaliencyMapping
 GVAE = GraphVAE = GraphVariationalAutoEncoder 
 GAE = GraphAE = GraphAutoEncoder
+
+Saliency = SaliencyMapping
+IntegratedSaliency = IntegratedSaliencyMapping
+SmoothGradSaliency = SmoothGradSaliencyMapping
+GradCAM = GradientActivation = GradientActivationMapping

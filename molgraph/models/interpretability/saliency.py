@@ -4,7 +4,6 @@ from tensorflow import keras
 from typing import Optional
 from typing import Union
 from typing import Callable
-from typing import List
 
 from molgraph.tensors.graph_tensor import GraphTensor
 
@@ -13,10 +12,23 @@ NOT_IMPLEMENTED_ERROR_MESSAGE = (
     "{} only makes predictions (call model.predict instead)")
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
-class SaliencyMapping(keras.Model):
+def automatically_infer_input_signature(func):
+    def call(
+        self: 'SaliencyMapping', 
+        x: GraphTensor, 
+        y: Optional[tf.Tensor] = None
+    ) -> Union[tf.Tensor, tf.RaggedTensor]:
+        if not self._built:
+            self.build(x, y)
+        return func(self, x, y)
+    return call
+
+
+class SaliencyMapping(tf.Module):
     '''Vanilla saliency mapping.
 
+    Alias: ``Saliency``
+    
     **Example:**
 
     >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
@@ -25,10 +37,11 @@ class SaliencyMapping(keras.Model):
     ...         molgraph.chemistry.features.Hybridization()
     ...     ])
     ... )
+    ...
     >>> esol = molgraph.chemistry.datasets.get('esol')
     >>> esol['train']['x'] = encoder(esol['train']['x'])
     >>> esol['test']['x'] = encoder(esol['test']['x'])
-    >>> # Pass GraphTensor to model
+    ...
     >>> gnn_model = tf.keras.Sequential([
     ...     tf.keras.layers.Input(type_spec=esol['train']['x'].spec),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_1'),
@@ -38,131 +51,125 @@ class SaliencyMapping(keras.Model):
     ...     tf.keras.layers.Dense(units=512),
     ...     tf.keras.layers.Dense(units=1)
     ... ])
+    ...
     >>> gnn_model.compile(optimizer='adam', loss='mse')
-    >>> _ = gnn_model.fit(esol['train']['x'], esol['train']['y'], epochs=10, verbose=0)
+    >>> _ = gnn_model.fit(
+    ...     esol['train']['x'], esol['train']['y'], epochs=10, verbose=0)
+    ...
     >>> saliency = molgraph.models.SaliencyMapping(model=gnn_model)
-    >>> # Interpretability models can only be predicted with
-    >>> saliency_maps = saliency.predict(esol['test']['x'])
-
+    >>> saliency_maps = saliency(esol['test']['x'])
     '''
 
     def __init__(
         self,
         model: keras.Model,
         output_activation: Optional[str] = None,
+        **kwargs
     ) -> None:
-        super().__init__()
+        self.random_seed = kwargs.pop('random_seed', None)
+        super().__init__(**kwargs)
         self._model = model
         self._activation = keras.activations.get(output_activation)
+        self._built = False
 
-    def compute_gradients(self, x: GraphTensor, y: tf.Tensor) -> tf.Tensor:
+    def __init__(
+        self,
+        model: keras.Model,
+        output_activation: Optional[str] = None,
+        **kwargs
+    ) -> None:
+        self.random_seed = kwargs.pop('random_seed', None)
+        super().__init__(**kwargs)
+        self._model = model
+        self._activation = keras.activations.get(output_activation)
+        self._built = False
 
+    def compute_saliency(
+        self, 
+        x: GraphTensor, 
+        y: Optional[tf.Tensor],
+    ) -> tf.Tensor:
+        gradients = self.compute_gradients(x, y)
+        gradients = tf.abs(gradients)
+        return tf.reduce_sum(gradients, axis=1)
+    
+    def compute_gradients(
+        self, 
+        x: GraphTensor, 
+        y: Optional[tf.Tensor],
+    ) -> tf.Tensor:
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(x.node_feature)
             predictions = self._model(x)
             predictions = self._activation(predictions)
+            predictions = self._process_predictions(predictions, y)
+        return tape.gradient(predictions, x.node_feature)
 
-            if y is not None:
-                y = tf.cond(
-                    tf.rank(y) < 2,
-                    lambda: tf.expand_dims(y, -1),
-                    lambda: y
-                )
-                predictions = tf.cond(
-                    tf.shape(y)[-1] > 1,
-                    lambda: tf.gather_nd(
-                        predictions,
-                        tf.stack([
-                            tf.range(tf.shape(y)[0], dtype=tf.int64),
-                            tf.argmax(y, axis=-1)
-                        ], axis=1)
-                    ),
-                    lambda: predictions
-                )
-
-        return tape.gradient(predictions, _maybe_flat_values(x.node_feature))
-
-    def predict_step(self, data) -> tf.RaggedTensor:
-
-        if isinstance(data, (GraphTensor)):
-            x, y = data, None
-        else:
-            x, y = data[:2]
-
-        saliency = self.compute_saliency(x, y)
-
+    @automatically_infer_input_signature
+    def __call__(
+        self, 
+        x: GraphTensor, 
+        y: Optional[tf.Tensor] = None
+    ) -> Union[tf.Tensor, tf.RaggedTensor]:
+        tf.random.set_seed(self.random_seed)
+        x_orig = x
         if isinstance(x.node_feature, tf.RaggedTensor):
-            value_rowids = x.node_feature.value_rowids()
-        else:
-            value_rowids = x.graph_indicator
+            x = x.merge()
+        saliency = self.compute_saliency(x, y)
+        return x_orig.update(node_feature=saliency).node_feature
 
-        nrows = tf.reduce_max(value_rowids) + 1
+    def build(
+        self, 
+        x: GraphTensor, 
+        y: Optional[tf.Tensor],
+    ) -> None:
 
-        saliency = tf.RaggedTensor.from_value_rowids(
-            saliency, value_rowids, nrows=nrows)
+        input_signature = [x.unspecific_spec]
+        if y is not None:
+            y_signature = tf.TensorSpec(
+                shape=tf.TensorShape([None]).concatenate(y.shape[1:]), 
+                dtype=y.dtype)
+            input_signature.append(y_signature)
+            
+        self.__call__ = tf.function(
+            self.__call__, input_signature=input_signature)         
+        
+        self._built = True
 
-        return saliency
+    @staticmethod
+    def _process_predictions(
+        pred: tf.Tensor, 
+        y: Optional[tf.Tensor],
+    ) -> tf.Tensor:
+        'Helper method to extract relevant predictions.'
 
-    def train_step(self, data) -> None:
-        raise NotImplementedError(
-            NOT_IMPLEMENTED_ERROR_MESSAGE.format(self.__class__.__name__))
+        if y is None:
+            return pred
+        
+        y = tf.cond(
+            tf.rank(y) < 2,
+            lambda: tf.expand_dims(y, -1),
+            lambda: y)
+        
+        # If multi-label or multi-class, extract relevant preds.
+        pred = tf.cond(
+            tf.shape(y)[-1] > 1,
+            lambda: tf.gather_nd(
+                pred,
+                tf.stack([
+                    tf.range(tf.shape(y)[0], dtype=tf.int64),
+                    tf.argmax(y, axis=-1)
+                ], axis=1)
+            ),
+            lambda: pred)
 
-    def test_step(self, data) -> None:
-        raise NotImplementedError(
-            NOT_IMPLEMENTED_ERROR_MESSAGE.format(self.__class__.__name__))
-
-    def compile(self, *args, **kwargs) -> None:
-        raise NotImplementedError(
-            NOT_IMPLEMENTED_ERROR_MESSAGE.format(self.__class__.__name__))
-
-    def compute_saliency(self, x: GraphTensor, y: tf.Tensor) -> tf.Tensor:
-        gradients = self.compute_gradients(x, y)
-        gradients = tf.abs(gradients)
-        return tf.reduce_sum(gradients, axis=1)
-
-    @tf.function
-    def call(self, inputs, *args, **kwargs):
-        return self.predict_step(inputs)
-
-    def predict(
-        self,
-        x: Union[GraphTensor, tf.data.Dataset, tf.keras.utils.Sequence],
-        batch_size: Optional[int] = None,
-        verbose: int = 0,
-        steps: Optional[int] = None,
-        callbacks: Optional[List[tf.keras.callbacks.Callback]] = None,
-        max_queue_size: int = 10,
-        workers: int = 1,
-        use_multiprocessing: bool = False
-    ) -> tf.RaggedTensor:
-        '''Generates saliency maps'''
-        return super().predict(
-            x=x,
-            batch_size=batch_size,
-            verbose=verbose,
-            steps=steps,
-            callbacks=callbacks,
-            max_queue_size=max_queue_size,
-            workers=workers,
-            use_multiprocessing=use_multiprocessing
-        )
-
-    def get_config(self):
-        config = {
-            'model': keras.layers.serialize(self._model),
-            'output_activation': keras.activations.serialize(self._activation),
-        }
-        return config
-
-    @classmethod
-    def from_config(cls, config):
-        config['model'] = keras.layers.deserialize(config['model'])
-        return cls(**config)
+        return pred
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
 class IntegratedSaliencyMapping(SaliencyMapping):
     '''Integrated saliency mapping.
+
+    Alias: ``IntegratedSaliency``
 
     **Example:**
 
@@ -175,7 +182,7 @@ class IntegratedSaliencyMapping(SaliencyMapping):
     >>> bbbp = molgraph.chemistry.datasets.get('bbbp')
     >>> bbbp['train']['x'] = encoder(bbbp['train']['x'])
     >>> bbbp['test']['x'] = encoder(bbbp['test']['x'])
-    >>> # Pass GraphTensor to model
+    ...
     >>> gnn_model = tf.keras.Sequential([
     ...     tf.keras.layers.Input(type_spec=bbbp['train']['x'].spec),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_1'),
@@ -185,12 +192,13 @@ class IntegratedSaliencyMapping(SaliencyMapping):
     ...     tf.keras.layers.Dense(units=512),
     ...     tf.keras.layers.Dense(units=1, activation='sigmoid')
     ... ])
+    ...
     >>> gnn_model.compile(optimizer='adam', loss='mse')
-    >>> _ = gnn_model.fit(bbbp['train']['x'], bbbp['train']['y'], epochs=10, verbose=0)
+    >>> _ = gnn_model.fit(
+    ...     bbbp['train']['x'], bbbp['train']['y'], epochs=10, verbose=0)
+    ...
     >>> saliency = molgraph.models.IntegratedSaliencyMapping(model=gnn_model)
-    >>> # Interpretability models can only be predicted with
-    >>> saliency_maps = saliency.predict(bbbp['test']['x'])
-
+    >>> saliency_maps = saliency(bbbp['test']['x'])
     '''
 
     def __init__(
@@ -198,25 +206,22 @@ class IntegratedSaliencyMapping(SaliencyMapping):
         model: keras.Model,
         output_activation: Union[
             None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
-        steps: int = 20
+        steps: int = 20,
+        **kwargs,
     ) -> None:
         super().__init__(
             model=model,
-            output_activation=output_activation)
+            output_activation=output_activation,
+            **kwargs)
         self.steps = steps
 
-    def get_config(self):
-        base_config = super().get_config()
-        config = {
-            'steps': self.steps,
-        }
-        base_config.update(config)
-        return base_config
+    def compute_saliency(
+        self, 
+        x: GraphTensor, 
+        y: Optional[tf.Tensor],
+    ) -> tf.Tensor:
 
-    @tf.function
-    def compute_saliency(self, x: GraphTensor, y: tf.Tensor) -> tf.Tensor:
-
-        original = _maybe_flat_values(x.node_feature)
+        original = x.node_feature
         baseline = tf.zeros_like(original)
         alpha = tf.linspace(start=0.1, stop=1.0, num=self.steps+1)
         alpha = tf.cast(alpha, dtype=original.dtype)
@@ -231,9 +236,11 @@ class IntegratedSaliencyMapping(SaliencyMapping):
             return x, gradients_batch, tf.add(i, 1)
 
         i = tf.constant(0)
-        condition = lambda x, gradients_batch, i: tf.less(i, self.steps + 1)
+        cond = lambda x, gradients_batch, i: tf.less(i, self.steps + 1)
         x, gradients_batch, i = tf.while_loop(
-            cond=condition, body=body, loop_vars=[x, gradients_batch, i])
+            cond=cond, 
+            body=body, 
+            loop_vars=[x, gradients_batch, i])
 
         gradients_batch = gradients_batch.stack()
 
@@ -245,9 +252,10 @@ class IntegratedSaliencyMapping(SaliencyMapping):
         return tf.reduce_sum(tf.abs(integrated_gradients), axis=1)
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
 class SmoothGradSaliencyMapping(SaliencyMapping):
     '''Smooth-gradient saliency mapping.
+
+    Alias: ``SmoothGradSaliency``
 
     **Example:**
 
@@ -260,7 +268,7 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
     >>> esol = molgraph.chemistry.datasets.get('esol')
     >>> esol['train']['x'] = encoder(esol['train']['x'])
     >>> esol['test']['x'] = encoder(esol['test']['x'])
-    >>> # Pass GraphTensor to model
+    ...
     >>> gnn_model = tf.keras.Sequential([
     ...     tf.keras.layers.Input(type_spec=esol['train']['x'].spec),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_1'),
@@ -270,12 +278,13 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
     ...     tf.keras.layers.Dense(units=512),
     ...     tf.keras.layers.Dense(units=1)
     ... ])
+    ...
     >>> gnn_model.compile(optimizer='adam', loss='mse')
-    >>> _ = gnn_model.fit(esol['train']['x'], esol['train']['y'], epochs=10, verbose=0)
+    >>> _ = gnn_model.fit(
+    ...     esol['train']['x'], esol['train']['y'], epochs=10, verbose=0)
+    ...
     >>> saliency = molgraph.models.SmoothGradSaliencyMapping(model=gnn_model)
-    >>> # Interpretability models can only be predicted with
-    >>> saliency_maps = saliency.predict(esol['test']['x'])
-
+    >>> saliency_maps = saliency(esol['test']['x'])
     '''
     def __init__(
         self,
@@ -284,25 +293,22 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
             None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
         steps: int = 50,
         noise: float = 0.1,
+        **kwargs,
     ) -> None:
         super().__init__(
             model=model,
-            output_activation=output_activation)
+            output_activation=output_activation,
+            **kwargs)
         self.steps = steps
         self.noise = noise
 
-    def get_config(self):
-        base_config = super().get_config()
-        config = {
-            'steps': self.steps,
-            'noise': self.noise,
-        }
-        base_config.update(config)
-        return base_config
+    def compute_saliency(
+        self, 
+        x: GraphTensor, 
+        y: Optional[tf.Tensor],
+    ) -> tf.Tensor:
 
-    def compute_saliency(self, x: GraphTensor, y: tf.Tensor) -> tf.Tensor:
-
-        original = _maybe_flat_values(x.node_feature)
+        original = x.node_feature
 
         gradients_batch = tf.TensorArray(original.dtype, size=self.steps)
 
@@ -311,16 +317,20 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
                 shape=(1, tf.shape(original)[1]),
                 mean=0.0,
                 stddev=self.noise,
-                dtype=original.dtype)
+                dtype=original.dtype,
+                seed=self.random_seed,
+            )
             x = x.update({'node_feature': noisy})
             gradients = self.compute_gradients(x, y)
             gradients_batch = gradients_batch.write(i, tf.abs(gradients))
             return x, gradients_batch, tf.add(i, 1)
 
         i = tf.constant(0)
-        condition = lambda x, gradients_batch, i: tf.less(i, self.steps)
+        cond = lambda x, gradients_batch, i: tf.less(i, self.steps)
         x, gradients_batch, i = tf.while_loop(
-            cond=condition, body=body, loop_vars=[x, gradients_batch, i])
+            cond=cond, 
+            body=body, 
+            loop_vars=[x, gradients_batch, i])
 
         gradients_batch = gradients_batch.stack()
 
@@ -328,8 +338,3 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
 
         return tf.reduce_sum(gradients_average, axis=1)
 
-
-def _maybe_flat_values(x):
-    if isinstance(x, tf.RaggedTensor):
-        return x.flat_values
-    return x
