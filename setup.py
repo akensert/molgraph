@@ -18,9 +18,7 @@ install_requires = [
     "pandas>=1.0.3",
     "ipython==8.12.0",
 ]
-tests_require = [
-    "pytest>=7.1.2"
-]
+
 setuptools.setup(
     name='molgraph',
     version=get_version(),
@@ -33,7 +31,6 @@ setuptools.setup(
     url="https://github.com/akensert/molgraph",
     packages=setuptools.find_packages(include=["molgraph*"]),
     install_requires=install_requires,
-    tests_require=tests_require,
     classifiers=[
         "Programming Language :: Python :: 3",
         "Intended Audience :: Science/Research",
