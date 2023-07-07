@@ -5,8 +5,6 @@ import tensorflow as tf
 
 from molgraph.layers import gnn_ops
 
-from _common import input_8a as inputs 
-
 
 # TODO: Write tests
 
