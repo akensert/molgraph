@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tensorflow import keras
-from keras.utils import tf_utils
 
 from typing import Optional
 
@@ -79,7 +78,7 @@ class NodeReadout(keras.layers.Layer):
         self._built = False
 
     def _build(self, input_shape: tf.TensorShape) -> None:
-        with tf_utils.maybe_init_scope(self):
+        with tf.init_scope():
             self._target_shape = input_shape
             if self.apply_transform:
                 # If units/activation is set to None, use default (input_shape[-1]/'relu')

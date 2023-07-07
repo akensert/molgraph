@@ -1,8 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
 
-from keras.utils import tf_utils
-
 from keras import initializers
 from keras import regularizers
 from keras import constraints
@@ -190,7 +188,7 @@ class EdgeConv(tf.keras.layers.Layer):
 
     def _build(self, initialize_edge_state):
         
-        with tf_utils.maybe_init_scope(self):
+        with tf.init_scope():
 
             if initialize_edge_state:
                 self._initialize_edge_state = True

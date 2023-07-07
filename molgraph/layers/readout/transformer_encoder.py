@@ -2,7 +2,6 @@ import tensorflow as tf
 from tensorflow import keras
 from keras import layers
 from keras import activations
-from keras.utils import tf_utils
 
 from typing import Tuple
 from typing import Union
@@ -86,7 +85,7 @@ class TransformerEncoderReadout(layers.Layer):
 
         node_dim = self._node_feature_shape[-1]
 
-        with tf_utils.maybe_init_scope(self):
+        with tf.init_scope():
             self.attention = keras.layers.MultiHeadAttention(
                 num_heads=self.num_heads, key_dim=node_dim)
             self.attention._build_from_signature(

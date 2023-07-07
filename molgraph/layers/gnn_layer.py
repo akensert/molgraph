@@ -1,8 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
 
-from keras.utils import tf_utils
-
 from keras import layers
 from keras import initializers
 from keras import regularizers
@@ -263,7 +261,7 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
         elif self.use_edge_features is None:
             self.use_edge_features = True
 
-        with tf_utils.maybe_init_scope(self):
+        with tf.init_scope():
 
             self.node_dim = node_dim
         
