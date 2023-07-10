@@ -11,7 +11,7 @@ from molgraph.tensors.graph_tensor import GraphTensor
 
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class TransformerEncoderReadout(layers.Layer):
 
     '''Transformer encoder layer for graph readout.

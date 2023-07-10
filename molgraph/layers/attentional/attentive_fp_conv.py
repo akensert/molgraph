@@ -16,7 +16,7 @@ from molgraph.tensors.graph_tensor import GraphTensorSpec
 from molgraph.layers.attentional.gat_conv import GATConv
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class AttentiveFPConv(GATConv):
 
     '''Node message passing step ("Atom embedding") of AttentiveFP.

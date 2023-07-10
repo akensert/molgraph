@@ -4,7 +4,7 @@ from tensorflow import keras
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class NodeDropout(keras.layers.Layer):
     '''Randomly dropping nodes from the graph.
 
@@ -78,7 +78,7 @@ class NodeDropout(keras.layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class EdgeDropout(NodeDropout):
     '''Randomly dropping edges from the graph.
 

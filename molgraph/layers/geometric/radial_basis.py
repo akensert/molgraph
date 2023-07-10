@@ -5,7 +5,7 @@ from typing import Optional
 from typing import Union
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class RadialBasis(keras.layers.Layer):
 
     def __init__(

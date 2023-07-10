@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 
 
-@keras.utils.register_keras_serializable(package='molgraph.losses')
+@keras.saving.register_keras_serializable(package='molgraph.losses')
 class LinkBinaryCrossentropy(keras.losses.BinaryCrossentropy):
 
     def __init__(
@@ -33,7 +33,7 @@ class LinkBinaryCrossentropy(keras.losses.BinaryCrossentropy):
 
 
 # TODO: Make it work for len(y_true) != len(y_pred)
-@keras.utils.register_keras_serializable(package='molgraph.losses')
+@keras.saving.register_keras_serializable(package='molgraph.losses')
 class LinkContrastiveMarginLoss(keras.losses.Loss):
 
     def __init__(
@@ -55,7 +55,7 @@ class LinkContrastiveMarginLoss(keras.losses.Loss):
 
 
 # TODO: Make it work for len(y_true) != len(y_pred)
-@keras.utils.register_keras_serializable(package='molgraph.losses')
+@keras.saving.register_keras_serializable(package='molgraph.losses')
 class LinkContrastiveBinaryCrossentropy(keras.losses.Loss):
 
     def __init__(

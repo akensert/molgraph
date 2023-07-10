@@ -25,7 +25,7 @@ from molgraph.tensors.graph_tensor import GraphTensorSpec
 from molgraph.layers import gnn_ops
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
 
     '''Base layer for the built-in GNN layers. 

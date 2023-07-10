@@ -8,7 +8,7 @@ from keras import activations
 
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class FeatureProjection(layers.Layer):
 
     '''Feature projection via dense layer.
@@ -158,11 +158,11 @@ class FeatureProjection(layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class NodeFeatureProjection(FeatureProjection):
     feature = 'node_feature'
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class EdgeFeatureProjection(FeatureProjection):
     feature = 'edge_feature'

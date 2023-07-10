@@ -3,6 +3,11 @@ import tensorflow as tf
 from tensorflow.python.framework import composite_tensor
 from tensorflow.python.framework import type_spec
 
+try:
+    from tensorflow.python.framework import type_spec_registry
+except ImportError:
+    type_spec_registry = None
+
 import numpy as np
 
 from typing import Optional
@@ -15,6 +20,11 @@ from typing import Type
 
 from molgraph.layers import gnn_ops
 
+
+type_spec_registry = (
+    type_spec_registry.register if type_spec_registry is not None 
+    else type_spec.register
+)
 
 _allowable_input_types = (
     tf.Tensor,
@@ -747,7 +757,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
         return f'GraphTensor(\n  ' + ',\n  '.join(fields) + ')'
 
 
-@type_spec.register('molgraph.tensors.graph_tensor.GraphTensorSpec')
+@type_spec_registry('molgraph.tensors.graph_tensor.GraphTensorSpec')
 class GraphTensorSpec(type_spec.BatchableTypeSpec):
 
     '''Spec of :class:`~GraphTensor`.

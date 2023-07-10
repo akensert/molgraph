@@ -6,7 +6,7 @@ from typing import Optional
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-
+@keras.saving.register_keras_serializable(package='molgraph')
 class NodeReadout(keras.layers.Layer):
 
     '''Aggregates edge states to associated nodes.

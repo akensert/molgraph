@@ -1,5 +1,9 @@
 # MolGraph 0.5.0
 
+## Version 0.5.1 (2023-07-10)
+
+Replace tensorflow/keras functions to make MolGraph compatible with tensorflow 2.13.0. E.g. `keras.utils.register_keras_serializable` is replaced with `tf.keras.saving.register_keras_serializable`. No breaking changes should exist.
+
 ## Version 0.5.0 (2023-07-07)
 
 ### Breaking changes

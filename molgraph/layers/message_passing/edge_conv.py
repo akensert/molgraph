@@ -14,7 +14,7 @@ from typing import Type
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class EdgeConv(tf.keras.layers.Layer):
 
     '''Edge convolutional layer, used to build DMPNN [#]_ and DGIN [#]_ like models.

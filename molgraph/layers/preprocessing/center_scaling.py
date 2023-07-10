@@ -1,16 +1,20 @@
 import tensorflow as tf
 from tensorflow import keras
 from keras import layers
-from keras.layers.preprocessing import preprocessing_utils as utils
 
 from typing import Optional
 
 from molgraph.tensors.graph_tensor import GraphTensor
 
+try:
+    PreprocessingLayer = layers.experimental.preprocessing.PreprocessingLayer
+except AttributeError:
+    PreprocessingLayer = layers.PreprocessingLayer
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
-class CenterScaling(layers.PreprocessingLayer):
+
+@keras.saving.register_keras_serializable(package='molgraph')
+class CenterScaling(PreprocessingLayer):
 
     '''Centering.
 
@@ -307,18 +311,26 @@ class CenterScaling(layers.PreprocessingLayer):
 
     def get_config(self):
         config = {
-            'mean': utils.listify_tensors(self.mean),
+            'mean': _listify_tensors(self.mean),
             'feature': self.feature,
         }
         base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class NodeCenterScaling(CenterScaling):
     feature = 'node_feature'
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class EdgeCenterScaling(CenterScaling):
     feature = 'edge_feature'
+
+
+def _listify_tensors(x):
+    if tf.is_tensor(x):
+        x = x.numpy()
+    if isinstance(x, np.ndarray):
+        x = x.tolist()
+    return x

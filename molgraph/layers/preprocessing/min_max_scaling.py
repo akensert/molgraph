@@ -2,18 +2,21 @@ import tensorflow as tf
 from tensorflow import keras
 from keras import layers
 from keras import initializers
-from keras.layers.preprocessing import preprocessing_utils as utils
 
 from typing import Tuple
 from typing import Optional
 from typing import Tuple
 
-
 from molgraph.tensors.graph_tensor import GraphTensor
 
+try:
+    PreprocessingLayer = layers.experimental.preprocessing.PreprocessingLayer
+except AttributeError:
+    PreprocessingLayer = layers.PreprocessingLayer
 
-@keras.utils.register_keras_serializable(package='molgraph')
-class MinMaxScaling(layers.PreprocessingLayer):
+
+@keras.saving.register_keras_serializable(package='molgraph')
+class MinMaxScaling(PreprocessingLayer):
 
     '''Min-max scaling between a specified range.
 
@@ -303,8 +306,8 @@ class MinMaxScaling(layers.PreprocessingLayer):
         config = {
             'feature': self.feature,
             'feature_range': self.feature_range,
-            'minimum': utils.listify_tensors(self.minimum),
-            'maximum': utils.listify_tensors(self.maximum),
+            'minimum': _listify_tensors(self.minimum),
+            'maximum': _listify_tensors(self.maximum),
             'threshold': self.threshold
         }
         base_config = super().get_config()
@@ -323,11 +326,19 @@ class MinMaxScaling(layers.PreprocessingLayer):
         return input_spec
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class NodeMinMaxScaling(MinMaxScaling):
     feature = 'node_feature'
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class EdgeMinMaxScaling(MinMaxScaling):
     feature = 'edge_feature'
+
+
+def _listify_tensors(x):
+    if tf.is_tensor(x):
+        x = x.numpy()
+    if isinstance(x, np.ndarray):
+        x = x.tolist()
+    return x

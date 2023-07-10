@@ -9,7 +9,7 @@ from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.layers.message_passing.edge_conv import edge_message_step
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class DMPNN(keras.models.Model):
 
     '''Directed message passing neural network (DMPNN).

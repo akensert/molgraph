@@ -17,7 +17,7 @@ from molgraph.layers import gnn_layer
 from molgraph.layers import gnn_ops
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class GATv2Conv(gnn_layer.GNNLayer):
 
     '''Multi-head graph attention (v2) layer (GATv2).

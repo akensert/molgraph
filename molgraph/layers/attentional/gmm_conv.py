@@ -17,7 +17,7 @@ from molgraph.layers import gnn_layer
 
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class GMMConv(gnn_layer.GNNLayer):
 
     '''Multi-head graph gaussian mixture layer (MoNet)

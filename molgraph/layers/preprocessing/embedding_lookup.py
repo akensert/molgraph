@@ -12,7 +12,7 @@ from typing import List
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class EmbeddingLookup(layers.StringLookup):
 
     '''A loookup layer and embedding layer in combination.
@@ -246,11 +246,11 @@ class EmbeddingLookup(layers.StringLookup):
         return base_config
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class NodeEmbeddingLookup(EmbeddingLookup):
     feature = 'node_feature'
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class EdgeEmbeddingLookup(EmbeddingLookup):
     feature = 'edge_feature'

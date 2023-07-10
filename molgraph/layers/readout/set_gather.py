@@ -8,7 +8,7 @@ from molgraph.tensors.graph_tensor import GraphTensor
 
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class SetGatherReadout(layers.Layer):
 
     '''Set-to-set layer for graph readout.
@@ -131,7 +131,7 @@ class SetGatherReadout(layers.Layer):
         return base_config
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class NoInputLSTMCell(layers.Layer):
 
     'Custom LSTM Cell that takes no input'

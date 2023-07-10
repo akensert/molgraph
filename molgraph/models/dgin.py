@@ -10,7 +10,7 @@ from molgraph.layers.gnn_ops import propagate_node_features
 from molgraph.layers.message_passing.edge_conv import edge_message_step
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class DGIN(keras.models.Model):
 
     '''Directed graph isomorphism network (DGIN).

@@ -17,7 +17,7 @@ from molgraph.tensors.graph_tensor import GraphTensorSpec
 from molgraph.layers import gnn_layer
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class MPNNConv(gnn_layer.GNNLayer):
 
     """Message passing neural network layer (MPNN)

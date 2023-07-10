@@ -16,7 +16,7 @@ from molgraph.layers import gnn_layer
 from molgraph.layers import gnn_ops
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class GTConv(gnn_layer.GNNLayer):
 
     '''Graph transformer layer

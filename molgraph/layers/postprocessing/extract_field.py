@@ -4,7 +4,7 @@ from tensorflow import keras
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class ExtractField(keras.layers.Layer):
     '''Extract specific field of ``GraphTensor``.
 

@@ -2,16 +2,21 @@ import tensorflow as tf
 from tensorflow import keras
 from keras import layers
 from keras import initializers
-from keras.layers.preprocessing import preprocessing_utils as utils
 
 from typing import Optional
 from typing import Union
 
 from molgraph.tensors.graph_tensor import GraphTensor
 
+try:
+    PreprocessingLayer = layers.experimental.preprocessing.PreprocessingLayer
+except AttributeError:
+    PreprocessingLayer = layers.PreprocessingLayer
 
-@keras.utils.register_keras_serializable(package='molgraph')
-class StandardScaling(layers.PreprocessingLayer):
+
+
+@keras.saving.register_keras_serializable(package='molgraph')
+class StandardScaling(PreprocessingLayer):
 
     '''Standard scaling, via centering and standardization.
 
@@ -380,15 +385,15 @@ class StandardScaling(layers.PreprocessingLayer):
 
     def get_config(self):
         config = {
-            'mean': utils.listify_tensors(self.mean),
-            'variance': utils.listify_tensors(self.variance),
+            'mean': _listify_tensors(self.mean),
+            'variance': _listify_tensors(self.variance),
             'feature': self.feature,
             'variance_threshold': self.variance_threshold}
         base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class VarianceThreshold(StandardScaling):
 
     '''Variance thresholding.
@@ -560,21 +565,29 @@ class VarianceThreshold(StandardScaling):
         return data.update({self.feature: feature})
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class NodeStandardScaling(StandardScaling):
     feature = 'node_feature'
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class EdgeStandardScaling(StandardScaling):
     feature = 'edge_feature'
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class NodeVarianceThreshold(VarianceThreshold):
     feature = 'node_feature'
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class EdgeVarianceThreshold(VarianceThreshold):
     feature = 'edge_feature'
+
+
+def _listify_tensors(x):
+    if tf.is_tensor(x):
+        x = x.numpy()
+    if isinstance(x, np.ndarray):
+        x = x.tolist()
+    return x

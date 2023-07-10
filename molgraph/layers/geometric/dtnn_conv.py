@@ -17,7 +17,7 @@ from molgraph.layers import gnn_layer
 from molgraph.layers.geometric import radial_basis
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class DTNNConv(gnn_layer.GNNLayer):
 
     """Deep Tensor Neural Network (DTNN).

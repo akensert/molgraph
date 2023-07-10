@@ -17,7 +17,7 @@ from molgraph.layers import gnn_ops
 
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class GCNConv(gnn_layer.GNNLayer):
 
     """Graph convolutional layer (GCN).

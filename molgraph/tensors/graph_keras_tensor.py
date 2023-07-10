@@ -1,8 +1,14 @@
-from keras.engine import keras_tensor
-from keras.layers import core
+try:
+    from keras.engine import keras_tensor
+except ImportError:
+    from keras.src.engine import keras_tensor
+
+try:
+    from keras.layers import core
+except ImportError:
+    from keras.src.layers import core
 
 from molgraph.tensors.graph_tensor import GraphTensor
-
 
 
 class GraphKerasTensor(keras_tensor.KerasTensor):

@@ -4,7 +4,7 @@ from tensorflow import keras
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class GatherIncident(keras.layers.Layer):
     '''Gathers incident node features.
 

@@ -11,7 +11,7 @@ from molgraph.tensors.graph_tensor import GraphTensor
 Config = TypeVar('Config', bound=dict)
 
 
-@keras.utils.register_keras_serializable(package='molgraph')
+@keras.saving.register_keras_serializable(package='molgraph')
 class AttentiveFPReadout(tf.keras.layers.Layer):
 
     '''Readout step ("Molecule embedding") of AttentiveFP.

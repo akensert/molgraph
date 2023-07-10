@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 
 
-@keras.utils.register_keras_serializable(package='molgraph.metrics')
+@keras.saving.register_keras_serializable(package='molgraph.metrics')
 class MeanRelativeError(keras.metrics.Mean):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
