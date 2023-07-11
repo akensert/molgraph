@@ -15,7 +15,7 @@ class TestDMPNN(unittest.TestCase):
 
     def test_model_with_ragged_tensor(self):
         inputs = tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec)
-        x = DMPNN(units=32, steps=4, name='dmpnn')(inputs)
+        x = DMPNN(units=32, name='dmpnn')(inputs)
         x = layers.SetGatherReadout(name='readout')(x)
         outputs = tf.keras.layers.Dense(10, activation='sigmoid')(x)
         mpnn_classifier = tf.keras.Model(inputs, outputs)
@@ -26,7 +26,7 @@ class TestDMPNN(unittest.TestCase):
     def test_model_with_nonragged_tensor(self):
         inputs = tf.keras.layers.Input(
             type_spec=graph_tensor_merged.unspecific_spec)
-        x = DMPNN(units=32, steps=4, name='dmpnn')(inputs)
+        x = DMPNN(units=32, name='dmpnn')(inputs)
         x = layers.SetGatherReadout(name='readout')(x)
         outputs = tf.keras.layers.Dense(10, activation='sigmoid')(x)
         mpnn_classifier = tf.keras.Model(inputs, outputs)

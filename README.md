@@ -12,15 +12,14 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 
 ## Implementations
 
-- **Tensor**
-    - **GraphTensor**
-        - A composite tensor holding graph data.
-        - Has a ragged (multiple graphs) and a non-ragged state (single disjoint graph)
-        - Can conveniently go between both states (merge() and separate())
-        - Can propagate node information (features) based on edges (propagate())
-        - Can add, update and remove graph data (update(), remove())
-        - Has an associated GraphTensorSpec which it compatible with Keras and TensorFlow API.
-            - This includes keras.Sequential, keras.Functional, tf.data.Dataset, and tf.saved_model API.
+- **Graph tensor** ([GraphTensor](http://github.com/akensert/molgraph/tree/main/molgraph/tensors/graph_tensor.py))
+    - A composite tensor holding graph data.
+    - Has a ragged (multiple graphs) and a non-ragged state (single disjoint graph)
+    - Can conveniently go between both states (merge() and separate())
+    - Can propagate node information (features) based on edges (propagate())
+    - Can add, update and remove graph data (update(), remove())
+    - Has an associated GraphTensorSpec which it makes it compatible with Keras and TensorFlow API.
+        - This includes keras.Sequential, keras.Functional, tf.data.Dataset, and tf.saved_model API.
 - **Layers**
     
     - **Convolutional**
