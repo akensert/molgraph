@@ -1,4 +1,10 @@
-# MolGraph 0.5.0
+# MolGraph 0.5.3
+
+## Version 0.5.3 (2023-07-17)
+
+### Bug fixes
+- `molgraph.layers`
+    - `_get_reverse_edge_features()` of `edge_conv.py` is now correctly obtaining the reverse edge features.
 
 ## Version 0.5.2 (2023-07-11)
 
