@@ -9,10 +9,12 @@ from typing import Optional
 from typing import Union
 from typing import List
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class EmbeddingLookup(layers.StringLookup):
 
     '''A loookup layer and embedding layer in combination.
@@ -246,11 +248,11 @@ class EmbeddingLookup(layers.StringLookup):
         return base_config
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class NodeEmbeddingLookup(EmbeddingLookup):
     feature = 'node_feature'
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class EdgeEmbeddingLookup(EmbeddingLookup):
     feature = 'edge_feature'

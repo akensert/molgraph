@@ -5,13 +5,14 @@ from typing import Optional
 from typing import Tuple
 from typing import TypeVar
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.layers.attentional.gat_conv import GATConv
+
 from molgraph.tensors.graph_tensor import GraphTensor
 
-Config = TypeVar('Config', bound=dict)
 
-
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class AttentiveFPReadout(tf.keras.layers.Layer):
 
     '''Readout step ("Molecule embedding") of AttentiveFP.
@@ -122,7 +123,7 @@ class AttentiveFPReadout(tf.keras.layers.Layer):
         
         return self.final_node_projection(virtual_node_state)
 
-    def get_config(self) -> Config:
+    def get_config(self) -> dict:
         config = super().get_config()
         config.update({
             'steps': self.steps, 

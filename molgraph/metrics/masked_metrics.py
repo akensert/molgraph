@@ -1,10 +1,12 @@
 import tensorflow as tf
 from tensorflow import keras
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.metrics.mean_relative_error import MeanRelativeError
 
 
-@keras.saving.register_keras_serializable(package='molgraph.metrics')
+@register_keras_serializable(package='molgraph.metrics')
 class MaskedMeanSquaredError(keras.metrics.MeanSquaredError):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
@@ -15,7 +17,7 @@ class MaskedMeanSquaredError(keras.metrics.MeanSquaredError):
         return super().update_state(y_true, y_pred, None)
 
 
-@keras.saving.register_keras_serializable(package='molgraph.metrics')
+@register_keras_serializable(package='molgraph.metrics')
 class MaskedMeanAbsoluteError(keras.metrics.MeanAbsoluteError):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
@@ -26,7 +28,7 @@ class MaskedMeanAbsoluteError(keras.metrics.MeanAbsoluteError):
         return super().update_state(y_true, y_pred, None)
 
 
-@keras.saving.register_keras_serializable(package='molgraph.metrics')
+@register_keras_serializable(package='molgraph.metrics')
 class MaskedMeanRelativeError(MeanRelativeError):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
@@ -37,7 +39,7 @@ class MaskedMeanRelativeError(MeanRelativeError):
         return super().update_state(y_true, y_pred, None)
 
 
-@keras.saving.register_keras_serializable(package='molgraph.metrics')
+@register_keras_serializable(package='molgraph.metrics')
 class MaskedRootMeanSquaredError(keras.metrics.RootMeanSquaredError):
 
     def update_state(self, y_true, y_pred, sample_weight=None):

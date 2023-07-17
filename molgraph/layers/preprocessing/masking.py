@@ -1,10 +1,12 @@
 import tensorflow as tf
 from tensorflow import keras
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class FeatureMasking(keras.layers.Layer):
     '''Randomly masking node or edge features from the graph.
 
@@ -116,11 +118,11 @@ class FeatureMasking(keras.layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class NodeFeatureMasking(FeatureMasking):
     feature = 'node_feature'
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class EdgeFeatureMasking(FeatureMasking):
     feature = 'edge_feature'

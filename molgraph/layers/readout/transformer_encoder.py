@@ -3,15 +3,15 @@ from tensorflow import keras
 from keras import layers
 from keras import activations
 
-from typing import Tuple
 from typing import Union
 from typing import Callable
+
+from molgraph.internal import register_keras_serializable 
 
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class TransformerEncoderReadout(layers.Layer):
 
     '''Transformer encoder layer for graph readout.

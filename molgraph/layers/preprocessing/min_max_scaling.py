@@ -9,15 +9,14 @@ from typing import Tuple
 from typing import Optional
 from typing import Tuple
 
+from molgraph.internal import register_keras_serializable 
+from molgraph.internal import PreprocessingLayer
+
 from molgraph.tensors.graph_tensor import GraphTensor
 
-try:
-    PreprocessingLayer = layers.experimental.preprocessing.PreprocessingLayer
-except AttributeError:
-    PreprocessingLayer = layers.PreprocessingLayer
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class MinMaxScaling(PreprocessingLayer):
 
     '''Min-max scaling between a specified range.
@@ -328,12 +327,12 @@ class MinMaxScaling(PreprocessingLayer):
         return input_spec
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class NodeMinMaxScaling(MinMaxScaling):
     feature = 'node_feature'
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class EdgeMinMaxScaling(MinMaxScaling):
     feature = 'edge_feature'
 

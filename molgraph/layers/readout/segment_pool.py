@@ -2,11 +2,12 @@ import tensorflow as tf
 from tensorflow import keras
 from keras import layers
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class SegmentPoolingReadout(layers.Layer):
 
     '''Segmentation pooling for graph readout.

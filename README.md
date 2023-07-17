@@ -58,9 +58,8 @@ For a detailed list of changes, see the [CHANGELOG.md](https://github.com/akense
 
 ## Requirements/dependencies
 - **Python** (version >= 3.6 recommended)
-    - **TensorFlow** (version >= 2.7.0 recommended)
+    - **TensorFlow** (version >= 2.10.0 recommended)
     - **RDKit** (version >= 2022.3.3 recommended)
-    - **NumPy** (version >= 1.21.2 recommended)
     - **Pandas** (version >= 1.0.3 recommended)
 
 ## Installation

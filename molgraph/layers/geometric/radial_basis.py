@@ -4,8 +4,10 @@ from tensorflow import keras
 from typing import Optional
 from typing import Union
 
+from molgraph.internal import register_keras_serializable 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+
+@register_keras_serializable(package='molgraph')
 class RadialBasis(keras.layers.Layer):
 
     def __init__(

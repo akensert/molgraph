@@ -4,11 +4,12 @@ from keras import layers
 
 from typing import Tuple
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class SetGatherReadout(layers.Layer):
 
     '''Set-to-set layer for graph readout.
@@ -131,7 +132,7 @@ class SetGatherReadout(layers.Layer):
         return base_config
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class NoInputLSTMCell(layers.Layer):
 
     'Custom LSTM Cell that takes no input'

@@ -8,10 +8,6 @@ from typing import Callable
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-NOT_IMPLEMENTED_ERROR_MESSAGE = (
-    "{} only makes predictions (call model.predict instead)")
-
-
 def automatically_infer_input_signature(func):
     def call(
         self: 'SaliencyMapping', 

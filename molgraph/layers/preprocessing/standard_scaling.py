@@ -8,16 +8,13 @@ import numpy as np
 from typing import Optional
 from typing import Union
 
+from molgraph.internal import register_keras_serializable 
+from molgraph.internal import PreprocessingLayer
+
 from molgraph.tensors.graph_tensor import GraphTensor
 
-try:
-    PreprocessingLayer = layers.experimental.preprocessing.PreprocessingLayer
-except AttributeError:
-    PreprocessingLayer = layers.PreprocessingLayer
 
-
-
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class StandardScaling(PreprocessingLayer):
 
     '''Standard scaling, via centering and standardization.
@@ -395,7 +392,7 @@ class StandardScaling(PreprocessingLayer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class VarianceThreshold(StandardScaling):
 
     '''Variance thresholding.
@@ -567,22 +564,22 @@ class VarianceThreshold(StandardScaling):
         return data.update({self.feature: feature})
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class NodeStandardScaling(StandardScaling):
     feature = 'node_feature'
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class EdgeStandardScaling(StandardScaling):
     feature = 'edge_feature'
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class NodeVarianceThreshold(VarianceThreshold):
     feature = 'node_feature'
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class EdgeVarianceThreshold(VarianceThreshold):
     feature = 'edge_feature'
 

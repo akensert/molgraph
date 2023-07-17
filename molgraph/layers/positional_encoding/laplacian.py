@@ -10,10 +10,12 @@ from typing import Union
 from typing import Callable
 from typing import Optional
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class LaplacianPositionalEncoding(layers.Layer):
 
     '''Laplacian positional encoding.

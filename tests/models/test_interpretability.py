@@ -58,8 +58,11 @@ class TestSaliency(unittest.TestCase):
         saliency_model_loaded = tf.saved_model.load(filename)
         shutil.rmtree(filename)
 
-        maps_2 = saliency_model_loaded(inputs, label)
-        
+        if label is not None:
+            maps_2 = saliency_model_loaded(inputs, label)
+        else:
+            maps_2 = saliency_model_loaded(inputs)
+
         if merge:
             test1 = all(
                 maps_1.numpy().round(3) ==  maps_2.numpy().round(3))
@@ -173,7 +176,10 @@ class TestGradientActivation(unittest.TestCase):
         saliency_model_loaded = tf.saved_model.load(filename)
         shutil.rmtree(filename)
 
-        maps_2 = saliency_model_loaded(inputs, label)
+        if label is not None:
+            maps_2 = saliency_model_loaded(inputs, label)
+        else:
+            maps_2 = saliency_model_loaded(inputs)
         
         if merge:
             test1 = all(

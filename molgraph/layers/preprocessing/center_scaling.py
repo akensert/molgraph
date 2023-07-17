@@ -6,16 +6,13 @@ import numpy as np
 
 from typing import Optional
 
+from molgraph.internal import register_keras_serializable 
+from molgraph.internal import PreprocessingLayer
+
 from molgraph.tensors.graph_tensor import GraphTensor
 
-try:
-    PreprocessingLayer = layers.experimental.preprocessing.PreprocessingLayer
-except AttributeError:
-    PreprocessingLayer = layers.PreprocessingLayer
 
-
-
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class CenterScaling(PreprocessingLayer):
 
     '''Centering.
@@ -320,12 +317,12 @@ class CenterScaling(PreprocessingLayer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class NodeCenterScaling(CenterScaling):
     feature = 'node_feature'
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class EdgeCenterScaling(CenterScaling):
     feature = 'edge_feature'
 

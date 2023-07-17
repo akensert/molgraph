@@ -5,13 +5,15 @@ from typing import Tuple
 from typing import Union
 from typing import Callable
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.layers.message_passing.edge_conv import EdgeConv
 from molgraph.layers.convolutional.gin_conv import GINConv
 from molgraph.layers.readout.node_readout import NodeReadout
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class DGIN(keras.layers.Layer):
 
     '''Directed graph isomorphism network (DGIN).

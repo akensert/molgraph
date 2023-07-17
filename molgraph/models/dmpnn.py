@@ -5,13 +5,15 @@ from typing import Tuple
 from typing import Union
 from typing import Callable
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.layers.message_passing.edge_conv import EdgeConv
 from molgraph.layers.message_passing.mpnn_conv import MPNNConv
 from molgraph.layers.readout.node_readout import NodeReadout
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class DMPNN(keras.layers.Layer):
 
     '''Directed message passing neural network (DMPNN).

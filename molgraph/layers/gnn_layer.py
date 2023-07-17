@@ -15,17 +15,15 @@ from typing import Optional
 from typing import Callable
 from typing import Union
 from typing import List
-from typing import Tuple
 from typing import Type
-from typing import TypeVar
+
+from molgraph.internal import register_keras_serializable 
 
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.tensors.graph_tensor import GraphTensorSpec
 
-from molgraph.layers import gnn_ops
 
-
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
 
     '''Base layer for the built-in GNN layers. 
@@ -512,6 +510,9 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
             A layer instance.
         '''
         graph_tensor_spec = config.pop('graph_tensor_spec', None)
+        update_step = config.pop('update_step')
+        config['update_step'] = (
+            None if update_step is None else layers.deserialize(update_step))
         layer = cls(**config)
         if graph_tensor_spec is None:
             warn(

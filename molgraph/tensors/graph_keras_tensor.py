@@ -1,12 +1,5 @@
-try:
-    from keras.engine import keras_tensor
-except ImportError:
-    from keras.src.engine import keras_tensor
-
-try:
-    from keras.layers import core
-except ImportError:
-    from keras.src.layers import core
+from molgraph.internal import keras_core 
+from molgraph.internal import keras_tensor
 
 from molgraph.tensors.graph_tensor import GraphTensor
 
@@ -36,13 +29,13 @@ tensor_graph_properties = [
     '_data', '_spec',
 ]
 for p in tensor_graph_properties:
-    core._delegate_property(GraphKerasTensor, p)
+    keras_core._delegate_property(GraphKerasTensor, p)
 
 tensor_graph_methods = [
     'update', 'remove', 'merge', 'separate',
 ]
 for m in tensor_graph_methods:
-    core._delegate_method(GraphKerasTensor, m)
+    keras_core._delegate_method(GraphKerasTensor, m)
 
 
 # from tensorflow.python.util import dispatch

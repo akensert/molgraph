@@ -10,13 +10,16 @@ from typing import Optional
 from typing import Callable
 from typing import Union
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.tensors.graph_tensor import GraphTensorSpec
+
 from molgraph.layers import gnn_layer
 from molgraph.layers import gnn_ops
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class GTConv(gnn_layer.GNNLayer):
 
     '''Graph transformer layer
@@ -133,7 +136,6 @@ class GTConv(gnn_layer.GNNLayer):
         **kwargs: Valid (optional) keyword arguments are:
 
             *   `name` (str): Name of the layer instance.
-            *   `name` (str): Name of the layer instance.
             *   `update_step` (tf.keras.layers.Layer): Applies post-processing 
                 step on the output (produced by `_call`). If passed, 
                 `normalization`, `residual`, `activation` and `dropout` 
@@ -178,10 +180,9 @@ class GTConv(gnn_layer.GNNLayer):
             kwargs.get('update_edge_features', True) and 
             kwargs.get('use_edge_features', True)
         )
-
-        super().__init__(
-            units=units,
-            update_step=_FeedForwardNetwork(
+        update_step = kwargs.pop(
+            'update_step',
+            _FeedForwardNetwork(
                 units=units,
                 normalization=normalization,
                 activation=activation,
@@ -195,7 +196,11 @@ class GTConv(gnn_layer.GNNLayer):
                 activity_regularizer=activity_regularizer,
                 kernel_constraint=kernel_constraint,
                 bias_constraint=bias_constraint,
-            ),
+            )
+        )
+        super().__init__(
+            units=units,
+            update_step=update_step,
             residual=residual,
             use_bias=use_bias,
             kernel_initializer=kernel_initializer,
@@ -286,6 +291,7 @@ class GTConv(gnn_layer.GNNLayer):
         return base_config
 
 
+@register_keras_serializable(package='molgraph')
 class _FeedForwardNetwork(layers.Layer):
 
     'Feed-forward network (FFN) of the graph transformer layer.'

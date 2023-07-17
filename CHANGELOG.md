@@ -1,16 +1,13 @@
-# MolGraph 0.5.4
+# MolGraph 0.5.5
 
-## Version 0.5.4 (2023-07-17)
-
-### Bug fixes
-- `molgraph.layers`
-    - Add missing numpy import for some preprocessing layers.
-
-## Version 0.5.3 (2023-07-17)
+## Version 0.5.3-0.5.5 (2023-07-17)
 
 ### Bug fixes
+- `molgraph`
+    - Make molgraph compatible with tf>=2.9.0. Before only compatible with tf>=2.12.0.
 - `molgraph.layers`
     - `_get_reverse_edge_features()` of `edge_conv.py` is now correctly obtaining the reverse edge features.
+    - Missing numpy import is now added for some preprocessing layers.
 
 ## Version 0.5.2 (2023-07-11)
 
@@ -21,7 +18,8 @@
 
 ## Version 0.5.1 (2023-07-10)
 
-Replace tensorflow/keras functions to make MolGraph compatible with tensorflow 2.13.0. E.g. `keras.utils.register_keras_serializable` is replaced with `tf.keras.saving.register_keras_serializable`. No breaking changes should exist.
+- `molgraph`
+    - Replace tensorflow/keras functions to make MolGraph compatible with tensorflow 2.13.0. E.g. `keras.utils.register_keras_serializable` is replaced with `tf.keras.saving.register_keras_serializable`.
 
 ## Version 0.5.0 (2023-07-07)
 

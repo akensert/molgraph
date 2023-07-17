@@ -16,6 +16,11 @@ filterwarnings(
     )
 )
 
+filterwarnings('ignore',
+    message='Converting sparse IndexedSlices.*' +
+            'to a dense Tensor of unknown shape. ' +
+            'This may consume a large amount of memory.')
+
 absl.logging.set_verbosity(absl.logging.ERROR)
 
 #logging.getLogger('tensorflow').setLevel(logging.ERROR)

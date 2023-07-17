@@ -3,10 +3,12 @@ from tensorflow import keras
 
 from typing import Optional
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class DotProductIncident(keras.layers.Layer):
     '''Performs dot product on the incident node features.
 

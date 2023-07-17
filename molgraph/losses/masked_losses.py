@@ -3,6 +3,8 @@ from tensorflow import keras
 
 from typing import Optional
 
+from molgraph.internal import register_keras_serializable 
+
 
 class MaskedLoss(keras.losses.Loss):
 
@@ -53,7 +55,7 @@ class MaskedLoss(keras.losses.Loss):
         return base_config
 
 
-@keras.saving.register_keras_serializable(package='molgraph.losses')
+@register_keras_serializable(package='molgraph.losses')
 class MaskedBinaryCrossentropy(MaskedLoss):
     
     '''Masked binary crossentropy loss. 
@@ -106,7 +108,7 @@ class MaskedBinaryCrossentropy(MaskedLoss):
         return base_config
 
 
-@keras.saving.register_keras_serializable(package='molgraph.losses')
+@register_keras_serializable(package='molgraph.losses')
 class MaskedHuber(MaskedLoss):
 
     '''Masked huber loss. 
@@ -146,7 +148,7 @@ class MaskedHuber(MaskedLoss):
         return base_config
 
 
-@keras.saving.register_keras_serializable(package='molgraph.losses')
+@register_keras_serializable(package='molgraph.losses')
 class MaskedMeanSquaredError(MaskedLoss):
 
     '''Masked mean squared error loss. 
@@ -160,7 +162,7 @@ class MaskedMeanSquaredError(MaskedLoss):
         return tf.math.squared_difference(y_pred, y_true)
 
 
-@keras.saving.register_keras_serializable(package='molgraph.losses')
+@register_keras_serializable(package='molgraph.losses')
 class MaskedMeanAbsoluteError(MaskedLoss):
 
     '''Masked mean absolute error loss. 

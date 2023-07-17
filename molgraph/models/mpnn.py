@@ -4,11 +4,13 @@ from tensorflow import keras
 from typing import Optional
 from typing import Tuple
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.layers.message_passing.mpnn_conv import message_step
 
 
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class MPNN(keras.layers.Layer):
 
     '''Message passing neural network (MPNN) with weight tying.

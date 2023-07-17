@@ -11,14 +11,16 @@ from typing import Optional
 from typing import Callable
 from typing import Union
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.tensors.graph_tensor import GraphTensorSpec
+
 from molgraph.layers import gnn_layer
 from molgraph.layers import gnn_ops
 
 
-
-@keras.saving.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class GINConv(gnn_layer.GNNLayer):
 
     '''Graph isomorphism convolution layer (GIN).
