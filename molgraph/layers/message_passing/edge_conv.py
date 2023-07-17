@@ -330,6 +330,7 @@ class EdgeConv(tf.keras.layers.Layer):
             bias_constraint=self.bias_constraint,
             recurrent_constraint=self.recurrent_constraint)
     
+    
 def edge_update_step(
     edge_feature: tf.Tensor, 
     edge_feature_prev: tf.Tensor,
@@ -358,8 +359,8 @@ def edge_message_step(
 
 def _get_reverse_edge_features(edge_feature, edge_src, edge_dst):
     edge_exclude = tf.logical_and(
-        edge_src[:, None] == edge_src,
-        edge_dst[:, None] == edge_dst
+        edge_src[:, None] == edge_dst,
+        edge_dst[:, None] == edge_src
     )
     edge_forward, edge_reverse = tf.split(tf.where(edge_exclude), 2, axis=-1)
     return tf.tensor_scatter_nd_add(
