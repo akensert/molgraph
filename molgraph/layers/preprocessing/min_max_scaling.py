@@ -3,6 +3,8 @@ from tensorflow import keras
 from keras import layers
 from keras import initializers
 
+import numpy as np
+
 from typing import Tuple
 from typing import Optional
 from typing import Tuple

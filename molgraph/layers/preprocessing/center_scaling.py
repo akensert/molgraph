@@ -2,6 +2,8 @@ import tensorflow as tf
 from tensorflow import keras
 from keras import layers
 
+import numpy as np
+
 from typing import Optional
 
 from molgraph.tensors.graph_tensor import GraphTensor

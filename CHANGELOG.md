@@ -1,4 +1,10 @@
-# MolGraph 0.5.3
+# MolGraph 0.5.4
+
+## Version 0.5.4 (2023-07-17)
+
+### Bug fixes
+- `molgraph.layers`
+    - Add missing numpy import for some preprocessing layers.
 
 ## Version 0.5.3 (2023-07-17)
 
