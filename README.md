@@ -15,10 +15,10 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 - **Graph tensor** ([GraphTensor](http://github.com/akensert/molgraph/tree/main/molgraph/tensors/graph_tensor.py))
     - A composite tensor holding graph data.
     - Has a ragged (multiple graphs) and a non-ragged state (single disjoint graph)
-    - Can conveniently go between both states (merge() and separate())
+    - Can conveniently go between both states (merge(), separate())
     - Can propagate node information (features) based on edges (propagate())
     - Can add, update and remove graph data (update(), remove())
-    - Has an associated GraphTensorSpec which it makes it compatible with Keras and TensorFlow API.
+    - Has an associated GraphTensorSpec which makes it compatible with Keras and TensorFlow API.
         - This includes keras.Sequential, keras.Functional, tf.data.Dataset, and tf.saved_model API.
 - **Layers**
     
@@ -41,9 +41,9 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
         - DTNNConv ([DTNNConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/geometric/dtnn_conv.py))
         - GCFConv ([GCFConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/geometric/gcf_conv.py))
     - **Pre- and post-processing**
-        - In addition to the aforementioned GNN layers, there are also several other layers which improves model-building. See `readout/`, `preprocessing/`, `postprocessing/`, `positional_encoding/`.
+        - In addition to the aforementioned GNN layers, there are also several other layers which improves model-building. See [readout/](https://github.com/akensert/molgraph/tree/main/molgraph/layers/readout), [preprocessing/](https://github.com/akensert/molgraph/tree/main/molgraph/layers/preprocessing), [postprocessing/](https://github.com/akensert/molgraph/tree/main/molgraph/layers/postprocessing), [positional_encoding/](https://github.com/akensert/molgraph/tree/main/molgraph/layers/positional_encoding).
 - **Models**
-    - Although model building is easy with MolGraph, there are some built-in GNN models:
+    - Although model building is easy with MolGraph, there are some built-in GNN [models](https://github.com/akensert/molgraph/tree/main/molgraph/models):
         - **DGIN**
         - **DMPNN**
         - **MPNN**
@@ -56,8 +56,12 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 ## Changelog
 For a detailed list of changes, see the [CHANGELOG.md](https://github.com/akensert/molgraph/blob/main/CHANGELOG.md).
 
-**Important notes**
-- Since version **0.5.0**, default normalization for the GNN layers is layer normalization. This significantly improved the performance on some of the MoleculeNet datasets.
+## Requirements/dependencies
+- **Python** (version >= 3.6 recommended)
+    - **TensorFlow** (version >= 2.7.0 recommended)
+    - **RDKit** (version >= 2022.3.3 recommended)
+    - **NumPy** (version >= 1.21.2 recommended)
+    - **Pandas** (version >= 1.0.3 recommended)
 
 ## Installation
 
@@ -101,7 +105,7 @@ bond_encoder = chemistry.Featurizer([
 
 encoder = chemistry.MolecularGraphEncoder(atom_encoder, bond_encoder)
 
-# Obtain features and associated labels
+# Obtain graphs and associated labels
 x_train = encoder(qm7['train']['x'])
 y_train = qm7['train']['y']
 
@@ -129,14 +133,3 @@ gam_model = models.GradientActivationMapping(
 
 maps = gam_model(x_train)
 ```
-
-## Requirements/dependencies
-- **Python** (version >= 3.6 recommended)
-- **TensorFlow** (version >= 2.7.0 recommended)
-- **RDKit** (version >= 2022.3.3 recommended)
-- **NumPy** (version >= 1.21.2 recommended)
-- **Pandas** (version >= 1.0.3 recommended)
-
-## Tested with
-- **Ubuntu 20.04 - Python 3.8.10**
-- **MacOS Monterey (12.3.1) - Python 3.10.3**
