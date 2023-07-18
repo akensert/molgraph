@@ -548,7 +548,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
             node_feature=data['node_feature'],
             edge_src=data['edge_src'],
             edge_dst=data['edge_dst'],
-            edge_weight=data.get('edge_weight', None),
+            edge_weight=data.pop('edge_weight', None),
             mode=mode)
         
         if residual is not None:
@@ -570,6 +570,7 @@ class GraphTensor(composite_tensor.CompositeTensor):
 
         if not self.is_ragged():
             return graph_tensor 
+        
         return graph_tensor.separate()
 
     def is_ragged(self):
