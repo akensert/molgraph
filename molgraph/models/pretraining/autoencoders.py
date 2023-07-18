@@ -5,12 +5,18 @@ from keras import layers
 from typing import Optional
 from typing import Any
 
+from molgraph.internal import register_keras_serializable 
+
 from molgraph.tensors.graph_tensor import GraphTensor
+
 from molgraph.layers.postprocessing.dot_product_incident import DotProductIncident
-from molgraph.losses.link_losses import LinkBinaryCrossentropy
+
+
+# TODO: Improve negative graph sampler. Need to distinguish separate but
+#       equivalent atoms.
 
     
-@keras.utils.register_keras_serializable(package='molgraph')
+@register_keras_serializable(package='molgraph')
 class GraphAutoEncoder(keras.Model):
     '''Graph AutoEncoder (GAE) based on Kipf and Welling [#]_.
     
@@ -22,7 +28,7 @@ class GraphAutoEncoder(keras.Model):
         decoder (tf.keras.layers.Layer):
             The decoder part of the autoencoder. If None is passed,
             the decoder used is ``DotProductIncident``. Default to None.
-        negative_graph_sampler (int):
+        negative_graph_sampler (callable):
             A function which samples negative graphs. It takes as input
             the current GraphTensor instance and produces a new
             GraphTensor instance with negative edges. If None, 
@@ -34,34 +40,64 @@ class GraphAutoEncoder(keras.Model):
     
     **Example:**
 
-    >>> # Obtain GraphTensor instance
-    >>> atom_encoder = molgraph.chemistry.Featurizer([
-    ...     molgraph.chemistry.features.Symbol({'C', 'N', 'O', 'P', 'Na'}),
-    ...     molgraph.chemistry.features.Hybridization(),
-    ... ])
-    >>> bond_encoder = molgraph.chemistry.Featurizer([
-    ...     molgraph.chemistry.features.BondType(),
-    ...     molgraph.chemistry.features.Rotatable()
-    ... ])
-    >>> encoder = molgraph.chemistry.MolecularGraphEncoder(atom_encoder, bond_encoder)
-    >>> dataset = molgraph.chemistry.datasets.get('esol', splitter=None)
-    >>> graph_tensor = encoder(dataset['x'])
+    >>> # Replace this graph_tensor with a large dataset of graphs
+    >>> # Also accepts featurized graph tensors (via `chemistry.Featurizer`)
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...    data={
+    ...        'edge_src': [1, 4, 0, 2, 3, 1, 1, 0],
+    ...        'edge_dst': [0, 0, 1, 1, 1, 2, 3, 4],
+    ...        'node_feature': [
+    ...            'Sym:C|Hyb:SP3', 
+    ...            'Sym:C|Hyb:SP2', 
+    ...            'Sym:O|Hyb:SP2',
+    ...            'Sym:O|Hyb:SP2', 
+    ...            'Sym:N|Hyb:SP3'
+    ...        ],
+    ...        'edge_feature': [
+    ...            'BonTyp:SINGLE|Rot:1', 
+    ...            'BonTyp:SINGLE|Rot:0',
+    ...            'BonTyp:SINGLE|Rot:1', 
+    ...            'BonTyp:DOUBLE|Rot:0',
+    ...            'BonTyp:SINGLE|Rot:0', 
+    ...            'BonTyp:DOUBLE|Rot:0',
+    ...            'BonTyp:SINGLE|Rot:0', 
+    ...            'BonTyp:SINGLE|Rot:0'
+    ...        ],
+    ...        'graph_indicator': [0, 0, 0, 0, 0],
+    ...    }
+    ... )
+    >>> graph_tensor = graph_tensor.separate()
+    >>> node_embedding = molgraph.layers.NodeEmbeddingLookup(
+    ...    32, mask_token='[MASK]'
+    ... )
+    >>> edge_embedding = molgraph.layers.EdgeEmbeddingLookup(
+    ...    32, mask_token='[MASK]'
+    ... )
+    >>> node_embedding.adapt(graph_tensor)
+    >>> edge_embedding.adapt(graph_tensor)
     >>> # Obtain GraphAutoEncoder model
     >>> encoder = tf.keras.Sequential([
     ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     node_embedding,
+    ...     edge_embedding,
     ...     molgraph.layers.GATv2Conv(128),
     ...     molgraph.layers.GATv2Conv(128),
     ...     molgraph.layers.GATv2Conv(128),
     ... ])
-    >>> decoder = molgraph.layers.DotProductIncident(apply_sigmoid=True)
+    >>> decoder = molgraph.layers.DotProductIncident(normalize=True)
     >>> gae = molgraph.models.GraphAutoEncoder(encoder, decoder)
-    >>> gae.compile('adam', loss=molgraph.losses.LinkBinaryCrossentropy())
-    >>> gae.fit(graph_tensor, batch_size=32, epochs=50, verbose=0)
+    >>> gae.compile('adam')
+    >>> _ = gae.fit(graph_tensor, batch_size=32, epochs=50, verbose=0)
     >>> reconstruction_loss = gae.evaluate(graph_tensor, verbose=0)
+    >>> encoder.save( # doctest: +SKIP
+    ...     '/tmp/my_pretrained_encoder_model'
+    ... ) 
+    >>> loaded_encoder = tf.saved_model.load( # doctest: +SKIP
+    ...     '/tmp/my_pretrained_encoder_model'
+    ... )
 
     References:
         .. [#] https://arxiv.org/pdf/1611.07308.pdf
-    
     '''
     def __init__(
         self, 
@@ -75,43 +111,24 @@ class GraphAutoEncoder(keras.Model):
         self.encoder = encoder
         self.decoder = (
             decoder if decoder is not None 
-            else DotProductIncident(apply_sigmoid=True)
+            else DotProductIncident(normalize=True)
         )
         self.negative_graph_sampler = (
             negative_graph_sampler if negative_graph_sampler is not None 
             else NegativeGraphSampler(1)
         )
         self.balanced_class_weighting = balanced_class_weighting
-        self.reconstruction_loss_tracker = keras.metrics.Mean(
-            name="rec_loss")
-    
-    def compile(self, optimizer, loss=None, *args, **kwargs):
-        super().compile(
-            optimizer=optimizer, loss=None, metrics=None, *args, **kwargs)
-        if loss is None:
-            self.reconstruction_loss = LinkBinaryCrossentropy(name='lbc_loss')
-        else:
-            self.reconstruction_loss = loss
-    
+        self.reconstruction_loss_tracker = keras.metrics.Mean(name="rec_loss")
+
     @property
     def metrics(self):
         return [
             self.reconstruction_loss_tracker
         ]
-    
-    @staticmethod
-    def compute_balanced_class_weighting(edge_score_pos, edge_score_neg):
-        num_positives = tf.shape(edge_score_pos)[0]
-        num_negatives = tf.shape(edge_score_neg)[0]
-        ratio = tf.cast(num_positives / num_negatives, edge_score_pos.dtype)
-        sample_weight = tf.concat([[1.], [ratio]], axis=0)
-        sample_weight = tf.repeat(sample_weight, [num_positives, num_negatives])
-        sample_weight = tf.reshape(sample_weight, [-1, 1])
-        return sample_weight
         
     def train_step(self, tensor: GraphTensor):
         
-        if isinstance(tensor.node_feature, tf.RaggedTensor):
+        if tensor.is_ragged():
             tensor = tensor.merge()
             
         with tf.GradientTape() as tape:
@@ -121,16 +138,23 @@ class GraphAutoEncoder(keras.Model):
             decoded_pos = self.decoder(encoded)
             
             if self.balanced_class_weighting:
-                sample_weight = self.compute_balanced_class_weighting(
+                sample_weight = _compute_balanced_class_weighting(
                     decoded_pos.edge_score, decoded_neg.edge_score)
             else:
-                sample_weight = None
+                sample_weight = 1.
             
-            reconstruction_loss = self.reconstruction_loss(
-                decoded_pos.edge_score, 
-                decoded_neg.edge_score,
-                sample_weight=sample_weight)
-            
+            if self.loss_fn is None:
+                scores = tf.concat([
+                    decoded_pos.edge_score * -1., 
+                    decoded_neg.edge_score], axis=0)
+                reconstruction_loss = scores * sample_weight
+                reconstruction_loss = tf.reduce_mean(reconstruction_loss)
+            else:
+                reconstruction_loss = self.loss_fn(
+                    decoded_pos.edge_score, 
+                    decoded_neg.edge_score, 
+                    sample_weight=sample_weight)
+                
             reg_loss = sum(self.losses)
 
             loss = reconstruction_loss + reg_loss
@@ -145,66 +169,79 @@ class GraphAutoEncoder(keras.Model):
     
     def test_step(self, tensor: GraphTensor):
         
-        if isinstance(tensor.node_feature, tf.RaggedTensor):
+        if tensor.is_ragged():
             tensor = tensor.merge()
-            
+
         encoded = self(tensor, training=False)
         encoded_neg = self.negative_graph_sampler(encoded)
         decoded_neg = self.decoder(encoded_neg)
         decoded_pos = self.decoder(encoded)
         
         if self.balanced_class_weighting:
-            sample_weight = self.compute_balanced_class_weighting(
+            sample_weight = _compute_balanced_class_weighting(
                 decoded_pos.edge_score, decoded_neg.edge_score)
         else:
-            sample_weight = None
+            sample_weight = 1.
 
-        reconstruction_loss = self.reconstruction_loss(
-            decoded_pos.edge_score, 
-            decoded_neg.edge_score,
-            sample_weight=sample_weight)
+        if self.loss_fn is None:
+            scores = tf.concat([
+                decoded_pos.edge_score * -1., 
+                decoded_neg.edge_score], axis=0)
+            reconstruction_loss = scores * sample_weight
+            reconstruction_loss = tf.reduce_mean(reconstruction_loss)
+        else:
+            reconstruction_loss = self.loss_fn(
+                decoded_pos.edge_score, 
+                decoded_neg.edge_score, 
+                sample_weight=sample_weight)
         
         self.reconstruction_loss_tracker.update_state(reconstruction_loss)
 
         return {m.name: m.result() for m in self.metrics}
     
-    # TODO: What should be returned by .predict() ?
-    #       Right now used for debugging.
     def predict_step(self, tensor: GraphTensor) -> GraphTensor:
         
-        if isinstance(tensor.node_feature, tf.RaggedTensor):
+        tensor_orig = tensor
+        if tensor.is_ragged():
             tensor = tensor.merge()
-            ragged = True
-        else:
-            ragged = False
-        
-        # TODO: training = True necessary for GVAE. Otherwise scores always 1. Why?
-        encoded = self(tensor, training=True)
 
-        encoded_neg = self.negative_graph_sampler(encoded)
-        decoded_neg = self.decoder(encoded_neg)
-        decoded_pos = self.decoder(encoded)
-        return {
-            'encoded': encoded,
-            'decoded_positive': decoded_pos, 
-            'decoded_negative': decoded_neg
-        }
-        # if ragged:
-        #     return encoded.separate()
-        # return encoded
+        encoded = self(tensor, training=False)
+        decoded = self.decoder(encoded)
+        return tensor_orig.update({
+            'edge_score': decoded.edge_score}).edge_score
         
     def call(self, tensor: GraphTensor) -> GraphTensor:
         return self.encoder(tensor)
-    
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'encoder': layers.serialize(self.encoder),
-            'decoder': layers.serialize(self.decoder),
-            'negative_graph_sampler': layers.serialize(self.negative_graph_sampler),
-            'balanced_class_weighting': self.balanced_class_weighting,
-        })
 
+    def compile(self, optimizer, loss=None, *args, **kwargs):
+        '''Configures the model for training.
+        
+        Args:
+            optimizer (tf.keras.optimizers.Optimizer):
+                The optimizer to use for training.
+            loss (None, tf.keras.losses.Loss):
+                The loss function to use. If None, a default loss function
+                will be used. This loss function simply just tried to 
+                maximize the values of the positive edges and minimize the
+                values of the negative edges. If a custom loss function is used,
+                be aware that the inputs to the loss functions are: positive 
+                edge scores (`y_true` ) and negative edge scores (`y_pred`);
+                both resulting from `molgraph.layers.DotProductIncident(...)`.
+                Default to None.
+            metrics (None):
+                This argument will be ignored (at least for now).
+            *args:
+                See tf.keras.Model.compile documentation.
+            **kwargs:
+                See tf.keras.Model.compile documentation.
+        '''
+        super().compile(
+            optimizer=optimizer, loss=None, metrics=None, *args, **kwargs)
+        
+        if loss is not None:
+            self.loss_fn = loss
+        else:
+            self.loss_fn = None
 
     def fit(
         self, 
@@ -296,15 +333,26 @@ class GraphAutoEncoder(keras.Model):
                 See tf.keras.Model.evaluate documentation.
         
         Returns:
-            A dictionary of `GraphTensor` instances, including an encoded
-            `GraphTensor` as well as decoded `GraphTensor`s.
+            `tf.Tensor` or `tf.RaggedTensor` of edge scores, corresponding to 
+            the inputted `GraphTensor` instance.
         '''
         return super().predict(
             x=x, batch_size=batch_size, *args, **kwargs)
 
-      
-# TODO: instead of beta_initial/end/incr, pass a scheduler?
-@keras.utils.register_keras_serializable(package='molgraph')
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'encoder': layers.serialize(self.encoder),
+            'decoder': layers.serialize(self.decoder),
+            'negative_graph_sampler': layers.serialize(
+                self.negative_graph_sampler),
+            'balanced_class_weighting': self.balanced_class_weighting,
+        })
+        return config
+    
+
+# TODO: instead of beta initial/end/incr, pass a scheduler?
+@register_keras_serializable(package='molgraph')
 class GraphVariationalAutoEncoder(GraphAutoEncoder):
     '''Graph Variational AutoEncoder (GAE) based on Kipf and Welling [#]_.
     
@@ -316,7 +364,7 @@ class GraphVariationalAutoEncoder(GraphAutoEncoder):
         decoder (tf.keras.layers.Layer):
             The decoder part of the autoencoder. If None is passed,
             the decoder used is ``DotProductIncident``. Default to None.
-        negative_graph_sampler (int):
+        negative_graph_sampler (callable):
             A function which samples negative graphs. It takes as input
             the current GraphTensor instance and produces a new
             GraphTensor instance with negative edges. If None, 
@@ -326,43 +374,75 @@ class GraphVariationalAutoEncoder(GraphAutoEncoder):
             instance, if there are twice as many negative edges, should
             each negative edge be weighted 0.5 for the loss?
         beta_initial (float):
-            placeholder
+            Initial beta value (which is multiplied with the kl loss). 
+            Default to 0.0.
         beta_end (float):
-            placeholder
+            End beta value. Default to 0.1.
         beta_incr (float):
-            placeholder
+            The increment rate of the beta value (updated each train step).
+            Default to 1e-6.
     
     **Example:**
 
-    >>> # Obtain GraphTensor instance
-    >>> atom_encoder = molgraph.chemistry.Featurizer([
-    ...     molgraph.chemistry.features.Symbol({'C', 'N', 'O', 'P', 'Na'}),
-    ...     molgraph.chemistry.features.Hybridization(),
-    ... ])
-    >>> bond_encoder = molgraph.chemistry.Featurizer([
-    ...     molgraph.chemistry.features.BondType(),
-    ...     molgraph.chemistry.features.Rotatable()
-    ... ])
-    >>> encoder = molgraph.chemistry.MolecularGraphEncoder(atom_encoder, bond_encoder)
-    >>> dataset = molgraph.chemistry.datasets.get('esol', splitter=None)
-    >>> graph_tensor = encoder(dataset['x'])
+    >>> # Replace this graph_tensor with a large dataset of graphs
+    >>> # Also accepts featurized graph tensors (via `chemistry.Featurizer`)
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...    data={
+    ...        'edge_src': [1, 4, 0, 2, 3, 1, 1, 0],
+    ...        'edge_dst': [0, 0, 1, 1, 1, 2, 3, 4],
+    ...        'node_feature': [
+    ...            'Sym:C|Hyb:SP3', 
+    ...            'Sym:C|Hyb:SP2', 
+    ...            'Sym:O|Hyb:SP2',
+    ...            'Sym:O|Hyb:SP2', 
+    ...            'Sym:N|Hyb:SP3'
+    ...        ],
+    ...        'edge_feature': [
+    ...            'BonTyp:SINGLE|Rot:1', 
+    ...            'BonTyp:SINGLE|Rot:0',
+    ...            'BonTyp:SINGLE|Rot:1', 
+    ...            'BonTyp:DOUBLE|Rot:0',
+    ...            'BonTyp:SINGLE|Rot:0', 
+    ...            'BonTyp:DOUBLE|Rot:0',
+    ...            'BonTyp:SINGLE|Rot:0', 
+    ...            'BonTyp:SINGLE|Rot:0'
+    ...        ],
+    ...        'graph_indicator': [0, 0, 0, 0, 0],
+    ...    }
+    ... )
+    >>> graph_tensor = graph_tensor.separate()
+    >>> node_embedding = molgraph.layers.NodeEmbeddingLookup(
+    ...    32, mask_token='[MASK]'
+    ... )
+    >>> edge_embedding = molgraph.layers.EdgeEmbeddingLookup(
+    ...    32, mask_token='[MASK]'
+    ... )
+    >>> node_embedding.adapt(graph_tensor)
+    >>> edge_embedding.adapt(graph_tensor)
     >>> # Obtain the encoder of GVAE
     >>> encoder_inputs = tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec)
-    >>> encoder_x = molgraph.layers.GATv2Conv(128, name='shared_conv')(encoder_inputs)
+    >>> encoder_x = node_embedding(encoder_inputs)
+    >>> encoder_x = edge_embedding(encoder_x)
+    >>> encoder_x = molgraph.layers.GATv2Conv(128, name='shared_conv')(encoder_x)
     >>> encoder_x_mean = molgraph.layers.GATv2Conv(128, name='loc_conv')(encoder_x)
     >>> encoder_x_log_var = molgraph.layers.GATv2Conv(128, name='log_var_conv')(encoder_x)
     >>> encoder = tf.keras.Model(encoder_inputs, [encoder_x_mean, encoder_x_log_var])
     >>> # Obtain the decoder of GVAE
-    >>> decoder = molgraph.layers.DotProductIncident(apply_sigmoid=True)
+    >>> decoder = molgraph.layers.DotProductIncident(normalize=True)
     >>> # Obtain, train and evaluate GVAE model
     >>> gvae = molgraph.models.GraphVariationalAutoEncoder(encoder, decoder)
-    >>> gvae.compile('adam', loss=molgraph.losses.LinkBinaryCrossentropy())
-    >>> gvae.fit(graph_tensor, batch_size=32, epochs=50, verbose=0)
-    >>> total_loss, rec_loss, kl_loss = gae.evaluate(graph_tensor, verbose=0)
-    
+    >>> gvae.compile('adam')
+    >>> _ = gvae.fit(graph_tensor, batch_size=32, epochs=50, verbose=0)
+    >>> total_loss, rec_loss, kl_loss = gvae.evaluate(graph_tensor, verbose=0)
+    >>> encoder.save( # doctest: +SKIP
+    ...     '/tmp/my_pretrained_encoder_model'
+    ... ) 
+    >>> loaded_encoder = tf.saved_model.load( # doctest: +SKIP
+    ...     '/tmp/my_pretrained_encoder_model'
+    ... )
+
     References:
         .. [#] https://arxiv.org/pdf/1611.07308.pdf
-    
     '''
     def __init__(
         self, 
@@ -371,7 +451,7 @@ class GraphVariationalAutoEncoder(GraphAutoEncoder):
         negative_graph_sampler: Optional[tf.keras.layers.Layer] = None,
         balanced_class_weighting: bool = False,
         beta_initial: float = 0.00,
-        beta_end: float = 0.05,
+        beta_end: float = 0.1,
         beta_incr: float = 1e-6,
         **kwargs
     ):
@@ -389,8 +469,7 @@ class GraphVariationalAutoEncoder(GraphAutoEncoder):
         self.beta = tf.Variable(
             initial_value=beta_initial, 
             dtype=tf.float32, 
-            trainable=False
-        )
+            trainable=False)
         
     @property
     def metrics(self):
@@ -413,15 +492,22 @@ class GraphVariationalAutoEncoder(GraphAutoEncoder):
             decoded_pos = self.decoder(encoded)
             
             if self.balanced_class_weighting:
-                sample_weight = self.compute_balanced_class_weighting(
+                sample_weight = _compute_balanced_class_weighting(
                     decoded_pos.edge_score, decoded_neg.edge_score)
             else:
-                sample_weight = None
+                sample_weight = 1.
 
-            reconstruction_loss = self.reconstruction_loss(
-                decoded_pos.edge_score, 
-                decoded_neg.edge_score,
-                sample_weight=sample_weight)
+            if self.loss_fn is None:
+                scores = tf.concat([
+                    decoded_pos.edge_score * -1., 
+                    decoded_neg.edge_score], axis=0)
+                reconstruction_loss = scores * sample_weight
+                reconstruction_loss = tf.reduce_mean(reconstruction_loss)
+            else:
+                reconstruction_loss = self.loss_fn(
+                    decoded_pos.edge_score, 
+                    decoded_neg.edge_score, 
+                    sample_weight=sample_weight)
             
             kl_loss = self.kl_loss(
                 encoded.node_feature_mean, encoded.node_feature_log_var)
@@ -456,16 +542,23 @@ class GraphVariationalAutoEncoder(GraphAutoEncoder):
         decoded_pos = self.decoder(encoded)
         
         if self.balanced_class_weighting:
-            sample_weight = self.compute_balanced_class_weighting(
+            sample_weight = _compute_balanced_class_weighting(
                 decoded_pos.edge_score, decoded_neg.edge_score)
         else:
-            sample_weight = None
+            sample_weight = 1.
 
-        reconstruction_loss = self.reconstruction_loss(
-            decoded_pos.edge_score, 
-            decoded_neg.edge_score,
-            sample_weight=sample_weight)
-        
+        if self.loss_fn is None:
+            scores = tf.concat([
+                decoded_pos.edge_score * -1., 
+                decoded_neg.edge_score], axis=0)
+            reconstruction_loss = scores * sample_weight
+            reconstruction_loss = tf.reduce_mean(reconstruction_loss)
+        else:
+            reconstruction_loss = self.loss_fn(
+                decoded_pos.edge_score, 
+                decoded_neg.edge_score, 
+                sample_weight=sample_weight)
+    
         kl_loss = self.kl_loss(
             encoded.node_feature_mean, encoded.node_feature_log_var)
         
@@ -484,7 +577,8 @@ class GraphVariationalAutoEncoder(GraphAutoEncoder):
         z_log_var = tensor_z_log_var.node_feature
 
         if training:
-            z = z_mean + tf.exp(0.5 * z_log_var) * tf.random.normal(tf.shape(z_log_var))
+            z_shape = tf.shape(z_log_var)
+            z = z_mean + tf.exp(0.5 * z_log_var) * tf.random.normal(z_shape)
         else:
             z = z_mean
  
@@ -510,8 +604,10 @@ class GraphVariationalAutoEncoder(GraphAutoEncoder):
             'beta_end': self.beta_end,
             'beta_incr': self.beta_incr
         })
+        return config
 
-@keras.utils.register_keras_serializable(package='molgraph')
+
+@register_keras_serializable(package='molgraph')
 class NaiveNegativeGraphSampler(layers.Layer):
     
     '''Samples a negative graphs, or rather, a graph with negative edges.
@@ -528,7 +624,6 @@ class NaiveNegativeGraphSampler(layers.Layer):
             than positive examples will be trained on. If k = 1, then the 
             same number of negative and positive examples will be trained
             on. Default to 1.
-    
     '''
     
     def __init__(self, k: int = 1, **kwargs):
@@ -542,14 +637,15 @@ class NaiveNegativeGraphSampler(layers.Layer):
         data = tensor._data.copy()
         data['edge_dst'] = edge_dst
         data['edge_src'] = edge_src
-        return GraphTensor(**data)
+        return tensor.__class__(**data)
     
     def get_config(self):
         config = super().get_config()
         config.update({'k': self.k})
         return config
     
-@keras.utils.register_keras_serializable(package='molgraph')
+
+@register_keras_serializable(package='molgraph')
 class NegativeGraphSampler(NaiveNegativeGraphSampler):
     
     '''Samples a negative graphs, or rather, a graph with negative edges.
@@ -565,7 +661,6 @@ class NegativeGraphSampler(NaiveNegativeGraphSampler):
             than positive examples will be trained on. If k = 1, then the 
             same number of negative and positive examples will be trained
             on. Default to 1.
-    
     '''
     
     def call(self, tensor: GraphTensor) -> GraphTensor:
@@ -605,4 +700,14 @@ class NegativeGraphSampler(NaiveNegativeGraphSampler):
         data['edge_src'] = edge_src_neg
         data['edge_dst'] = edge_dst_neg
 
-        return GraphTensor(**data)
+        return tensor.__class__(**data)
+    
+
+def _compute_balanced_class_weighting(edge_score_pos, edge_score_neg):
+    num_positives = tf.shape(edge_score_pos)[0] # num positive edges
+    num_negatives = tf.shape(edge_score_neg)[0] # num negative edges
+    ratio = tf.cast(num_positives / num_negatives, edge_score_pos.dtype)
+    sample_weight = tf.concat([[1.], [ratio]], axis=0)
+    sample_weight = tf.repeat(sample_weight, [num_positives, num_negatives])
+    sample_weight = tf.reshape(sample_weight, [-1, 1])
+    return sample_weight

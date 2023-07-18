@@ -8,13 +8,14 @@ from molgraph.models.dgin import DGIN
 
 from molgraph.models.pretraining.autoencoders import GraphAutoEncoder
 from molgraph.models.pretraining.autoencoders import GraphVariationalAutoEncoder
+from molgraph.models.pretraining.masked_modeling import GraphMasking
 
 # aliases
-VanillaSaliencyMapping = SaliencyMapping
 GVAE = GraphVAE = GraphVariationalAutoEncoder 
 GAE = GraphAE = GraphAutoEncoder
+MaskedGraphModeling = GraphMasking
 
-Saliency = SaliencyMapping
+Saliency = VanillaSaliencyMapping = SaliencyMapping
 IntegratedSaliency = IntegratedSaliencyMapping
 SmoothGradSaliency = SmoothGradSaliencyMapping
 GradCAM = GradientActivation = GradientActivationMapping
