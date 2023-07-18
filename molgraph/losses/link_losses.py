@@ -24,14 +24,13 @@ class LinkBinaryCrossentropy(keras.losses.BinaryCrossentropy):
         )
 
     def call(self, positive_score, negative_score):
-        # TODO: Only works when scores are defined as y_true, why?
-        y_true = tf.concat([
+        y_pred = tf.concat([
             positive_score, negative_score
         ], axis=0)
-        y_pred = tf.concat([
+        y_true = tf.concat([
             tf.ones_like(positive_score), tf.zeros_like(negative_score)
         ], axis=0)
-        return super().call(y_pred, y_true)
+        return super().call(y_true, y_pred)
 
 
 # TODO: Make it work for len(y_true) != len(y_pred)
