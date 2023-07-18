@@ -2,6 +2,8 @@ import tensorflow as tf
 from tensorflow import keras
 
 from typing import Optional
+from typing import Union
+from typing import Tuple
 
 from molgraph.internal import register_keras_serializable 
 
@@ -38,9 +40,11 @@ class DotProductIncident(keras.layers.Layer):
       edge_score=<tf.RaggedTensor: shape=(2, None, 1), dtype=float32>)
 
     Args:
-        apply_sigmoid (bool):
-            Whether to apply a sigmoid activaton on the edge scores. 
-            Default to False.
+        normalize (bool):
+            Whether to apply normalization on the edge scores. Produces cosine
+            similarity values in the range -1 to 1. Default to False.
+        axes (int, tuple):
+            The axes (or axis) to perform the dot product. Default to 1.
         data_field (str, None):
             Name of the data added to the GraphTensor instance. If None,
             the output will be a ``tf.Tensor`` or ``tf.RaggedTensor`` 
@@ -50,15 +54,21 @@ class DotProductIncident(keras.layers.Layer):
     '''
     def __init__(
         self, 
-        apply_sigmoid: bool = False, 
+        normalize: bool = False, 
+        axes: Union[int, Tuple[int, ...]] = 1,
         data_field: Optional[str] = 'edge_score',
         **kwargs
     ):
         super().__init__(**kwargs)
-        self._apply_sigmoid = apply_sigmoid
+        self._dot_normalize = normalize
+        self._dot_axes = axes
         self._data_field = data_field
+        self._dot_layer = keras.layers.Dot(axes=axes, normalize=normalize)
 
-    def call(self, tensor: GraphTensor) -> GraphTensor:
+    def call(
+        self, 
+        tensor: GraphTensor
+    ) -> Union[GraphTensor, tf.Tensor, tf.RaggedTensor]:
         '''Defines the computation from inputs to outputs.
 
         This method should not be called directly, but indirectly
@@ -74,25 +84,29 @@ class DotProductIncident(keras.layers.Layer):
             field of the inputted ``GraphTensor``.
         '''
         tensor_orig = tensor
-        if isinstance(tensor.node_feature, tf.RaggedTensor):
+
+        if tensor.is_ragged():
             tensor = tensor.merge()
         
-        adjacency = tf.stack([
-            tensor.edge_src, tensor.edge_dst], axis=1)
-        node_feature_incident = tf.gather(
-            tensor.node_feature, adjacency)
-        edge_score = tf.reduce_sum(
-            tf.reduce_prod(node_feature_incident, axis=1), axis=1, keepdims=True)
-        if self._apply_sigmoid:
-            edge_score = tf.nn.sigmoid(edge_score)
-        if self._data_field is None:
-            return edge_score
-        return tensor_orig.update({self._data_field: edge_score})
+        node_feature_src = tf.gather(
+            tensor.node_feature, tensor.edge_src)
+
+        node_feature_dst = tf.gather(
+            tensor.node_feature, tensor.edge_dst)
+
+        edge_score = self._dot_layer([node_feature_src, node_feature_dst])
+
+        if self._data_field is not None:
+            return tensor_orig.update({self._data_field: edge_score})
+        
+        tensor_orig = tensor_orig.update({'edge_score': edge_score})
+        return tensor_orig.edge_score
 
     def get_config(self):
         config = super().get_config()
         config.update({
-            'apply_sigmoid': self._apply_sigmoid,
+            'normalize': self._dot_normalize,
+            'axes': self._dot_axes,
             'data_field': self._data_field,
         })
         return config
