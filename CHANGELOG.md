@@ -1,4 +1,28 @@
-# MolGraph 0.5.5
+# MolGraph 0.5.6
+
+## Version 0.5.6 (2023-07-19)
+
+### Breaking changes
+- `molgraph.layers`
+    - `molgraph.layers.DotProductIncident` no longer takes `apply_sigmoid` as an argument. Instead it takes `normalize`, which specifies whether the dot product should be normalized, resulting in cosine similarities (values between -1 and 1).
+- `molgraph.models`
+    - `GraphAutoEncoder` (GAE) and `GraphVariationalAutoEncoder` (GVAE) are changed. The default `loss` is `None`, which means that a default loss function is used. This loss function simply tries to maximize the positive edge scores and minimize the negative edge scores. `predict` now returns the (positive) edge scores corresponding to the inputted `GraphTensor` instance. `get_config` now returns a dictionary, as expected. The default decoder is `molgraph.layers.DotProductIncident(normalize=True)`. Note: there is still some more work to be done with GAE/GVAE; e.g. improving the "`NegativeGraphSampler`" and (for VGAE) improving the `beta` schedule.
+- `molgraph.tensors`
+    - `GraphTensor.propagate()` now removes the `edge_weight` data component, as
+    it has already been used.
+
+### Major features and improvements
+- `molgraph.models`
+    - `GraphMasking` (alias: `MaskedGraphModeling`) is now implemented. Like the autoencoders, this model pretrains an encoder; though instead of predicting links between nodes, it predicts randomly masked node and edge features. (Currently only works with tokenized node and edge features (via `chemistry.Tokenizer`).) This pretraining strategy is inspired by BERT for language modeling.
+
+### Bug fixes 
+- `molgraph.layers`
+    - `from_config` now works as expected for all gnn layers. Consequently, `gnn_model.from_config(gnn_model.get_config())` now works fine.
+
+### Minor features and improvements
+- `molgraph.layers`
+    - `_build_from_vocabulary_size()` removed from `EmbeddingLookup`. Instead creates `self.embedding` in `adapt()` or `build()`.
+    
 
 ## Version 0.5.3-0.5.5 (2023-07-17)
 
@@ -9,6 +33,7 @@
     - `_get_reverse_edge_features()` of `edge_conv.py` is now correctly obtaining the reverse edge features.
     - Missing numpy import is now added for some preprocessing layers.
 
+
 ## Version 0.5.2 (2023-07-11)
 
 ### Breaking changes
@@ -16,10 +41,12 @@
 - `molgraph.models`
     - Update DGIN and DMPNN. These models are now working more as expected.
 
+
 ## Version 0.5.1 (2023-07-10)
 
 - `molgraph`
     - Replace tensorflow/keras functions to make MolGraph compatible with tensorflow 2.13.0. E.g. `keras.utils.register_keras_serializable` is replaced with `tf.keras.saving.register_keras_serializable`.
+
 
 ## Version 0.5.0 (2023-07-07)
 
@@ -61,6 +88,7 @@
 - `molgraph.models`
     - Saliency and gradient activation mappings now works with `tf.saved_model` API.
     - Saliency and gradient activation mappings now work well with both ragged and non-ragged GraphTensor, as well as an optional label (for multi-label and multi-class classification). Note that these modules automatically sets an `input_signature` for `__call__` upon first call. 
+
 
 ## Version <0.5.0 (202X-XX-XX)
 ### \[...\]
