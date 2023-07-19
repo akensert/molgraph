@@ -146,8 +146,6 @@ class EmbeddingLookup(layers.StringLookup):
         self.embeddings_initializer = initializers.get(embeddings_initializer)
         self.embeddings_regularizer = regularizers.get(embeddings_regularizer)
         self.embeddings_constraint = constraints.get(embeddings_constraint)
-        self._vocabulary_size = None
-        self._built_from_vocabulary_size = False
 
     def adapt(self, data, batch_size=None, steps=None):
         '''Adapts the layer to data.
@@ -173,8 +171,17 @@ class EmbeddingLookup(layers.StringLookup):
         else:
             data = getattr(data, self.feature)
         super().adapt(data, batch_size=batch_size, steps=steps)
-        self._vocabulary_size = self.vocabulary_size()
 
+        self.embeddings = self.add_weight(
+            shape=(self.vocabulary_size(), self.output_dim),
+            dtype=tf.float32,
+            initializer=self.embeddings_initializer,
+            name='embeddings',
+            regularizer=self.embeddings_regularizer,
+            constraint=self.embeddings_constraint,
+            experimental_autocast=False
+        )
+        
     def call(self, tensor: GraphTensor) -> GraphTensor:
         '''Defines the computation from inputs to outputs.
 
@@ -192,9 +199,6 @@ class EmbeddingLookup(layers.StringLookup):
                 ``node_feature`` component or the ``edge_feature``
                 component (of the ``GraphTensor``) are updated.
         '''
-        if not self._built_from_vocabulary_size:
-            self._build_from_vocabulary_size(self._vocabulary_size)
-
         tensor = tensor.update({
             self.feature: super().call(getattr(tensor, self.feature))
         })
@@ -202,19 +206,20 @@ class EmbeddingLookup(layers.StringLookup):
             self.feature: tf.nn.embedding_lookup(
                 self.embeddings, getattr(tensor, self.feature))
         })
-
-    def _build_from_vocabulary_size(self, vocabulary_size):
-        self._built_from_vocabulary_size = True
-
-        self.embeddings = self.add_weight(
-            shape=(vocabulary_size, self.output_dim),
-            dtype=tf.float32,
-            initializer=self.embeddings_initializer,
-            name='embeddings',
-            regularizer=self.embeddings_regularizer,
-            constraint=self.embeddings_constraint,
-            experimental_autocast=False
-        )
+    
+    def build(self, input_shape):
+        super().build(input_shape)
+        if not hasattr(self, 'embeddings'):
+            with tf.init_scope():
+                self.embeddings = self.add_weight(
+                    shape=(self.vocabulary_size(), self.output_dim),
+                    dtype=tf.float32,
+                    initializer=self.embeddings_initializer,
+                    name='embeddings',
+                    regularizer=self.embeddings_regularizer,
+                    constraint=self.embeddings_constraint,
+                    experimental_autocast=False
+                )
 
     def compute_output_shape(
         self, 
@@ -222,21 +227,10 @@ class EmbeddingLookup(layers.StringLookup):
     ) -> tf.TensorShape:
         return tf.TensorShape(
             input_shape[:-1]).concatenate([self.output_dim])
-    
-    @classmethod
-    def from_config(cls, config):
-        vocabulary_size = config.pop('vocabulary_size')
-        layer = cls(**config)
-        if vocabulary_size is None:
-            pass
-        else:
-            layer._build_from_vocabulary_size(vocabulary_size)
-        return layer
 
     def get_config(self):
         base_config = super().get_config()
         base_config.update({
-            'vocabulary_size': self._vocabulary_size,
             'output_dim': self.output_dim,
             'embeddings_initializer': initializers.serialize(
                 self.embeddings_initializer),
