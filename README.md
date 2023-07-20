@@ -2,7 +2,7 @@
 
 *This is an early release; things are still being updated, added and experimented with. Hence, API compatibility may break in the future.*
 
-*Any feedback is welcomed!*
+*Any feedback is welcomed! If there are any issues/suggestions/questions, do not hesitate to bring it up!*
 
 ## Manuscript
 See [pre-print](https://arxiv.org/abs/2208.09944)

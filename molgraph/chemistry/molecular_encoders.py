@@ -86,10 +86,6 @@ class BaseMolecularGraphEncoder(ABC):
                 graph_tensor_list = [
                     gt for gt in graph_tensor_list if gt is not None]
 
-                # The list of `GraphTensor`s is concatenated to generate a single
-                # `GraphTensor` (disjoint [molecular] graph). The `separate` method
-                # is called to make the nested structures of the `GraphTensor`
-                # ragged. This will allow for batching of the `GraphTensor`.
                 return tf.stack(graph_tensor_list, axis=0)
 
             return self.call(inputs, **kwargs)
@@ -152,7 +148,7 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
       edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
       node_feature=<tf.Tensor: shape=(6, 119), dtype=float32>,
       edge_feature=<tf.Tensor: shape=(8, 4), dtype=float32>,
-      positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
+      node_position=<tf.Tensor: shape=(6, 10), dtype=float32>,
       graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
 
     Generate a molecular graph with tokenizers:
@@ -184,7 +180,7 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
       edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
       node_feature=<tf.Tensor: shape=(6,), dtype=string>,
       edge_feature=<tf.Tensor: shape=(8,), dtype=string>,
-      positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
+      node_position=<tf.Tensor: shape=(6, 10), dtype=float32>,
       graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
 
 
@@ -234,7 +230,7 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
       edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
       node_feature=<tf.Tensor: shape=(6, 16), dtype=float32>,
       edge_feature=<tf.Tensor: shape=(8, 8), dtype=float32>,
-      positional_encoding=<tf.Tensor: shape=(6, 10), dtype=float32>,
+      node_position=<tf.Tensor: shape=(6, 10), dtype=float32>,
       graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
     '''
 
@@ -291,7 +287,7 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
 
         # Obtain positional encoding of nodes (atoms)
         if self.positional_encoding_dim:
-            data['positional_encoding'] = _compute_positional_encoding(
+            data['node_position'] = _compute_positional_encoding(
                 molecule=molecule,
                 dim=self.positional_encoding_dim,
                 dtype=getattr(self.atom_encoder, 'dtype', 'float32'))

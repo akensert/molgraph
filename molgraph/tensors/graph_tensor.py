@@ -5,6 +5,8 @@ from tensorflow.python.framework import type_spec
 
 import numpy as np
 
+from warnings import warn
+
 from typing import Optional
 from typing import Mapping
 from typing import List
@@ -670,6 +672,11 @@ class GraphTensor(composite_tensor.CompositeTensor):
         'Obtain `graph_indicator` from graph tensor instance.'
         return self._data.get('graph_indicator', None) 
     
+    @property
+    def node_position(self):
+        'Obtain `node_position` from graph tensor instance.'
+        return self._data.get('node_position', None)
+    
     def __getattr__(self, name: str) -> Union[tf.Tensor, tf.RaggedTensor, Any]:
         '''Access nested data as attributes.
 
@@ -688,6 +695,17 @@ class GraphTensor(composite_tensor.CompositeTensor):
         Raises:
             AttributeError: if `name` does not exist in data.
         '''
+        if name == 'positional_encoding':
+            warn(
+                (
+                    '`positional_encoding` will be depracated in the '
+                    'near future, please use `node_position` instead.'
+                ),
+                DeprecationWarning,
+                stacklevel=2
+            )
+            name = 'node_position'
+
         if name in object.__getattribute__(self, '_data'):
             return self._data[name]
         
@@ -715,6 +733,18 @@ class GraphTensor(composite_tensor.CompositeTensor):
             of range.
         '''
         if isinstance(index, str):
+
+            if index == 'positional_encoding':
+                warn(
+                    (
+                        '`positional_encoding` will be depracated in the '
+                        'near future, please use `node_position` instead.'
+                    ),
+                    DeprecationWarning,
+                    stacklevel=2
+                )
+                index = 'node_position'
+            
             return self._data[index]
         if isinstance(index, slice):
             index = _slice_to_tensor(index, self.num_subgraphs)

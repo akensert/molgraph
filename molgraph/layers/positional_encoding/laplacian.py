@@ -172,7 +172,7 @@ class LaplacianPositionalEncoding(layers.Layer):
         if not self._built:
             self._build(
                 getattr(tensor, 'node_feature', None),
-                getattr(tensor, 'positional_encoding', None)
+                getattr(tensor, 'node_position', None)
             )
 
         def random_sign_flip(positional_encoding):
@@ -184,7 +184,7 @@ class LaplacianPositionalEncoding(layers.Layer):
             positional_encoding = compute_positional_encoding(
                 tensor, self._target_dim)
         else:
-            positional_encoding = tensor.positional_encoding
+            positional_encoding = tensor.node_position
 
         if training:
             positional_encoding = random_sign_flip(positional_encoding)

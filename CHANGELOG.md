@@ -1,4 +1,23 @@
-# MolGraph 0.5.6
+# MolGraph 0.5.7
+
+## Version 0.5.7 (2023-07-20)
+
+### Breaking changes
+- `molgraph`
+    - Optional `positional_encoding` field of `GraphTensor` is renamed to `node_position`. A (Laplacian) positional encoding is included in a `GraphTensor` instance when e.g. `positional_encoding_dim` argument of `chemistry.MolecularGraphEncoder` is not `None`. The positional encoding is still referred to as "positional" and "encoding" in `layers.LaplacianPositionalEncoding` and `chemistry.MolecularGraphEncoder`, though the actual data field added to the `GraphTensor` is `node_position`.  
+- `molgraph.chemistry`
+    - `molgraph.chemistry.benchmark.tf_records` moved out from `benchmark`; and `inputs` argument replaced with `data`.
+
+### Bug fixes 
+- `molgraph.chemistry`
+    - `molgraph.chemistry.tf_records.write()` no longer leaks memory. A large dataset (about 10 million small molecules, encoded as graph tensors) is expected to be written to tf records without exceeding 3GB memory usage. 
+
+### Minor features and improvements
+- `molgraph.chemistry`
+    - `molgraph.chemistry.tf_records.write()` now accepts `None` input for `encoder`. If `None` is passed, it is assumed that `data['x']` contains `GraphTensor` instances (and not e.g. SMILES strings).
+- `molgraph.tensors`
+    - `node_position` is now an attribute of the `GraphTensor`. Note: `positional_encoding` can still be used to access the positional encoding (now `node_position` of a `GraphTensor` instance). However, it will be depracated in the near future.
+
 
 ## Version 0.5.6 (2023-07-19)
 
@@ -10,6 +29,7 @@
 - `molgraph.tensors`
     - `GraphTensor.propagate()` now removes the `edge_weight` data component, as
     it has already been used.
+
 
 ### Major features and improvements
 - `molgraph.models`
