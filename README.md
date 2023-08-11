@@ -2,7 +2,7 @@
 
 *This is an early release; things are still being updated, added and experimented with. Hence, API compatibility may break in the future.*
 
-***Important update****: I am currently working on migrating the current `GraphTensor` to the [tf.experimental.ExtensionType](https://www.tensorflow.org/guide/extension_type) API (v0.6.0). Although this will likely break some user code, it is a worthwhile investment: as we no longer need to rely on internal TF modules (which aren't supposed to be used) and instead rely on a more robust, reliable and maintainable public API.*
+***Important update***: *I am currently working on migrating the current `GraphTensor` to the [tf.experimental.ExtensionType](https://www.tensorflow.org/guide/extension_type) API (v0.6.0). Although this will likely break some user code, it is a worthwhile investment: as we no longer need to rely on internal TF modules (which aren't supposed to be used) and instead rely on a more robust, reliable and maintainable public API.*
 
 
 ## Paper
