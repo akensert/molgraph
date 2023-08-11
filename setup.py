@@ -12,7 +12,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 install_requires = [
-    "tensorflow>=2.10.0",
+    "tensorflow>=2.13.0",
     "rdkit>=2022.3.3",
     "pandas>=1.0.3",
     "ipython==8.12.0",

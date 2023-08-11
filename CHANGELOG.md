@@ -1,4 +1,15 @@
-# MolGraph 0.5.7
+# MolGraph 0.5.8
+
+## Version 0.5.8 (2023-08-XX)
+
+### Bug fixes
+- `molgraph.layers`
+    - `from_config` of `molgraph.layers.gnn_layer` should now properly build/initialize the the derived layer. Specifically, a `GraphTensorSpec` should now be passed to `build_from_signature()`. 
+
+### Minor features and improvements
+- `molgraph.models`
+    - `layer_names` of `molgraph.models.GradientActivationMapping` is now optional. If `None` (the default), the object will look for, and use, all layers subclassed from `GNNLayer`. If not found, an error will be raised.
+ 
 
 ## Version 0.5.7 (2023-07-20)
 
@@ -6,7 +17,7 @@
 - `molgraph`
     - Optional `positional_encoding` field of `GraphTensor` is renamed to `node_position`. A (Laplacian) positional encoding is included in a `GraphTensor` instance when e.g. `positional_encoding_dim` argument of `chemistry.MolecularGraphEncoder` is not `None`. The positional encoding is still referred to as "positional" and "encoding" in `layers.LaplacianPositionalEncoding` and `chemistry.MolecularGraphEncoder`, though the actual data field added to the `GraphTensor` is `node_position`.  
 - `molgraph.chemistry`
-    - `molgraph.chemistry.benchmark.tf_records` moved out from `benchmark`; and `inputs` argument replaced with `data`.
+    - `inputs` argument replaced with `data`.
 
 ### Bug fixes 
 - `molgraph.chemistry`

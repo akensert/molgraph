@@ -509,13 +509,12 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
         Returns:
             A layer instance.
         '''
-        serialized_gt_spec = config.pop('graph_tensor_spec', None)
+        graph_tensor_spec = config.pop('graph_tensor_spec', None)
         update_step = config.pop('update_step')
         config['update_step'] = (
             None if update_step is None else layers.deserialize(update_step))
         layer = cls(**config)
-        if serialized_gt_spec is None:
-            deserialized_gt_spec = None
+        if graph_tensor_spec is None:
             warn(
                 (
                  'A GraphTensorSpec could not be obtained from the config, '
@@ -527,9 +526,7 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
                 stacklevel=2
             )
         else:
-            deserialized_gt_spec = GraphTensorSpec(
-                serialized_gt_spec['config'][0])
-            layer.build_from_signature(deserialized_gt_spec)
+            layer.build_from_signature(graph_tensor_spec)
         return layer
 
     def get_config(self) -> dict:

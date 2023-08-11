@@ -3,6 +3,7 @@ import tensorflow as tf
 from typing import List
 from typing import Optional
 
+from molgraph.layers.gnn_layer import GNNLayer
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.models.interpretability.saliency import SaliencyMapping
 
@@ -55,13 +56,23 @@ class GradientActivationMapping(SaliencyMapping):
     def __init__(
         self,
         model,
-        layer_names: List[str],
+        layer_names: List[str] = None,
         output_activation: Optional[str] = None,
         discard_negative_values: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(model, output_activation, **kwargs)
-        self._layer_names = layer_names
+        if layer_names is not None:
+            self._layer_names = layer_names
+        else:
+            layer_names = []
+            for layer in model.layers:
+                if isinstance(layer, GNNLayer):
+                    layer_names.append(layer.name)
+            if not layer_names:
+                raise ValueError(
+                    'Could not obtain GNN layer(s).')
+            self._layer_names = layer_names
         self._discard_negative_values = discard_negative_values
 
     def compute_saliency(

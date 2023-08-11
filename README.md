@@ -2,10 +2,11 @@
 
 *This is an early release; things are still being updated, added and experimented with. Hence, API compatibility may break in the future.*
 
-*Any feedback is welcomed! If there are any issues/suggestions/questions, do not hesitate to bring it up!*
+***Important update****: I am currently working on migrating the current `GraphTensor` to the [tf.experimental.ExtensionType](https://www.tensorflow.org/guide/extension_type) API (v0.6.0). Although this will likely break some user code, it is a worthwhile investment: as we no longer need to rely on internal TF modules (which aren't supposed to be used) and instead rely on a more robust, reliable and maintainable public API.*
 
-## Manuscript
-See [pre-print](https://arxiv.org/abs/2208.09944)
+
+## Paper
+See [arXiv](https://arxiv.org/abs/2208.09944)
 
 ## Documentation
 See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
@@ -58,9 +59,10 @@ For a detailed list of changes, see the [CHANGELOG.md](https://github.com/akense
 
 ## Requirements/dependencies
 - **Python** (version >= 3.6 recommended)
-    - **TensorFlow** (version >= 2.10.0 recommended)
+    - **TensorFlow** (version >= 2.13.0 recommended)
     - **RDKit** (version >= 2022.3.3 recommended)
     - **Pandas** (version >= 1.0.3 recommended)
+    - **IPython** (version == 8.12.0 recommended)
 
 ## Installation
 
