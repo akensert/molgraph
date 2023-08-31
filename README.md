@@ -1,9 +1,24 @@
 # MolGraph: Graph Neural Networks for Molecular Machine Learning
 
-*This is an early release; things are still being updated, added and experimented with. Hence, API compatibility may break in the future.*
+*This is an early release; things are still being updated, added and experimented with. Hence, API compatibility may break in the future. Any feedback is welcomed!*
 
-***Important update***: *I am currently working on migrating the current `GraphTensor` to the [tf.experimental.ExtensionType](https://www.tensorflow.org/guide/extension_type) API (v0.6.0). Although this will likely break some user code, it is a worthwhile investment: as we no longer need to rely on internal TF modules (which aren't supposed to be used) and instead rely on a more robust, reliable and maintainable public API.*
+**Important update**: The `GraphTensor` is now a [tf.experimental.ExtensionType](https://www.tensorflow.org/guide/extension_type) (as of version 0.6.0). Although user code will likely break when updating to 0.6.0, the new `GraphTensor` was implemented to avoid this as much as possible. See [GraphTensor documentation](https://molgraph.readthedocs.io/en/latest/api/tensors.html) and [GraphTensor walk through](https://molgraph.readthedocs.io/en/latest/examples/walk_through/01_graph-tensor.html) for more information on how to use it. Old features will for most part raise depracation warnings (though in the near future they will raise errors). **Likely cause of breakage:** the `GraphTensor` is now by default in its "non-ragged" state when obtained from the `chemistry.MolecularGraphEncoder`. The non-ragged `GraphTensor` can now be batched; i.e., a disjoint molecular graph, encoded by nested `tf.Tensor` values, can now be passed to a `tf.data.Dataset` and subsequently batched, unbatched, etc. There is no need to separate the `GraphTensor` beforehand and then merge it again. Finally, there is no need to pass an input type_spec to keras.Sequential model, making it even easier to code up and use a GNN models:
 
+```python
+from molgraph import GraphTensor
+from molgraph import layers
+from tensorflow import keras
+
+model = keras.Sequential([
+    layers.GINConv(units=32),
+    layers.GINConv(units=32),
+    layers.Readout(),
+    keras.layers.Dense(units=1),
+])
+output = model(
+    GraphTensor(node_feature=[[4.], [2.]], edge_src=[0], edge_dst=[1])
+)
+```
 
 ## Paper
 See [arXiv](https://arxiv.org/abs/2208.09944)
@@ -19,10 +34,8 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
     - Can conveniently go between both states (merge(), separate())
     - Can propagate node information (features) based on edges (propagate())
     - Can add, update and remove graph data (update(), remove())
-    - Has an associated GraphTensorSpec which makes it compatible with Keras and TensorFlow API.
-        - This includes keras.Sequential, keras.Functional, tf.data.Dataset, and tf.saved_model API.
+    - As it is now implemented with the TF's ExtensionType API, it is now compatible with TensorFlow's APIs (including Keras). For instance, graph data (encoded as a GraphTensor) can now seamlessly be used with keras.Sequential, keras.Functional, tf.data.Dataset, and tf.saved_model APIs.
 - **Layers**
-    
     - **Convolutional**
         - GCNConv ([GCNConv](http://github.com/akensert/molgraph/tree/main/molgraph/layers/convolutional/gcn_conv.py))
         - GINConv ([GINConv](https://github.com/akensert/molgraph/tree/main/molgraph/layers/convolutional/gin_conv.py))
@@ -45,9 +58,9 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
         - In addition to the aforementioned GNN layers, there are also several other layers which improves model-building. See [readout/](https://github.com/akensert/molgraph/tree/main/molgraph/layers/readout), [preprocessing/](https://github.com/akensert/molgraph/tree/main/molgraph/layers/preprocessing), [postprocessing/](https://github.com/akensert/molgraph/tree/main/molgraph/layers/postprocessing), [positional_encoding/](https://github.com/akensert/molgraph/tree/main/molgraph/layers/positional_encoding).
 - **Models**
     - Although model building is easy with MolGraph, there are some built-in GNN [models](https://github.com/akensert/molgraph/tree/main/molgraph/models):
-        - **DGIN**
-        - **DMPNN**
+        - **GIN**
         - **MPNN**
+        - **DMPNN**
     - And models for improved interpretability of GNNs:
         - **SaliencyMapping**
         - **IntegratedSaliencyMapping**
@@ -60,7 +73,7 @@ For a detailed list of changes, see the [CHANGELOG.md](https://github.com/akense
 ## Requirements/dependencies
 - **Python** (version >= 3.6 recommended)
     - **TensorFlow** (version >= 2.13.0 recommended)
-    - **RDKit** (version >= 2022.3.3 recommended)
+    - **RDKit** (version >= 2022.3.5 recommended)
     - **Pandas** (version >= 1.0.3 recommended)
     - **IPython** (version == 8.12.0 recommended)
 
@@ -115,9 +128,8 @@ y_test = qm7['test']['y']
 
 # Build model via Keras API
 gnn_model = keras.Sequential([
-    keras.layers.Input(type_spec=x_train.spec),
-    layers.GATConv(name='gat_conv_1'),
-    layers.GATConv(name='gat_conv_2'),
+    layers.GATConv(units=32, name='gat_conv_1'),
+    layers.GATConv(units=32, name='gat_conv_2'),
     layers.Readout(),
     keras.layers.Dense(units=1024, activation='relu'),
     keras.layers.Dense(units=y_train.shape[-1])
@@ -132,5 +144,5 @@ scores = gnn_model.evaluate(x_test, y_test)
 gam_model = models.GradientActivationMapping(
     model=gnn_model, layer_names=['gat_conv_1', 'gat_conv_2'])
 
-maps = gam_model(x_train)
+maps = gam_model(x_train.separate())
 ```

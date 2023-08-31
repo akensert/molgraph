@@ -1,6 +1,38 @@
-# MolGraph 0.5.8
+# MolGraph 0.6.0
 
-## Version 0.5.8 (2023-08-XX)
+<!-- ## Version 0.6.1 (2023-XX-XX)
+
+### Minor features and improvements
+- `molgraph.layers`
+    - `molgraph.layers.EdgeConv` now inherits from the `molgraph.layers.GNNLayer`
+    - `molgraph.layers.EdgeConv` now works with single node graphs (i.e. graphs without edges) -->
+
+
+## Version 0.6.0 (2023-08-31)
+
+### Major features and improvements
+- `molgraph.tensors`
+    - `GraphTensor` is now implemented with the `tf.experimental.ExtensionType` API. **Be aware that this migration will likely break user code**. The migration was deemed necessary to make the MolGraph API more robust, reliable and maintainable. The `GraphTensor` is by default in its non-ragged (disjoint) state when obtained from the `MolecularGraphEncoder`. A non-ragged `GraphTensor` is now, thanks to the `tf.experimental.ExtensionType` API batchable. There is no need to `.separate()` it before using it with `tf.data.Dataset`. Furthermore, no need to add type_spec to keras.Sequential model. 
+- `molgraph.layers`
+    - `molgraph.layers.GINConv` now optionally updates edge features at each layer, given that `use_edge_features=True` and `edge_features` exist. Specify `update_edge_features=True` to update edge features at each layer. If `update_edge_features=False`, `GINConv` will behave as before, namely, edge_features will only be updated if `edge_dim!=node_dim`. Furthermore, `GINConv` uses edge features by default, given that edge features exist (specify `use_edge_features=False` to not use edge features).
+- `molgraph.models`
+    - Note on `models`: models are currently being experimented with and will likely change in the future.
+    - `GIN` model implemented, based on the original paper. This model differ somewhat from a GIN implementation using `keras.Sequential` with `GINConv` layers, as it outputs node embeddings from each `GINConv` layer. These embeddings can be used for graph predictions, by performing readout on each embedding and conatenating it. Or it can be used for node/edge predictions by simply concatenating these embeddings. The embeddings outputted from the GIN model is stored in `node_feature` as a 3-D tf.Tensor (or 4-D tf.RaggedTensor). 
+    - `DMPNN` model changed to better match the implementation of the original paper (though some differences may still exist).
+
+### Minor features and improvements
+- `molgraph.layers`
+    - `normalization` is now by default set to None for most gnn layers (which means no normalization should be applied). 
+- `molgraph.chemistry`
+    - `tf_records` module now implements `writer`: a context manager which makes it easier to write tf records to file. `writer` seems to work fine, though it might be subject to changes in the future. Note: `tf_records.write` can still be used, though the `device` argument is depracated. To write tf records on CPU (given that GPU is available and used by default), use `with tf_records.writer(path) as writer: writer.write(data={'x': ...}, encoder=...)` instead.
+
+### Breaking changes
+- `molgraph.models`
+    - `DGIN` model has been removed. 
+    - `DMPNN` now takes different parameters.
+        - The first parameter of `DMPNN` and `MPNN` is `steps` and not `units` (`units` is the second parameter). 
+
+## Version 0.5.8 (2023-08-11)
 
 ### Bug fixes
 - `molgraph.layers`

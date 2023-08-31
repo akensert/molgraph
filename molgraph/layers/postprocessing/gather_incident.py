@@ -12,33 +12,27 @@ class GatherIncident(keras.layers.Layer):
 
     Useful for e.g., downstream edge and link classification.
 
-    **Example:**
+    Example usage:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
-    ...         'node_feature': [
-    ...             [[1.0, 0.0], [2.0, 0.0]],
-    ...             [[3.0, 0.0], [4.0, 0.0], [0.0, 5.0]]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
-    >>> graph_tensor = graph_tensor.merge()
     >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
     ...     molgraph.layers.GatherIncident(concat=True)
     ... ])
     >>> model(graph_tensor)
     <tf.Tensor: shape=(8, 4), dtype=float32, numpy=
-    array([[2., 0., 1., 0.],
-           [1., 0., 2., 0.],
-           [4., 0., 3., 0.],
-           [0., 5., 3., 0.],
-           [3., 0., 4., 0.],
-           [0., 5., 4., 0.],
-           [4., 0., 0., 5.],
-           [3., 0., 0., 5.]], dtype=float32)>
+    array([[1., 0., 1., 0.],
+           [1., 0., 1., 0.],
+           [1., 0., 1., 0.],
+           [0., 1., 1., 0.],
+           [1., 0., 1., 0.],
+           [0., 1., 1., 0.],
+           [1., 0., 0., 1.],
+           [1., 0., 0., 1.]], dtype=float32)>
 
     Args:
         concat (bool):

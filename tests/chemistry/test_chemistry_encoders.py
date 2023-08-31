@@ -93,6 +93,15 @@ class TestMolecularEncoder(unittest.TestCase):
         ])
 
         self.assertTrue(
+            tf.reduce_all(graph_tensor.separate()[1].node_feature == node_feature))
+        self.assertTrue(
+            tf.reduce_all(graph_tensor.separate()[1].edge_feature == edge_feature))
+        self.assertTrue(
+            tf.reduce_all(graph_tensor.separate()[1].edge_src == edge_src))
+        self.assertTrue(
+            tf.reduce_all(graph_tensor.separate()[1].edge_dst == edge_dst))
+
+        self.assertTrue(
             tf.reduce_all(graph_tensor[1].node_feature == node_feature))
         self.assertTrue(
             tf.reduce_all(graph_tensor[1].edge_feature == edge_feature))
@@ -100,15 +109,6 @@ class TestMolecularEncoder(unittest.TestCase):
             tf.reduce_all(graph_tensor[1].edge_src == edge_src))
         self.assertTrue(
             tf.reduce_all(graph_tensor[1].edge_dst == edge_dst))
-
-        self.assertTrue(
-            tf.reduce_all(graph_tensor.merge()[1].node_feature == node_feature))
-        self.assertTrue(
-            tf.reduce_all(graph_tensor.merge()[1].edge_feature == edge_feature))
-        self.assertTrue(
-            tf.reduce_all(graph_tensor.merge()[1].edge_src == edge_src))
-        self.assertTrue(
-            tf.reduce_all(graph_tensor.merge()[1].edge_dst == edge_dst))
         
 
 if __name__ == "__main__":

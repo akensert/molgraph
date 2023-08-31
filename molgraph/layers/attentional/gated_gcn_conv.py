@@ -26,79 +26,50 @@ class GatedGCNConv(gnn_layer.GNNLayer):
     Implementation is based on Dwivedi et al. (2022) [#]_, Bresson et al. (2019) [#]_,
     Joshi et al. (2019) [#]_, and Bresson et al. (2018) [#]_.
 
-    **Examples:**
-
-    Inputs a ``GraphTensor`` encoding (two) subgraphs:
+    Example usage:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
-    ...         'node_feature': [
-    ...             [[1.0, 0.0], [1.0, 0.0]],
-    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
-    ...         ],
-    ...         'edge_feature': [
-    ...             [[1.0, 0.0], [0.0, 1.0]],
-    ...             [[0.0, 1.0], [0.0, 1.0], [1.0, 0.0],
-    ...              [0.0, 1.0], [1.0, 0.0], [0.0, 1.0]]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
-    >>> # Build a model with GatedGCNConv
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.GatedGCNConv(16, activation='relu'),
-    ...     molgraph.layers.GatedGCNConv(16, activation='relu')
+    ...     molgraph.layers.GatedGCNConv(units=16),
+    ...     molgraph.layers.GatedGCNConv(units=16),
+    ...     molgraph.layers.GatedGCNConv(units=16),
+    ...     molgraph.layers.Readout(),
     ... ])
-    >>> gnn_model.output_shape
-    (None, None, 16)
-
-    Inputs a ``GraphTensor`` encoding a single disjoint graph:
+    >>> gnn_model(graph_tensor).shape
+    TensorShape([2, 16])
+    
+    Including edge features:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...         'edge_feature': [
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_feature=[[1., 0.], [0., 1.], [0., 1.], [0., 1.], 
+    ...                   [1., 0.], [0., 1.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
-    >>> # Build a model with GatedGCNConv
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.GatedGCNConv(16, activation='relu'),
-    ...     molgraph.layers.GatedGCNConv(16, activation='relu')
+    ...     molgraph.layers.GatedGCNConv(units=16, use_edge_features=True),
+    ...     molgraph.layers.GatedGCNConv(units=16, use_edge_features=True),
+    ...     molgraph.layers.GatedGCNConv(units=16, use_edge_features=True),
     ... ])
-    >>> gnn_model.output_shape
-    (None, 16)
+    >>> output = gnn_model(graph_tensor)
+    >>> output.node_feature.shape, output.edge_feature.shape
+    (TensorShape([5, 16]), TensorShape([8, 16]))
 
     Args:
         units (int, None):
             Number of output units.
-        use_edge_features (bool):
-            Whether or not to use edge features. Default to True.
         self_projection (bool):
             Whether to apply self projection. Default to True.
         normalization: (None, str, bool):
             Whether to apply layer normalization to the output. If batch 
-            normalization is desired, pass 'batch_norm'. Default to True.
+            normalization is desired, pass 'batch_norm'. Default to None.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -154,7 +125,7 @@ class GatedGCNConv(gnn_layer.GNNLayer):
         self,
         units: Optional[int] = None,
         self_projection: bool = True,
-        normalization: Union[None, str, bool] = 'layer_norm',
+        normalization: Union[None, str, bool] = None,
         residual: bool = True,
         dropout: Optional[float] = None,
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = 'relu',

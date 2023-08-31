@@ -31,141 +31,60 @@ class AttentiveFPConv(GATConv):
 
     The implementation is based on Xiong et al. (2020) [#]_.
 
-    **Examples:**
-
-    Inputs a ``GraphTensor`` encoding (two) subgraphs:
-
+    Example usage:
+    
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
-    ...         'node_feature': [
-    ...             [[1.0, 0.0], [1.0, 0.0]],
-    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
-    ...         ],
-    ...         'edge_feature': [
-    ...             [[1.0, 0.0], [0.0, 1.0]],
-    ...             [[0.0, 1.0], [0.0, 1.0], [1.0, 0.0],
-    ...              [0.0, 1.0], [1.0, 0.0], [0.0, 1.0]]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_feature=[[1., 0.], [0., 1.], [0., 1.], [0., 1.], 
+    ...                   [1., 0.], [0., 1.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
     >>> # Build a model with AttentiveFPConv
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
     ...     molgraph.layers.AttentiveFPConv(16, apply_initial_node_projection=True),
     ...     molgraph.layers.AttentiveFPConv(16)
     ... ])
-    >>> gnn_model.output_shape
-    (None, None, 16)
-
-    Inputs a ``GraphTensor`` encoding a single disjoint graph:
-
-    >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...         'edge_feature': [
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...     }
-    ... )
-    >>> # Build a model with AttentiveFPConv
-    >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.AttentiveFPConv(16, apply_initial_node_projection=True),
-    ...     molgraph.layers.AttentiveFPConv(16)
-    ... ])
-    >>> gnn_model.output_shape
-    (None, 16)
+    >>> gnn_model(graph_tensor).node_feature.shape
+    TensorShape([5, 16])
 
     Create a complete AttentiveFP model:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...         'edge_feature': [
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_feature=[[1., 0.], [0., 1.], [0., 1.], [0., 1.], 
+    ...                   [1., 0.], [0., 1.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
-    >>> # Build a model with AttentiveFPConv
     >>> attentive_fp = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
     ...     molgraph.layers.AttentiveFPConv(16, apply_initial_node_projection=True),
     ...     molgraph.layers.AttentiveFPConv(16),
     ...     molgraph.layers.AttentiveFPReadout(),
     ... ])
-    >>> attentive_fp(graph_tensor).shape.as_list()
-    [2, 16]
+    >>> attentive_fp(graph_tensor).shape
+    TensorShape([2, 16])
 
     Pass the same GRU cell to each layer to perform weight sharing:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...         'edge_feature': [
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_feature=[[1., 0.], [0., 1.], [0., 1.], [0., 1.], 
+    ...                   [1., 0.], [0., 1.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
     >>> gru_cell = tf.keras.layers.GRUCell(16) # same units as AttentiveFPConv
-    >>> # Build a model with AttentiveFPConv
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
     ...     molgraph.layers.AttentiveFPConv(
     ...         16, apply_initial_node_projection=True, gru_cell=gru_cell),
     ...     molgraph.layers.AttentiveFPConv(16, gru_cell=gru_cell)
     ... ])
-    >>> gnn_model.output_shape
-    (None, 16)
+    >>> gnn_model(graph_tensor).node_feature.shape
+    TensorShape([5, 16])
 
     Args:
         units (int, None):
@@ -187,7 +106,7 @@ class AttentiveFPConv(GATConv):
             Whether to apply self projection. Default to True.
         normalization: (None, str, bool):
             Whether to apply layer normalization to the output. If batch 
-            normalization is desired, pass 'batch_norm'. Default to True.
+            normalization is desired, pass 'batch_norm'. Default to None.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -239,7 +158,7 @@ class AttentiveFPConv(GATConv):
         num_heads: int = 8,
         merge_mode: Optional[str] = 'concat',
         self_projection: bool = True,
-        normalization: Union[None, str, bool] = 'layer_norm',
+        normalization: Union[None, str, bool] = None,
         residual: bool = True,
         dropout: Optional[float] = None,
         attention_activation: Union[

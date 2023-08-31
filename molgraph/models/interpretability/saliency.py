@@ -25,7 +25,7 @@ class SaliencyMapping(tf.Module):
 
     Alias: ``Saliency``
     
-    **Example:**
+    Example usage:
 
     >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
     ...     atom_encoder=molgraph.chemistry.Featurizer([
@@ -39,7 +39,6 @@ class SaliencyMapping(tf.Module):
     >>> esol['test']['x'] = encoder(esol['test']['x'])
     ...
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=esol['train']['x'].spec),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_1'),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_2'),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_3'),
@@ -53,7 +52,7 @@ class SaliencyMapping(tf.Module):
     ...     esol['train']['x'], esol['train']['y'], epochs=10, verbose=0)
     ...
     >>> saliency = molgraph.models.SaliencyMapping(model=gnn_model)
-    >>> saliency_maps = saliency(esol['test']['x'])
+    >>> saliency_maps = saliency(esol['test']['x'].separate())
     '''
 
     def __init__(
@@ -120,7 +119,7 @@ class SaliencyMapping(tf.Module):
         y: Optional[tf.Tensor],
     ) -> None:
 
-        input_signature = [x.unspecific_spec]
+        input_signature = [x.spec]
         if y is not None:
             y_signature = tf.TensorSpec(
                 shape=tf.TensorShape([None]).concatenate(y.shape[1:]), 
@@ -167,7 +166,7 @@ class IntegratedSaliencyMapping(SaliencyMapping):
 
     Alias: ``IntegratedSaliency``
 
-    **Example:**
+    Example usage:
 
     >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
     ...     atom_encoder=molgraph.chemistry.Featurizer([
@@ -180,7 +179,6 @@ class IntegratedSaliencyMapping(SaliencyMapping):
     >>> bbbp['test']['x'] = encoder(bbbp['test']['x'])
     ...
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=bbbp['train']['x'].spec),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_1'),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_2'),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_3'),
@@ -194,7 +192,7 @@ class IntegratedSaliencyMapping(SaliencyMapping):
     ...     bbbp['train']['x'], bbbp['train']['y'], epochs=10, verbose=0)
     ...
     >>> saliency = molgraph.models.IntegratedSaliencyMapping(model=gnn_model)
-    >>> saliency_maps = saliency(bbbp['test']['x'])
+    >>> saliency_maps = saliency(bbbp['test']['x'].separate())
     '''
 
     def __init__(
@@ -253,7 +251,7 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
 
     Alias: ``SmoothGradSaliency``
 
-    **Example:**
+    Example usage:
 
     >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
     ...     atom_encoder=molgraph.chemistry.Featurizer([
@@ -266,7 +264,6 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
     >>> esol['test']['x'] = encoder(esol['test']['x'])
     ...
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=esol['train']['x'].spec),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_1'),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_2'),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_3'),
@@ -280,7 +277,7 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
     ...     esol['train']['x'], esol['train']['y'], epochs=10, verbose=0)
     ...
     >>> saliency = molgraph.models.SmoothGradSaliencyMapping(model=gnn_model)
-    >>> saliency_maps = saliency(esol['test']['x'])
+    >>> saliency_maps = saliency(esol['test']['x'].separate())
     '''
     def __init__(
         self,

@@ -38,46 +38,30 @@ class GraphAutoEncoder(keras.Model):
             instance, if there are twice as many negative edges, should
             each negative edge be weighted 0.5 for the loss?
     
-    **Example:**
+    Example usage:
 
     >>> # Replace this graph_tensor with a large dataset of graphs
     >>> # Also accepts featurized graph tensors (via `chemistry.Featurizer`)
     >>> graph_tensor = molgraph.GraphTensor(
-    ...    data={
-    ...        'edge_src': [1, 4, 0, 2, 3, 1, 1, 0],
-    ...        'edge_dst': [0, 0, 1, 1, 1, 2, 3, 4],
-    ...        'node_feature': [
-    ...            'Sym:C|Hyb:SP3', 
-    ...            'Sym:C|Hyb:SP2', 
-    ...            'Sym:O|Hyb:SP2',
-    ...            'Sym:O|Hyb:SP2', 
-    ...            'Sym:N|Hyb:SP3'
-    ...        ],
-    ...        'edge_feature': [
-    ...            'BonTyp:SINGLE|Rot:1', 
-    ...            'BonTyp:SINGLE|Rot:0',
-    ...            'BonTyp:SINGLE|Rot:1', 
-    ...            'BonTyp:DOUBLE|Rot:0',
-    ...            'BonTyp:SINGLE|Rot:0', 
-    ...            'BonTyp:DOUBLE|Rot:0',
-    ...            'BonTyp:SINGLE|Rot:0', 
-    ...            'BonTyp:SINGLE|Rot:0'
-    ...        ],
-    ...        'graph_indicator': [0, 0, 0, 0, 0],
-    ...    }
+    ...     sizes=[5],
+    ...     edge_src=[1, 4, 0, 2, 3, 1, 1, 0],
+    ...     edge_dst=[0, 0, 1, 1, 1, 2, 3, 4],
+    ...     node_feature=['Sym:C|Hyb:SP3', 'Sym:C|Hyb:SP2', 'Sym:O|Hyb:SP2',
+    ...                   'Sym:O|Hyb:SP2', 'Sym:N|Hyb:SP3'],
+    ...     edge_feature=['BonTyp:SINGLE|Rot:1', 'BonTyp:SINGLE|Rot:0',
+    ...                   'BonTyp:SINGLE|Rot:1', 'BonTyp:DOUBLE|Rot:0',
+    ...                   'BonTyp:SINGLE|Rot:0', 'BonTyp:DOUBLE|Rot:0',
+    ...                   'BonTyp:SINGLE|Rot:0', 'BonTyp:SINGLE|Rot:0'],
     ... )
-    >>> graph_tensor = graph_tensor.separate()
     >>> node_embedding = molgraph.layers.NodeEmbeddingLookup(
-    ...    32, mask_token='[MASK]'
-    ... )
+    ...    32, mask_token='[MASK]')
     >>> edge_embedding = molgraph.layers.EdgeEmbeddingLookup(
-    ...    32, mask_token='[MASK]'
-    ... )
+    ...    32, mask_token='[MASK]')
     >>> node_embedding.adapt(graph_tensor)
     >>> edge_embedding.adapt(graph_tensor)
     >>> # Obtain GraphAutoEncoder model
     >>> encoder = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+    ...     tf.keras.layers.Input(type_spec=graph_tensor.spec),
     ...     node_embedding,
     ...     edge_embedding,
     ...     molgraph.layers.GATv2Conv(128),
@@ -382,45 +366,30 @@ class GraphVariationalAutoEncoder(GraphAutoEncoder):
             The increment rate of the beta value (updated each train step).
             Default to 1e-6.
     
-    **Example:**
+    Example usage:
 
     >>> # Replace this graph_tensor with a large dataset of graphs
     >>> # Also accepts featurized graph tensors (via `chemistry.Featurizer`)
     >>> graph_tensor = molgraph.GraphTensor(
-    ...    data={
-    ...        'edge_src': [1, 4, 0, 2, 3, 1, 1, 0],
-    ...        'edge_dst': [0, 0, 1, 1, 1, 2, 3, 4],
-    ...        'node_feature': [
-    ...            'Sym:C|Hyb:SP3', 
-    ...            'Sym:C|Hyb:SP2', 
-    ...            'Sym:O|Hyb:SP2',
-    ...            'Sym:O|Hyb:SP2', 
-    ...            'Sym:N|Hyb:SP3'
-    ...        ],
-    ...        'edge_feature': [
-    ...            'BonTyp:SINGLE|Rot:1', 
-    ...            'BonTyp:SINGLE|Rot:0',
-    ...            'BonTyp:SINGLE|Rot:1', 
-    ...            'BonTyp:DOUBLE|Rot:0',
-    ...            'BonTyp:SINGLE|Rot:0', 
-    ...            'BonTyp:DOUBLE|Rot:0',
-    ...            'BonTyp:SINGLE|Rot:0', 
-    ...            'BonTyp:SINGLE|Rot:0'
-    ...        ],
-    ...        'graph_indicator': [0, 0, 0, 0, 0],
-    ...    }
+    ...     sizes=[5],
+    ...     edge_src=[1, 4, 0, 2, 3, 1, 1, 0],
+    ...     edge_dst=[0, 0, 1, 1, 1, 2, 3, 4],
+    ...     node_feature=['Sym:C|Hyb:SP3', 'Sym:C|Hyb:SP2', 'Sym:O|Hyb:SP2',
+    ...                   'Sym:O|Hyb:SP2', 'Sym:N|Hyb:SP3'],
+    ...     edge_feature=['BonTyp:SINGLE|Rot:1', 'BonTyp:SINGLE|Rot:0',
+    ...                   'BonTyp:SINGLE|Rot:1', 'BonTyp:DOUBLE|Rot:0',
+    ...                   'BonTyp:SINGLE|Rot:0', 'BonTyp:DOUBLE|Rot:0',
+    ...                   'BonTyp:SINGLE|Rot:0', 'BonTyp:SINGLE|Rot:0'],
     ... )
     >>> graph_tensor = graph_tensor.separate()
     >>> node_embedding = molgraph.layers.NodeEmbeddingLookup(
-    ...    32, mask_token='[MASK]'
-    ... )
+    ...    32, mask_token='[MASK]')
     >>> edge_embedding = molgraph.layers.EdgeEmbeddingLookup(
-    ...    32, mask_token='[MASK]'
-    ... )
+    ...    32, mask_token='[MASK]')
     >>> node_embedding.adapt(graph_tensor)
     >>> edge_embedding.adapt(graph_tensor)
     >>> # Obtain the encoder of GVAE
-    >>> encoder_inputs = tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec)
+    >>> encoder_inputs = tf.keras.layers.Input(type_spec=graph_tensor.spec)
     >>> encoder_x = node_embedding(encoder_inputs)
     >>> encoder_x = edge_embedding(encoder_x)
     >>> encoder_x = molgraph.layers.GATv2Conv(128, name='shared_conv')(encoder_x)

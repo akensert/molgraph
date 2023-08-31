@@ -7,16 +7,541 @@ from tests.tensors._common import graph_tensor_4
 from tests.tensors._common import graph_tensor_5
 
 import unittest
+import tempfile
+import shutil
 
 import tensorflow as tf
 
 from molgraph.tensors.graph_tensor import GraphTensor
-
+from molgraph.chemistry import tf_records
 
 inputs = [graph_tensor_1, graph_tensor_2, graph_tensor_3]
 
 
 class TestGraphTensor(unittest.TestCase):
+
+    def test_ds_from_tensor_slices(self):
+        
+        def f(x):
+            return x
+        
+        graph_tensor = GraphTensor(
+            sizes=tf.constant([1, 2, 3], dtype=tf.int64),
+            node_feature=tf.constant([[1.], [1.], [2.],  [1.], [2.], [3.]]), 
+            edge_src=tf.constant([1, 2, 3, 4, 5], dtype=tf.int64),
+            edge_dst=tf.constant([2, 1, 4, 5, 3], dtype=tf.int64),
+            edge_state=tf.constant([1., 2., 3., 4., 5.]),
+            node_state=tf.constant([3., 4., 5., 6., 7., 8.])
+        )
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        for x in ds: 
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(lambda x: x)
+        for x in ds:
+            pass 
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(lambda x: x).batch(2)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(lambda x: x).batch(2).unbatch()
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(lambda x: x).batch(2).unbatch().batch(1)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).unbatch().batch(1)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).rebatch(3)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).map(lambda x: x)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).rebatch(3).map(lambda x: x).unbatch().batch(2)
+        for x in ds:
+            pass
+        
+    def test_ds_from_tensor_slices_ragged(self):
+
+        def f(x):
+            return x
+        
+        graph_tensor = GraphTensor(
+            sizes=tf.constant([1, 2, 3], dtype=tf.int64),
+            node_feature=tf.constant([[1.], [1.], [2.],  [1.], [2.], [3.]]), 
+            edge_src=tf.constant([1, 2, 3, 4, 5], dtype=tf.int64),
+            edge_dst=tf.constant([2, 1, 4, 5, 3], dtype=tf.int64),
+            edge_state=tf.constant([1., 2., 3., 4., 5.]),
+            node_state=tf.constant([3., 4., 5., 6., 7., 8.])
+        )
+
+        graph_tensor = graph_tensor.separate()
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        for x in ds: 
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(lambda x: x)
+        for x in ds:
+            pass 
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(lambda x: x).batch(2)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(lambda x: x).batch(2).unbatch()
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(lambda x: x).batch(2).unbatch().batch(1)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).unbatch().batch(1)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).rebatch(3)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).map(lambda x: x)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).rebatch(3).map(lambda x: x).unbatch().batch(2)
+        for x in ds:
+            pass
+    
+    def test_ds_from_tensor_slices_with_y(self):
+        
+        def f(x, y):
+            return x, y
+        
+        graph_tensor = GraphTensor(
+            sizes=tf.constant([1, 2, 3], dtype=tf.int64),
+            node_feature=tf.constant([[1.], [1.], [2.],  [1.], [2.], [3.]]), 
+            edge_src=tf.constant([1, 2, 3, 4, 5], dtype=tf.int64),
+            edge_dst=tf.constant([2, 1, 4, 5, 3], dtype=tf.int64),
+            edge_state=tf.constant([1., 2., 3., 4., 5.]),
+            node_state=tf.constant([3., 4., 5., 6., 7., 8.])
+        )
+
+        graph_tensor = (graph_tensor, tf.constant([[1.], [2.], [3.]]))
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        for x in ds: 
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f)
+        for x in ds:
+            pass 
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f).batch(2)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f).batch(2).unbatch()
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f).batch(2).map(f).unbatch().batch(1)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).unbatch().batch(1)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).rebatch(3)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).map(f)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).rebatch(3).map(f).unbatch().batch(2)
+        for x in ds:
+            pass
+
+    def test_ds_from_tensor_slices_ragged_with_y(self):
+        
+        def f(x, y):
+            return x, y
+
+        graph_tensor = GraphTensor(
+            sizes=tf.constant([1, 2, 3], dtype=tf.int64),
+            node_feature=tf.constant([[1.], [1.], [2.],  [1.], [2.], [3.]]), 
+            edge_src=tf.constant([1, 2, 3, 4, 5], dtype=tf.int64),
+            edge_dst=tf.constant([2, 1, 4, 5, 3], dtype=tf.int64),
+            edge_state=tf.constant([1., 2., 3., 4., 5.]),
+            node_state=tf.constant([3., 4., 5., 6., 7., 8.])
+        )
+
+        graph_tensor = (graph_tensor.separate(), tf.constant([[1.], [2.], [3.]]))
+        
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        for x in ds: 
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f)
+        for x in ds:
+            pass 
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f).batch(2)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f).batch(2).unbatch()
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f).batch(2).map(f).unbatch().batch(1)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).unbatch().batch(1)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).rebatch(3)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).map(f)
+        for x in ds:
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).rebatch(3).map(f).unbatch().batch(2)
+        for x in ds:
+            pass
+
+    def test_ds_from_tensor_slices_with_int32_and_y(self):
+        
+        def f(x, y):
+            return x, y
+        
+        graph_tensor = GraphTensor(
+            sizes=tf.constant([1, 2, 3], dtype=tf.int32),
+            node_feature=tf.constant([[1.], [1.], [2.],  [1.], [2.], [3.]]), 
+            edge_src=tf.constant([1, 2, 3, 4, 5], dtype=tf.int32),
+            edge_dst=tf.constant([2, 1, 4, 5, 3], dtype=tf.int32),
+            edge_state=tf.constant([1., 2., 3., 4., 5.]),
+            node_state=tf.constant([3., 4., 5., 6., 7., 8.])
+        )
+
+        graph_tensor = (graph_tensor, tf.constant([[1.], [2.], [3.]]))
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        for x in ds: 
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).map(f)
+        for x in ds:
+            pass 
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f).batch(2)
+        for x in ds:
+            pass 
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f).batch(2).map(f)
+        for x in ds:
+            pass 
+        
+        # -----
+
+        graph_tensor = GraphTensor(
+            sizes=tf.constant([1, 2, 3], dtype=tf.int32),
+            node_feature=tf.constant([[1.], [1.], [2.],  [1.], [2.], [3.]]), 
+            edge_src=tf.constant([1, 2, 3, 4, 5], dtype=tf.int64),
+            edge_dst=tf.constant([2, 1, 4, 5, 3], dtype=tf.int64),
+            edge_state=tf.constant([1., 2., 3., 4., 5.]),
+            node_state=tf.constant([3., 4., 5., 6., 7., 8.])
+        )
+
+        graph_tensor = (graph_tensor, tf.constant([[1.], [2.], [3.]]))
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        for x in ds: 
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).map(f)
+        for x in ds:
+            pass 
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f).batch(2)
+        for x in ds:
+            pass 
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f).batch(2).map(f)
+        for x in ds:
+            pass 
+
+        # -----
+
+        graph_tensor = GraphTensor(
+            sizes=tf.constant([1, 2, 3], dtype=tf.int64),
+            node_feature=tf.constant([[1.], [1.], [2.],  [1.], [2.], [3.]]), 
+            edge_src=tf.constant([1, 2, 3, 4, 5], dtype=tf.int32),
+            edge_dst=tf.constant([2, 1, 4, 5, 3], dtype=tf.int32),
+            edge_state=tf.constant([1., 2., 3., 4., 5.]),
+            node_state=tf.constant([3., 4., 5., 6., 7., 8.])
+        )
+
+        graph_tensor = (graph_tensor, tf.constant([[1.], [2.], [3.]]))
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        for x in ds: 
+            pass
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.batch(2).map(f)
+        for x in ds:
+            pass 
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f).batch(2)
+        for x in ds:
+            pass 
+
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        ds = ds.map(f).batch(2).map(f)
+        for x in ds:
+            pass 
+
+    def test_ds_from_tf_records(self):
+
+        def f(inputs):
+            return inputs 
+        
+        file = tempfile.NamedTemporaryFile()
+        filepath = file.name
+        file.close()
+
+
+        with tf_records.writer(filepath) as writer:
+
+
+            x1 = GraphTensor(
+                sizes=tf.constant(1, dtype=tf.int64),
+                node_feature=tf.constant([[1.]]), 
+                edge_src=tf.constant([], dtype=tf.int64),
+                edge_dst=tf.constant([], dtype=tf.int64),
+            )
+
+            x2 = GraphTensor(
+                sizes=tf.constant(2, dtype=tf.int64),
+                node_feature=tf.constant([[1.], [2.]]), 
+                edge_src=tf.constant([0, 1], dtype=tf.int64),
+                edge_dst=tf.constant([1, 0], dtype=tf.int64),
+            )
+
+            x3 = GraphTensor(
+                sizes=tf.constant(3, dtype=tf.int64),
+                node_feature=tf.constant([[1.], [2.], [3.]]), 
+                edge_src=tf.constant([0, 1, 2], dtype=tf.int64),
+                edge_dst=tf.constant([1, 2, 0], dtype=tf.int64),
+            )
+
+            y1 = [1.]
+            y2 = [2.]
+            y3 = [3.]
+
+            writer.write({'x': [x1, x2, x3], 'y': [y1, y2, y3]})
+
+        ds = tf_records.load(filepath)
+
+        for x in ds.map(f).batch(2).map(f):
+            pass
+
+        ds = tf_records.load(filepath)
+
+        for x in ds.batch(1).unbatch().batch(2):
+            pass
+
+        shutil.rmtree(filepath)
+
+        self.assertTrue(True)
+
+    def test_ds_from_tensors(self):
+        t1 = GraphTensor(
+            sizes=tf.constant(1, dtype=tf.int64),
+            node_feature=tf.constant([[1.]]), 
+            edge_src=tf.constant([], dtype=tf.int64),
+            edge_dst=tf.constant([], dtype=tf.int64),
+        )
+
+        t2 = GraphTensor(
+            sizes=tf.constant(2, dtype=tf.int64),
+            node_feature=tf.constant([[1.], [2.]]), 
+            edge_src=tf.constant([0, 1], dtype=tf.int64),
+            edge_dst=tf.constant([1, 0], dtype=tf.int64),
+        )
+
+        t3 = GraphTensor(
+            sizes=tf.constant(3, dtype=tf.int64),
+            node_feature=tf.constant([[1.], [2.], [3.]]), 
+            edge_src=tf.constant([0, 1, 2], dtype=tf.int64),
+            edge_dst=tf.constant([1, 2, 0], dtype=tf.int64),
+        )
+        ds = tf.data.Dataset.from_tensors((t1, t2, t3))
+
+        for x in ds:
+            pass
+
+    def test_ds_via_keras(self):
+
+        graph_tensor = GraphTensor(
+            sizes=tf.constant([1, 2, 3], dtype=tf.int64),
+            node_feature=tf.constant([[1.], [1.], [2.],  [1.], [2.], [3.]]), 
+            edge_src=tf.constant([1, 2, 3, 4, 5], dtype=tf.int32),
+            edge_dst=tf.constant([2, 1, 4, 5, 3], dtype=tf.int32),
+            edge_state=tf.constant([1., 2., 3., 4., 5.]),
+            node_state=tf.constant([3., 4., 5., 6., 7., 8.])
+        )
+
+        class L(tf.keras.layers.Layer):
+
+            def __init__(self):
+                super().__init__()
+
+            def call(self, g):
+                return g
+            
+        model = tf.keras.Sequential([L()])
+        model.compile()
+        model.predict(graph_tensor, verbose=0, batch_size=2)
+
+        model = tf.keras.Sequential([L()])
+        model.compile()
+        graph_tensor = graph_tensor.separate()
+        model.predict(graph_tensor, verbose=0, batch_size=2)
+
+        model = tf.keras.Sequential([L()])
+        model.compile()
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        model.predict(ds, verbose=0, batch_size=2)
+
+        model = tf.keras.Sequential([L()])
+        model.compile()
+        graph_tensor = graph_tensor.merge()
+        ds = tf.data.Dataset.from_tensor_slices(graph_tensor)
+        model.predict(ds, verbose=0, batch_size=2)
+
+    def test_graph_tensor_split(self):
+        # TODO: create tests
+        pass
+
+    def test_graph_tensor_with_tf_function(self):
+
+        @tf.function
+        def _tf_separate(x):
+            return x.separate()
+
+        @tf.function
+        def _tf_merge(x):
+            return x.merge()
+
+        @tf.function
+        def _tf_update(x):
+            return x.update({'node_feature': x.node_feature[:, :6]})
+
+        @tf.function
+        def _tf_remove(x):
+            return x.remove(['edge_feature'])
+            
+        @tf.function
+        def _tf_propagate(x):
+            return x.propagate()
+
+        @tf.function
+        def _tf_index_lookup(x):
+            return x[:2]
+
+        @tf.function
+        def _tf_attribute_lookup(x):
+            return x.node_feature 
+        
+        for x in inputs:
+            x = (
+                _tf_attribute_lookup(
+                _tf_index_lookup(
+                _tf_propagate(
+                _tf_remove(
+                _tf_update(
+                _tf_merge(
+                _tf_separate(
+                _tf_merge(x))))))))
+            )
+            self.assertTrue(True)
 
     def _test_shape(
         self, 
@@ -55,27 +580,25 @@ class TestGraphTensor(unittest.TestCase):
                 tf.unique(graph_tensor.graph_indicator)[0].shape.as_list()[0], 
                 num_graphs)
             
-    def _test_dtype(self, graph_tensor, edge_dtype=tf.int32):
+    def _test_dtype(self, graph_tensor, edge_dtype):
         self.assertIs(graph_tensor.node_feature.dtype, tf.float32)
         self.assertIs(graph_tensor.edge_feature.dtype, tf.float32)
         self.assertIs(graph_tensor.edge_src.dtype, edge_dtype)
         self.assertIs(graph_tensor.edge_dst.dtype, edge_dtype)
-        if graph_tensor.graph_indicator is not None:
-            self.assertIs(graph_tensor.graph_indicator.dtype, edge_dtype)
 
     def test_merge(self):
         merged_graph_tensor_1 = graph_tensor_1.merge()
         self._test_shape(merged_graph_tensor_1, 3, 32, 64)
-        self._test_dtype(merged_graph_tensor_1)
+        self._test_dtype(merged_graph_tensor_1, tf.int32)
 
         merged_graph_tensor_2 = graph_tensor_2.merge()
         self._test_shape(merged_graph_tensor_2, 1, 1, 0)
-        self._test_dtype(merged_graph_tensor_2)
+        self._test_dtype(merged_graph_tensor_2, tf.int32)
 
         merged_graph_tensor_3 = graph_tensor_3.merge()
         self._test_shape(merged_graph_tensor_3, 3, 5, 4)
-        self._test_dtype(merged_graph_tensor_3)
-
+        self._test_dtype(merged_graph_tensor_3, tf.int32)
+        
         merged_graph_tensor_4 = graph_tensor_4.merge()
         self._test_shape(merged_graph_tensor_4, 3, 32, 64)
         self._test_dtype(merged_graph_tensor_4, tf.int64)
@@ -84,15 +607,15 @@ class TestGraphTensor(unittest.TestCase):
 
         separated_graph_tensor_1 = graph_tensor_1.merge().separate()
         self._test_shape(separated_graph_tensor_1, 3, 32, 64)
-        self._test_dtype(separated_graph_tensor_1)
+        self._test_dtype(separated_graph_tensor_1, tf.int32)
 
         separated_graph_tensor_2 = graph_tensor_2.merge().separate()
         self._test_shape(separated_graph_tensor_2, 1, 1, 0)
-        self._test_dtype(separated_graph_tensor_2)
+        self._test_dtype(separated_graph_tensor_2, tf.int32)
 
         separated_graph_tensor_3 = graph_tensor_3.merge().separate()
         self._test_shape(separated_graph_tensor_3, 3, 5, 4)
-        self._test_dtype(separated_graph_tensor_3)
+        self._test_dtype(separated_graph_tensor_3, tf.int32)
 
         separated_graph_tensor_4 = graph_tensor_4.merge().separate()
         self._test_shape(separated_graph_tensor_4, 3, 32, 64)
@@ -102,17 +625,17 @@ class TestGraphTensor(unittest.TestCase):
         merged_graph_tensor_1 = graph_tensor_1.merge()
         merged_graph_tensor_1 = merged_graph_tensor_1.propagate()
         self._test_shape(merged_graph_tensor_1, 3, 32, 64)
-        self._test_dtype(merged_graph_tensor_1)
+        self._test_dtype(merged_graph_tensor_1, tf.int32)
 
         merged_graph_tensor_2 = graph_tensor_2.merge()
         merged_graph_tensor_2 = merged_graph_tensor_2.propagate()
         self._test_shape(merged_graph_tensor_2, 1, 1, 0)
-        self._test_dtype(merged_graph_tensor_2)
+        self._test_dtype(merged_graph_tensor_2, tf.int32)
 
         merged_graph_tensor_3 = graph_tensor_3.merge()
         merged_graph_tensor_3 = merged_graph_tensor_3.propagate()
         self._test_shape(merged_graph_tensor_3, 3, 5, 4)
-        self._test_dtype(merged_graph_tensor_3)
+        self._test_dtype(merged_graph_tensor_3, tf.int32)
 
         merged_graph_tensor_4 = graph_tensor_4.merge()
         merged_graph_tensor_4 = merged_graph_tensor_4.propagate()
@@ -123,17 +646,17 @@ class TestGraphTensor(unittest.TestCase):
         separated_graph_tensor_1 = graph_tensor_1.merge().separate()
         separated_graph_tensor_1 = separated_graph_tensor_1.propagate()
         self._test_shape(separated_graph_tensor_1, 3, 32, 64)
-        self._test_dtype(separated_graph_tensor_1)
+        self._test_dtype(separated_graph_tensor_1, tf.int32)
 
         separated_graph_tensor_2 = graph_tensor_2.merge().separate()
         separated_graph_tensor_2 = separated_graph_tensor_2.propagate()
         self._test_shape(separated_graph_tensor_2, 1, 1, 0)
-        self._test_dtype(separated_graph_tensor_2)
+        self._test_dtype(separated_graph_tensor_2, tf.int32)
 
         separated_graph_tensor_3 = graph_tensor_3.merge().separate()
         separated_graph_tensor_3 = separated_graph_tensor_3.propagate()
         self._test_shape(separated_graph_tensor_3, 3, 5, 4)
-        self._test_dtype(separated_graph_tensor_3)
+        self._test_dtype(separated_graph_tensor_3, tf.int32)
 
         separated_graph_tensor_4 = graph_tensor_4.merge().separate()
         separated_graph_tensor_4 = separated_graph_tensor_4.propagate()
@@ -874,12 +1397,12 @@ class TestGraphTensor(unittest.TestCase):
         test = tf.shape(out.merge().node_feature) == tf.shape(out_m.node_feature)
         self.assertTrue(tf.reduce_all(test).numpy())
 
-        node_feature = inp['node_feature']
+        node_feature = inp.node_feature
         test = tf.shape(node_feature) == tf.shape(inp.node_feature)
         self.assertTrue(test)
 
         inp = inp.update({'node_feature_2': inp.node_feature})
-        node_feature_2 = inp['node_feature_2']
+        node_feature_2 = inp.node_feature_2
         test = tf.shape(node_feature_2) == tf.shape(inp.node_feature_2)
         self.assertTrue(test)
 
@@ -905,11 +1428,11 @@ class TestGraphTensor(unittest.TestCase):
         self.assertIsInstance(exception, tf.errors.InvalidArgumentError)
 
         try:
-            node_feature_3 = inp['node_feature_3']
+            node_feature_3 = inp.node_feature_3
             exception = None
         except Exception as e:
             exception = e
-        self.assertIsInstance(exception, KeyError)
+        self.assertIsInstance(exception, AttributeError)
         
     def test_attributes(self):
         for t in inputs:
@@ -934,34 +1457,10 @@ class TestGraphTensor(unittest.TestCase):
     def test_spec(self):
         for t in inputs:
             t_spec = t.spec
-            for s in t_spec._data_spec.values():
+            for s in t_spec.data_spec.values():
                 test = isinstance(s, tf.RaggedTensorSpec)
                 self.assertTrue(test)
                 test = s.shape[0] is not None 
-                self.assertTrue(test)
-            
-            test = t_spec.shape[0] is not None 
-            self.assertTrue(test)
-
-        for t in inputs:
-            t = t.merge()
-            t_spec = t.spec
-            for s in t_spec._data_spec.values():
-                test = isinstance(s, tf.TensorSpec)
-                self.assertTrue(test)
-                test = s.shape[0] is not None 
-                self.assertTrue(test)
-            
-            test = t_spec.shape[0] is not None 
-            self.assertTrue(test)
-
-    def test_unspecific_spec(self):
-        for t in inputs:
-            t_spec = t.unspecific_spec
-            for s in t_spec._data_spec.values():
-                test = isinstance(s, tf.RaggedTensorSpec)
-                self.assertTrue(test)
-                test = s.shape[0] is None 
                 self.assertTrue(test)
             
             test = t_spec.shape[0] is None 
@@ -969,8 +1468,8 @@ class TestGraphTensor(unittest.TestCase):
 
         for t in inputs:
             t = t.merge()
-            t_spec = t.unspecific_spec
-            for s in t_spec._data_spec.values():
+            t_spec = t.spec
+            for s in t_spec.data_spec.values():
                 test = isinstance(s, tf.TensorSpec)
                 self.assertTrue(test)
                 test = s.shape[0] is None 
@@ -989,46 +1488,33 @@ class TestGraphTensor(unittest.TestCase):
             self.assertIsNone(exception)
 
             for t, s in zip(
-                tensor._data.values(), 
-                tensor.spec._data_spec.values()
+                tensor.data.values(), 
+                tensor.spec.data_spec.values()
             ):
                 test1 = t.shape == s.shape
                 test2 = t.dtype == s.dtype 
                 test3 = t.ragged_rank == s.ragged_rank
                 self.assertTrue(all([test1, test2, test3]))
 
-            test1 = tensor.shape == tensor.spec.shape 
+            test1 = tensor.shape == tf.type_spec_from_value(tensor).shape 
             test2 = tensor.dtype == tensor.spec.dtype 
             test3 = tensor.rank == tensor.spec.rank 
+
             self.assertTrue(all([test1, test2, test3]))
 
             tensor = tensor.merge()
             for t, s in zip(
-                tensor._data.values(), 
-                tensor.spec._data_spec.values()
+                tensor.data.values(), 
+                tensor.spec.data_spec.values()
             ):
-                test1 = t.shape == s.shape
+                test1 = t.shape.rank == s.shape.rank
                 test2 = t.dtype == s.dtype 
                 self.assertTrue(all([test1, test2, test3]))
 
-            test1 = tensor.shape == tensor.spec.shape 
+            test1 = tensor.shape.rank == tensor.spec.shape.rank
             test2 = tensor.dtype == tensor.spec.dtype 
             test3 = tensor.rank == tensor.spec.rank 
             self.assertTrue(all([test1, test2, test3]))
-
-    def test_dataset(self):
-        y_batch = tf.constant([1., 2., 3., 4., 5., 6., 7.])
-        x_batch = tf.concat(inputs, axis=0)
-        ds = tf.data.Dataset.from_tensor_slices((x_batch, y_batch))
-        ds = ds.batch(2).unbatch()
-
-        for i, (x, y) in enumerate(ds.batch(1).map(lambda x, y: (x.merge(), y)).prefetch(-1)):
-            test = tf.shape(x.node_feature) == tf.shape(x_batch[i].node_feature)
-            self.assertTrue(tf.reduce_all(test).numpy())
-        
-        for x, y in ds.batch(2).take(1):
-            test = tf.shape(x.node_feature) == tf.shape(x_batch[:2].node_feature)
-            self.assertTrue(test.numpy())
 
     def test_graph_tensor_concat(self):
         out = tf.concat(inputs, axis=0)
@@ -1038,15 +1524,6 @@ class TestGraphTensor(unittest.TestCase):
         out = tf.concat([i.merge() for i in inputs], axis=0)
         test = tf.shape(out.node_feature) == tf.shape(graph_tensor_123.merge().node_feature)
         self.assertTrue(tf.reduce_all(test).numpy())
-
-    def test_graph_tensor_stack(self):
-        inp_flat = []
-        for inp in inputs:
-            for i in inp:
-                inp_flat.append(i)
-        out = tf.stack(inp_flat, axis=0)
-        test = tf.shape(out.node_feature) == tf.shape(graph_tensor_123.node_feature)
-        self.assertTrue(test)
         
     def test_graph_tensor_boolean_mask(self):
 

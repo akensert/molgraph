@@ -25,7 +25,7 @@ bond_encoder = Featurizer([
 encoder = MolecularGraphEncoder(atom_encoder, bond_encoder)
 
 # Typical graph, with nested ragged tensors
-input_1a = encoder(['OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N'])
+input_1a = encoder(['OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N']).separate()
 # Typical graph, with nested tensors
 input_2a = input_1a.merge()
 # Typical graph, with nested ragged tensors, without edge features
@@ -33,13 +33,13 @@ input_3a = input_1a.remove(['edge_feature'])
 # Typical graph, with nested tensors, without edge features
 input_4a = input_3a.merge()
 # Single node graph, with nested tensors
-input_5a = encoder(['C']).merge()
+input_5a = encoder(['C'])
 # Single node graph, with nested tensors, without edge features
 input_6a = input_5a.remove(['edge_feature'])
 # Disconnected graph (first node is disconnected), with nested tensors
-input_7a = encoder(['[Na+].[O-]c1ccccc1']).merge()
+input_7a = encoder(['[Na+].[O-]c1ccccc1'])
 # Disconnected graph (last node is disconnected), with nested tensors
-input_8a = encoder(['[O-]c1ccccc1.[Na+]']).merge()
+input_8a = encoder(['[O-]c1ccccc1.[Na+]'])
 
 inputs = [
     input_1a, input_2a, input_3a, input_4a, 
@@ -51,15 +51,15 @@ encoder = MolecularGraphEncoder3D(
     atom_encoder, conformer_generator=ConformerGenerator())
 
 # Typical graph, with nested ragged tensors
-input_1b = encoder(['OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N'])
+input_1b = encoder(['OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N']).separate()
 # Typical graph, with nested tensors
 input_2b = input_1b.merge()
 # Single node graph, with nested tensors
-input_5b = encoder(['C']).merge()
+input_5b = encoder(['C'])
 # Disconnected graph (first node is disconnected), with nested tensors
-input_7b = encoder(['[Na+].[O-]c1ccccc1']).merge()
+input_7b = encoder(['[Na+].[O-]c1ccccc1'])
 # Disconnected graph (last node is disconnected), with nested tensors
-input_8b = encoder(['[O-]c1ccccc1.[Na+]']).merge()
+input_8b = encoder(['[O-]c1ccccc1.[Na+]'])
 
 inputs_3d = [
     input_1b, input_2b,           
@@ -80,7 +80,7 @@ encoder = MolecularGraphEncoder(
     atom_encoder, bond_encoder)
 
 # Typical graph, with nested ragged tensors
-input_1c = encoder(['OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N'])
+input_1c = encoder(['OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N']).separate()
 # Typical graph, with nested tensors
 input_2c = input_1c.merge()
 # Typical graph, with nested ragged tensors, without edge features
@@ -88,13 +88,13 @@ input_3c = input_1c.remove(['edge_feature'])
 # Typical graph, with nested tensors, without edge features
 input_4c = input_3c.merge()
 # Single node graph, with nested tensors
-input_5c = encoder(['C']).merge()
+input_5c = encoder(['C'])
 # Single node graph, with nested tensors, without edge features
 input_6c = input_5c.remove(['edge_feature'])
 # Disconnected graph (first node is disconnected), with nested tensors
-input_7c = encoder(['[Na+].[O-]c1ccccc1']).merge()
+input_7c = encoder(['[Na+].[O-]c1ccccc1'])
 # Disconnected graph (last node is disconnected), with nested tensors
-input_8c = encoder(['[O-]c1ccccc1.[Na+]']).merge()
+input_8c = encoder(['[O-]c1ccccc1.[Na+]'])
 
 inputs_tokenized = [
     input_1c, input_2c, input_3c, input_4c, 
@@ -117,12 +117,12 @@ class BaseLayerTestCase(unittest.TestCase):
 
                 units = layer_instance1.units 
 
-                self.assertEqual(x1.node_feature.shape[0], inp.shape[0])
+                self.assertEqual(x1.node_feature.shape[0], inp.node_feature.shape[0])
                 self.assertEqual(x1.node_feature.shape[-1], units)
 
                 x2 = layer_instance2(x1)
 
-                self.assertEqual(x2.node_feature.shape[0], inp.shape[0])
+                self.assertEqual(x2.node_feature.shape[0], inp.node_feature.shape[0])
                 self.assertEqual(x2.node_feature.shape[-1], units)
                 
                 if layer_instance1.update_edge_features and x1.edge_feature is not None:
@@ -170,12 +170,12 @@ class BaseGeometricLayerTestCase(unittest.TestCase):
 
                 units = layer_instance1.units 
 
-                self.assertEqual(x1.node_feature.shape[0], inp.shape[0])
+                self.assertEqual(x1.node_feature.shape[0], inp.node_feature.shape[0])
                 self.assertEqual(x1.node_feature.shape[-1], units)
 
                 x2 = layer_instance2(x1)
 
-                self.assertEqual(x2.node_feature.shape[0], inp.shape[0])
+                self.assertEqual(x2.node_feature.shape[0], inp.node_feature.shape[0])
                 self.assertEqual(x2.node_feature.shape[-1], units)
                 
 

@@ -30,7 +30,7 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
     
     Can also be used to create new GNN layers.
     
-    **Example usage:**
+    Example usage:
 
     >>> class MyGCNLayer(molgraph.layers.GNNLayer):
     ...
@@ -58,7 +58,7 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
             Number of output units.
         normalization: (None, str, bool):
             Whether to apply layer normalization to the output. If batch 
-            normalization is desired, pass 'batch_norm'. Default to True.
+            normalization is desired, pass 'batch_norm'. Default to None.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -107,7 +107,7 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
     def __init__(
         self,
         units: int,
-        normalization: Union[None, str, bool] = 'layer_norm',
+        normalization: Union[None, str, bool] = None,
         residual: Optional[bool] = False,
         dropout: Optional[float] = None,
         activation: Union[Callable[[tf.Tensor], tf.Tensor], str, None] = None,
@@ -121,20 +121,6 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
         bias_constraint: Optional[constraints.Constraint] = None,
         **kwargs
     ) -> None:
-
-        if kwargs.get('batch_norm', None) is not None:
-            warn(
-                (
-                    '`batch_norm` will be deprecated in the near future. '
-                    'Please use `normalization` instead.'
-                ), 
-                DeprecationWarning, 
-                stacklevel=2
-            )
-
-        normalization = (
-            'batch_norm' if kwargs.pop('batch_norm', None) else normalization
-        )
 
         self.update_step_fn = kwargs.pop('update_step', None)
         self.use_edge_features = kwargs.pop('use_edge_features', None) 
@@ -227,7 +213,7 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
             self._call(graph_tensor), graph_tensor)
 
         return graph_tensor_orig.update({
-            k: v for (k, v) in graph_tensor_updated._data.items() if
+            k: v for (k, v) in graph_tensor_updated.data.items() if
             k not in ['edge_dst', 'edge_src', 'graph_indicator']
         })
     
@@ -490,11 +476,11 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
                 row_splits_dtype=spec.row_splits_dtype,
                 flat_values_spec=spec.flat_values_spec)
     
-        data_spec = input_signature._data_spec
+        data_spec = input_signature.data_spec
         data_spec['node_feature'] = _update_spec(data_spec['node_feature'])
         if self.update_edge_features:
             data_spec['edge_feature'] = _update_spec(data_spec['edge_feature'])
-        return input_signature.__class__(data_spec)
+        return input_signature.__class__(**data_spec)
 
     @classmethod
     def from_config(cls: Type['GNNLayer'], config: dict) -> 'GNNLayer':
@@ -623,7 +609,7 @@ class _DefaultUpdateStep(layers.Layer):
 
     def __init__(
         self, 
-        normalization: Union[None, str, bool, layers.Layer] = 'layer_norm',
+        normalization: Union[None, str, bool, layers.Layer] = None,
         activation: Union[Callable[[tf.Tensor], tf.Tensor], str, None] = 'relu',
         residual: Optional[bool] = True,
         dropout: Optional[float] = None,
@@ -634,10 +620,14 @@ class _DefaultUpdateStep(layers.Layer):
 
         if isinstance(normalization, str):
             self.normalization = (
-                layers.BatchNormalization() if normalization.startswith('batch')
+                layers.BatchNormalization() 
+                if normalization.lower().startswith('batch')
                 else layers.LayerNormalization())
         elif isinstance(normalization, bool):
-            self.normalization = layers.LayerNormalization()
+            if normalization:
+                self.normalization = layers.LayerNormalization()
+            else:
+                self.normalization = None
         else:
             self.normalization = normalization
 
@@ -651,7 +641,7 @@ class _DefaultUpdateStep(layers.Layer):
         states: tf.Tensor,
     ) -> tf.Tensor:
         outputs = inputs
-        if self.normalization:
+        if self.normalization is not None:
             outputs = self.normalization(outputs)
         if self.activation is not None:
             outputs = self.activation(outputs)

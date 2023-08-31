@@ -16,28 +16,24 @@ class DotProductIncident(keras.layers.Layer):
 
     Useful for e.g., edge and link classification.
 
-    **Example:**
+    Example usage:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
-    ...         'node_feature': [
-    ...             [[2.0, 0.0], [2.0, 0.0]],
-    ...             [[3.0, 0.0], [3.0, 0.0], [0.0, 3.0]]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
     >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
     ...     molgraph.layers.DotProductIncident()
     ... ])
     >>> model(graph_tensor)
     GraphTensor(
-      edge_src=<tf.RaggedTensor: shape=(2, None), dtype=int32>,
-      edge_dst=<tf.RaggedTensor: shape=(2, None), dtype=int32>,
-      node_feature=<tf.RaggedTensor: shape=(2, None, 2), dtype=float32>,
-      edge_score=<tf.RaggedTensor: shape=(2, None, 1), dtype=float32>)
+      sizes=<tf.Tensor: shape=(2,), dtype=int32>,
+      node_feature=<tf.Tensor: shape=(5, 2), dtype=float32>,
+      edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
+      edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
+      edge_score=<tf.Tensor: shape=(8, 1), dtype=float32>)
 
     Args:
         normalize (bool):

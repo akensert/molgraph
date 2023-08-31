@@ -86,7 +86,7 @@ class BaseMolecularGraphEncoder(ABC):
                 graph_tensor_list = [
                     gt for gt in graph_tensor_list if gt is not None]
 
-                return tf.stack(graph_tensor_list, axis=0)
+                return tf.concat(graph_tensor_list, axis=0)
 
             return self.call(inputs, **kwargs)
 
@@ -144,12 +144,12 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     >>> # Merge subgraphs into a single disjoint graph
     >>> graph_tensor.merge()
     GraphTensor(
+      sizes=<tf.Tensor: shape=(2,), dtype=int32>,
+      node_feature=<tf.Tensor: shape=(6, 119), dtype=float32>,
       edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
       edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
-      node_feature=<tf.Tensor: shape=(6, 119), dtype=float32>,
       edge_feature=<tf.Tensor: shape=(8, 4), dtype=float32>,
-      node_position=<tf.Tensor: shape=(6, 10), dtype=float32>,
-      graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
+      node_position=<tf.Tensor: shape=(6, 10), dtype=float32>)
 
     Generate a molecular graph with tokenizers:
 
@@ -176,13 +176,12 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     >>> # Merge subgraphs into a single disjoint graph
     >>> graph_tensor.merge()
     GraphTensor(
+      sizes=<tf.Tensor: shape=(2,), dtype=int32>,
+      node_feature=<tf.Tensor: shape=(6,), dtype=string>,
       edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
       edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
-      node_feature=<tf.Tensor: shape=(6,), dtype=string>,
       edge_feature=<tf.Tensor: shape=(8,), dtype=string>,
-      node_position=<tf.Tensor: shape=(6, 10), dtype=float32>,
-      graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
-
+      node_position=<tf.Tensor: shape=(6, 10), dtype=float32>)
 
     Obtain numerical encodings of atoms (``node_feature``) and bonds
     (``bond_feature``) with the EmbeddingLookup layer. This is only necessary
@@ -218,7 +217,6 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     >>> edge_embedding.adapt(graph_tensor)
     >>> # Build model
     >>> model = tf.keras.Sequential([
-    ...    tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
     ...    node_embedding,
     ...    edge_embedding,
     ... ])
@@ -226,12 +224,12 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     >>> graph_tensor = model(graph_tensor)
     >>> graph_tensor
     GraphTensor(
+      sizes=<tf.Tensor: shape=(2,), dtype=int32>,
+      node_feature=<tf.Tensor: shape=(6, 16), dtype=float32>,
       edge_src=<tf.Tensor: shape=(8,), dtype=int32>,
       edge_dst=<tf.Tensor: shape=(8,), dtype=int32>,
-      node_feature=<tf.Tensor: shape=(6, 16), dtype=float32>,
       edge_feature=<tf.Tensor: shape=(8, 8), dtype=float32>,
-      node_position=<tf.Tensor: shape=(6, 10), dtype=float32>,
-      graph_indicator=<tf.Tensor: shape=(6,), dtype=int32>)
+      node_position=<tf.Tensor: shape=(6, 10), dtype=float32>)
     '''
 
     bond_encoder: Optional[Union[
@@ -278,7 +276,6 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
         # Obtain node (atom) features
         atoms = _get_atoms(molecule)
         data['node_feature'] = self.atom_encoder(atoms)
-
         # Obtain edge (bond) features (if `bond_encoder` exist)
         if self.bond_encoder is not None:
             bonds = _get_bonds(molecule, *sparse_adjacency)
@@ -296,7 +293,7 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
             for field, encoder in self.auxiliary_encoders.items():
                 data[field] = encoder(molecule)
 
-        return GraphTensor(data)
+        return GraphTensor(**data)
 
 
 @dataclass
@@ -410,7 +407,7 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
 
         data['edge_feature'] = np.array(edge_feature, dtype=np.float32)
 
-        return GraphTensor(data)
+        return GraphTensor(**data)
 
 
 def _get_atoms(molecule: Chem.Mol) -> List[Chem.Atom]:

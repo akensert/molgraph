@@ -16,26 +16,21 @@ class SetGatherReadout(layers.Layer):
 
     Implementation based on Gilmer et al. (2017) [#]_ and Vinyals et al. (2016) [#]_.
 
-    **Example:**
+    Example usage:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
-    ...         'node_feature': [
-    ...             [[1.0, 0.0], [1.0, 0.0]],
-    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
     >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     # molgraph.layers.GCNConv(4),
+    ...     # molgraph.layers.GCNConv(2),
     ...     molgraph.layers.SetGatherReadout()
     ... ])
-    >>> # Note: SetGatherReadout increases output dim (from 2 to 4)
-    >>> model.output_shape
-    (None, 4)
+    >>> # Note: SetGatherReadout doubles output dim (from 2 to 4)
+    >>> model(graph_tensor).shape
+    TensorShape([2, 4])
 
     Args:
         steps (int):
@@ -71,7 +66,7 @@ class SetGatherReadout(layers.Layer):
             tensor = tensor.merge()
 
         node_dim = tensor.node_feature.shape[-1]
-        graph_indicator = tf.squeeze(tensor.graph_indicator)
+        graph_indicator = tensor.graph_indicator
         node_feature = tensor.node_feature
 
         # Obtain the number of molecules in the batch

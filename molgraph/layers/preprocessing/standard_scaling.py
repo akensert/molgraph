@@ -31,92 +31,39 @@ class StandardScaling(PreprocessingLayer):
     Adapt layer on ``GraphTensor`` directly:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
-    ...         'node_feature': [
-    ...             [[2.0, 0.5], [2.0, 0.0]],
-    ...             [[2.0, 0.0], [2.0, 0.5], [0.0, 2.0]]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[2., .5], [2., 0.], [2., 0.], [2., .5], [0., 2.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
-    >>> # Initialize layer
     >>> preprocessing = molgraph.layers.StandardScaling(
     ...    feature='node_feature')
-    >>> # Adapt layer to graph_tensor
     >>> preprocessing.adapt(graph_tensor)
-    >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     preprocessing,
-    ... ])
-    >>> graph_tensor = model(graph_tensor)
-    >>> graph_tensor.merge().node_feature
-    <tf.Tensor: shape=(5, 2), dtype=float32, numpy=
-    array([[ 0.50000006, -0.1360828 ],
-           [ 0.50000006, -0.8164967 ],
-           [ 0.50000006, -0.8164967 ],
-           [ 0.50000006, -0.1360828 ],
-           [-2.0000002 ,  1.9051588 ]], dtype=float32)>
-
-    Adapt layer on ``tf.data.Dataset`` constructed from ``GraphTensor``:
-
-    >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
-    ...         'node_feature': [
-    ...             [[2.0, 0.5], [2.0, 0.0]],
-    ...             [[2.0, 0.0], [2.0, 0.5], [0.0, 2.0]]
-    ...         ],
-    ...     }
-    ... )
-    >>> # Obtain dataset
-    >>> ds = tf.data.Dataset.from_tensor_slices(graph_tensor).batch(2)
-    >>> # Initialize layer
-    >>> preprocessing = molgraph.layers.StandardScaling(
-    ...    feature='node_feature')
-    >>> # Adapt layer to graph_tensor
-    >>> preprocessing.adapt(ds)
-    >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     preprocessing,
-    ... ])
-    >>> output = model.predict(ds, verbose=0)
-    >>> output.merge().node_feature
-    <tf.Tensor: shape=(5, 2), dtype=float32, numpy=
-    array([[ 0.50000006, -0.1360828 ],
-           [ 0.50000006, -0.8164967 ],
-           [ 0.50000006, -0.8164967 ],
-           [ 0.50000006, -0.1360828 ],
-           [-2.0000002 ,  1.9051588 ]], dtype=float32)>
-
-    Adapt layer on merged ``GraphTensor``:
-
-    >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [2.0, 0.5],
-    ...             [2.0, 0.0],
-    ...             [2.0, 0.0],
-    ...             [2.0, 0.5],
-    ...             [0.0, 2.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...     }
-    ... )
-    >>> # Initialize layer
-    >>> preprocessing = molgraph.layers.StandardScaling(
-    ...    feature='node_feature')
-    >>> # Adapt layer to graph_tensor
-    >>> preprocessing.adapt(graph_tensor)
-    >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     preprocessing,
-    ... ])
+    >>> model = tf.keras.Sequential([preprocessing,])
     >>> graph_tensor = model(graph_tensor)
     >>> graph_tensor.node_feature
+    <tf.Tensor: shape=(5, 2), dtype=float32, numpy=
+    array([[ 0.49999997, -0.1360828 ],
+           [ 0.49999997, -0.8164967 ],
+           [ 0.49999997, -0.8164967 ],
+           [ 0.49999997, -0.1360828 ],
+           [-2.        ,  1.9051588 ]], dtype=float32)>
+
+    Adapt layer on a tf.data.Dataset:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     sizes=[2, 3],
+    ...     node_feature=[[2., .5], [2., 0.], [2., 0.], [2., .5], [0., 2.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
+    ... )
+    >>> ds = tf.data.Dataset.from_tensor_slices(graph_tensor).batch(2)
+    >>> preprocessing = molgraph.layers.StandardScaling(
+    ...    feature='node_feature')
+    >>> preprocessing.adapt(ds)
+    >>> model = tf.keras.Sequential([preprocessing])
+    >>> output = model.predict(ds, verbose=0)
+    >>> output.node_feature
     <tf.Tensor: shape=(5, 2), dtype=float32, numpy=
     array([[ 0.49999997, -0.1360828 ],
            [ 0.49999997, -0.8164967 ],
@@ -178,13 +125,18 @@ class StandardScaling(PreprocessingLayer):
                 The number of steps of adaption. If None, the number of
                 samples divided by the batch_size is used. Default to None.
         '''
+
         if not isinstance(data,  GraphTensor):
             data = data.map(
                 lambda x: getattr(x, self.feature))
+            for x in data.take(1):
+                self.build(x.shape)
         else:
             data = getattr(data, self.feature)
-        super().adapt(data, batch_size=batch_size, steps=steps)
+            self.build(data.shape)
 
+        super().adapt(data, batch_size=batch_size, steps=steps)
+        
     def call(self, data):
         '''Defines the computation from inputs to outputs.
 
@@ -202,6 +154,7 @@ class StandardScaling(PreprocessingLayer):
                 ``node_feature`` component or the ``edge_feature``
                 component (of the ``GraphTensor``) are updated.
         '''
+
         feature = getattr(data, self.feature)
 
         if isinstance(feature, tf.RaggedTensor):
@@ -407,97 +360,42 @@ class VarianceThreshold(StandardScaling):
     on the ``edge_feature`` component of the ``GraphTensor``. If not specified,
     the ``node_feature`` component will be considered.
 
-    **Examples:**
-
-    Adapt layer on ``GraphTensor`` directly:
+    Example usage:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
-    ...         'node_feature': [
-    ...             [[2.0, 0.5], [2.0, 0.0]],
-    ...             [[2.0, 0.0], [2.0, 0.5], [0.0, 2.0]]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[2., .5], [2., 0.], [2., 0.], [2., .5], [0., 2.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
-    >>> # Initialize layer
     >>> preprocessing = molgraph.layers.VarianceThreshold(
     ...    feature='node_feature', variance_threshold=0.6)
-    >>> # Adapt layer to graph_tensor
     >>> preprocessing.adapt(graph_tensor)
-    >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     preprocessing,
-    ... ])
-    >>> graph_tensor = model(graph_tensor)
-    >>> graph_tensor.merge().node_feature
-    <tf.Tensor: shape=(5, 1), dtype=float32, numpy=
-    array([[2.],
-           [2.],
-           [2.],
-           [2.],
-           [0.]], dtype=float32)>
-
-    Adapt layer on ``tf.data.Dataset`` constructed from ``GraphTensor``:
-
-    >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
-    ...         'node_feature': [
-    ...             [[2.0, 0.5], [2.0, 0.0]],
-    ...             [[2.0, 0.0], [2.0, 0.5], [0.0, 2.0]]
-    ...         ],
-    ...     }
-    ... )
-    >>> # Obtain dataset
-    >>> ds = tf.data.Dataset.from_tensor_slices(graph_tensor).batch(2)
-    >>> # Initialize layer
-    >>> preprocessing = molgraph.layers.VarianceThreshold(
-    ...    feature='node_feature', variance_threshold=0.6)
-    >>> # Adapt layer to graph_tensor
-    >>> preprocessing.adapt(ds)
-    >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     preprocessing,
-    ... ])
-    >>> output = model.predict(ds, verbose=0)
-    >>> output.merge().node_feature
-    <tf.Tensor: shape=(5, 1), dtype=float32, numpy=
-    array([[2.],
-           [2.],
-           [2.],
-           [2.],
-           [0.]], dtype=float32)>
-
-    Adapt layer on merged ``GraphTensor``:
-
-    >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [2.0, 0.5],
-    ...             [2.0, 0.0],
-    ...             [2.0, 0.0],
-    ...             [2.0, 0.5],
-    ...             [0.0, 2.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...     }
-    ... )
-    >>> # Initialize layer
-    >>> preprocessing = molgraph.layers.VarianceThreshold(
-    ...    feature='node_feature', variance_threshold=0.6)
-    >>> # Adapt layer to graph_tensor
-    >>> preprocessing.adapt(graph_tensor)
-    >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     preprocessing,
-    ... ])
+    >>> model = tf.keras.Sequential([preprocessing])
     >>> graph_tensor = model(graph_tensor)
     >>> graph_tensor.node_feature
+    <tf.Tensor: shape=(5, 1), dtype=float32, numpy=
+    array([[2.],
+           [2.],
+           [2.],
+           [2.],
+           [0.]], dtype=float32)>
+
+    Adapt layer on a tf.data.Dataset:
+
+    >>> graph_tensor = molgraph.GraphTensor(
+    ...     sizes=[2, 3],
+    ...     node_feature=[[2., .5], [2., 0.], [2., 0.], [2., .5], [0., 2.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
+    ... )
+    >>> ds = tf.data.Dataset.from_tensor_slices(graph_tensor).batch(2)
+    >>> preprocessing = molgraph.layers.VarianceThreshold(
+    ...    feature='node_feature', variance_threshold=0.6)
+    >>> preprocessing.adapt(ds)
+    >>> model = tf.keras.Sequential([preprocessing])
+    >>> output = model.predict(ds, verbose=0)
+    >>> output.node_feature
     <tf.Tensor: shape=(5, 1), dtype=float32, numpy=
     array([[2.],
            [2.],

@@ -9,6 +9,8 @@ import multiprocessing
 from glob import glob
 from time import sleep
 from warnings import warn
+from contextlib import contextmanager 
+from dataclasses import dataclass
 
 from typing import Optional
 from typing import Union
@@ -18,7 +20,6 @@ from typing import Tuple
 from typing import Any
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.tensors.graph_tensor import GraphTensorSpec
 from molgraph.chemistry.molecular_encoders import MolecularGraphEncoder
 from molgraph.chemistry.molecular_encoders import MolecularGraphEncoder3D
 from molgraph.chemistry.benchmark.datasets import Dataset
@@ -26,13 +27,26 @@ from molgraph.chemistry.benchmark.datasets import Dataset
 
 # TODO: Clean up code.
 
+@dataclass
+class Writer:
+    path: str
+    num_files: Optional[int] = None
+    num_processes: Optional[int] = None
+
+    def write(self, data, encoder=None):
+        return write(self.path, data, encoder, self.num_files, self.num_processes)
+    
+@contextmanager
+def writer(path, num_files=None, num_processes=None, device='/cpu:0'):
+    with tf.device(device):
+        yield Writer(path, num_files, num_processes)
+
 def write(
     path: str,
     data: dict,
-    encoder: Union[MolecularGraphEncoder, MolecularGraphEncoder3D, None],
+    encoder: Union[MolecularGraphEncoder, MolecularGraphEncoder3D, None] = None,
     num_files: Optional[int] = None,
     num_processes: Optional[int] = None,
-    device: str = '/cpu:0',
     **kwargs
 ) -> None:
 
@@ -52,6 +66,42 @@ def write(
     ...     path='/tmp/dummy_records/',
     ...     data={'x': x, 'y': y},
     ...     encoder=encoder
+    ... )
+
+    **Important**: If the current enviromnet is running on a GPU by default, 
+    please use the `writer` context manager instead:
+
+    >>> with molgraph.chemistry.tf_records.writer('/tmp/dummy_records/') as writer:
+    ...    
+    ...     # In contrast to previous example, lets obtain the GraphTensor 
+    ...     # instances outside the write function. Note: this would cause 
+    ...     # issues if run on a GPU (namely, without the writer context manager)
+    ...
+    ...     t1 = GraphTensor(
+    ...         node_feature=tf.constant([[1.]]), 
+    ...         edge_src=tf.constant([], dtype=tf.int64),
+    ...         edge_dst=tf.constant([], dtype=tf.int64))
+    ...
+    ...     x2 = GraphTensor(
+    ...         node_feature=tf.constant([[1.], [2.]]), 
+    ...         edge_src=tf.constant([0, 1], dtype=tf.int64),
+    ...         edge_dst=tf.constant([1, 0], dtype=tf.int64))
+    ...
+    ...     x3 = GraphTensor(
+    ...         node_feature=tf.constant([[1.], [2.], [3.]]), 
+    ...         edge_src=tf.constant([0, 1, 2], dtype=tf.int64),
+    ...         edge_dst=tf.constant([1, 2, 0], dtype=tf.int64))
+    ...     
+    ...     # Should not specify path, num_files or num_processes; encoder is 
+    ...     # optional: here not needed as we already obtained the graph tensors.
+    ...     writer.write( # doctest: +SKIP
+    ...         data={'x': [x1, x2, x3], 'y': [0., 1., 2.]},
+    ...         encoder=None # encoder not needed as graph tensors are passed
+    ...     )
+    ...
+    >>> # load tf records as tf.data.Dataset
+    >>> ds = molgraph.chemistry.tf_records.load( # doctest: +SKIP
+    ...     '/tmp/dummy_records/'
     ... )
 
     Args:
@@ -79,13 +129,12 @@ def write(
             processes significantly speeds up writing of TF records. If 
             ``num_files`` < ``num_processes``, only ``num_files`` processes 
             will be used. Default to None.
-        device (str):
-            The device to use. Default to `/cpu:0`.
 
     Returns:
         ``None``
     '''
-
+    
+        
     inputs = kwargs.pop('inputs', None)
     if inputs is not None:
         warn(
@@ -96,7 +145,18 @@ def write(
             DeprecationWarning,
             stacklevel=2
         )
-    
+
+    device = kwargs.pop('device', None)
+    if device is not None:
+        warn(
+            (
+                '`device` argument will be depracated in the near future, '
+                ' please use tf_records.writer instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2
+        )
+
     assert 'x' in data, ('`data` requires field `x`.')
 
     os.makedirs(path, exist_ok=True)
@@ -118,9 +178,14 @@ def write(
                 value[0] if isinstance(value[0], GraphTensor) else 
                 encoder(value[0])
             )
-            graph_tensor_spec = graph_tensor.unspecific_spec._data_spec
-            graph_tensor_spec.pop('graph_indicator')
-            spec[key] = GraphTensorSpec(graph_tensor_spec)
+            graph_tensor_spec = tf.type_spec_from_value(graph_tensor)
+            # graph_tensor_spec.pop('graph_indicator')
+            def add_batch_dim(x):
+                return tf.TensorSpec(shape=[None] + x.shape[1:], dtype=x.dtype)
+            
+            data_spec = graph_tensor_spec.data_spec 
+            data_spec = tf.nest.map_structure(add_batch_dim, data_spec)
+            spec[key] = GraphTensor.Spec(sizes=graph_tensor_spec.sizes, **data_spec)
         else:
             spec[key] = tf.type_spec_from_value(value[0])
 
@@ -146,6 +211,7 @@ def write(
     processes = []
     # Loop chunk-wise:
     # [path_1, x_chunk_1, y_chunk_1], ..., [path_n, x_chunk_n, y_chunk_n]
+    
     for path, *values in zip(paths, *data_values):
 
         # Do not start new processes if 'num_processes' are still alive
@@ -160,11 +226,11 @@ def write(
         # Create dictionary to keep track of the different data components:
         # {'x': x_chunk_i, 'y': y_chunk_i}
         data_chunk = dict(zip(data_keys, values))
-
+        
         # Start process. Will write (nested) data chunk to tf records
         process = multiprocessing.Process(
             target=_write_tfrecords_to_file,
-            args=(path, data_chunk, encoder, device)
+            args=(path, data_chunk, encoder)
         )
         processes.append(process)
         process.start()
@@ -244,7 +310,6 @@ def _write_tfrecords_to_file(
         MolecularGraphEncoder3D, 
         None
     ] = None,
-    device: str = '/cpu:0',
 ) -> None:
     # Zip nested data chunks:
     # {'x': ['C', 'CC', ...], 'y': [1, 2, ...]} -> [('C', 1), ('CC', 2), ...]
@@ -252,14 +317,16 @@ def _write_tfrecords_to_file(
     data_values = list(zip(*data_chunk.values()))
 
     # Write tf records using 'device'
-    with tf.device(device), tf.io.TFRecordWriter(path) as writer:
+    with tf.io.TFRecordWriter(path) as writer:
 
         # Loop over each tuple in chunk (e.g. each (x, y) pair)
         for value in data_values:
+    
             # Create dictionary to keep track of data component:
             # ('C', 1) -> {'x': 'C', 'y': 1}
             value = dict(zip(data_keys, value))
             x = value.pop('x')
+           
             if not isinstance(x, GraphTensor):
                 graph_tensor = encoder(x)
                 if graph_tensor is None:
@@ -269,11 +336,12 @@ def _write_tfrecords_to_file(
                 graph_tensor = x
 
             # Extract graph tensor data components and convert to bytes feature
-            graph_tensor_data = graph_tensor._data.copy()
-            graph_tensor_data.pop('graph_indicator')
+            graph_tensor_data = graph_tensor.data
+
+            # graph_tensor_data.pop('graph_indicator')
             example = tf.nest.map_structure(
                 lambda x: _to_bytes_feature(x), graph_tensor_data)
-            
+
             # Convert remaining data components (non-GraphTensor instances)
             # to bytes features
             for k, v in value.items():
@@ -281,29 +349,21 @@ def _write_tfrecords_to_file(
 
             # Serialize and write bytes features to tf records.
             serialized = _serialize_example(example)
+
             writer.write(serialized)
 
 def _parse_features(
     example_proto: tf.Tensor,
-    specs: Dict[str, Union[GraphTensorSpec, tf.TensorSpec]],
+    specs: Dict[str, Union[GraphTensor.Spec, tf.TensorSpec]],
     extract_tuple: Optional[Union[List[str], Tuple[str]]] = None,
 ) -> Dict[str, Union[GraphTensor, tf.Tensor]]:
 
     graph_tensor_spec = specs.pop('x')
-    graph_tensor_spec_data = graph_tensor_spec._data_spec
-    graph_tensor_spec_data = tf.nest.map_structure(
-        lambda spec: tf.RaggedTensorSpec(
-            shape=spec.shape, 
-            dtype=spec.dtype, 
-            ragged_rank=0, 
-            row_splits_dtype=graph_tensor_spec_data['edge_src'].dtype
-        ),
-        graph_tensor_spec_data
-    )
+    graph_tensor_data_spec = graph_tensor_spec.data_spec
 
     feature_description = tf.nest.map_structure(
         lambda _: tf.io.FixedLenFeature([], tf.string), 
-        graph_tensor_spec_data)
+        graph_tensor_data_spec)
     
     example = tf.io.parse_single_example(
         serialized=example_proto, 
@@ -312,9 +372,15 @@ def _parse_features(
     graph_tensor_data = tf.nest.map_structure(
         lambda x, s: tf.io.parse_tensor(x, s.dtype), 
         example, 
-        graph_tensor_spec_data)
+        graph_tensor_data_spec)
     
-    graph_tensor = GraphTensor(graph_tensor_data, graph_tensor_spec_data)
+    graph_tensor_data = tf.nest.map_structure(
+        lambda x, s: tf.ensure_shape(x, s.shape),
+        graph_tensor_data,
+        graph_tensor_data_spec
+    )
+
+    graph_tensor = GraphTensor(**graph_tensor_data)
 
     if specs:
         feature_description = tf.nest.map_structure(
@@ -345,27 +411,27 @@ def _to_bytes_feature(value: Union[tf.Tensor, np.ndarray]) -> tf.train.Feature:
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 def _serialize_spec(
-    spec: Union[GraphTensorSpec, tf.TensorSpec]
+    spec: Union[GraphTensor.Spec, tf.TensorSpec]
 ) -> Union[Dict[str, Dict[str, Any]], Dict[str, Any]]:
-    if isinstance(spec, GraphTensorSpec):
+    if isinstance(spec, GraphTensor.Spec):
         return {
             k: {'shape': v.shape.as_list(), 'dtype': v.dtype.name}
-            for (k, v) in spec._data_spec.items()}
+            for (k, v) in spec.data_spec.items()}
     return {
         'shape': spec.shape.as_list(), 'dtype': spec.dtype.name}
 
 def _deserialize_spec(
     serialized_spec: Union[Dict[str, Dict[str, Any]], Dict[str, Any]]
-) -> Union[GraphTensorSpec, tf.TensorSpec]:
+) -> Union[GraphTensor.Spec, tf.TensorSpec]:
     if 'node_feature' in serialized_spec:
-        return GraphTensorSpec({
+        return GraphTensor.Spec(**{
             k: _deserialize_spec(v) for (k, v) in serialized_spec.items()
         })
     return tf.TensorSpec(
         shape=serialized_spec['shape'], dtype=serialized_spec['dtype'])
 
 def _specs_to_json(
-    specs: Dict[str, Union[GraphTensorSpec, tf.TensorSpec]],
+    specs: Dict[str, Union[GraphTensor.Spec, tf.TensorSpec]],
     path: str
 ) -> None:
     specs = {k: _serialize_spec(v) for (k, v) in specs.items()}
@@ -374,7 +440,7 @@ def _specs_to_json(
 
 def _specs_from_json(
     path: str
-) -> Dict[str, Union[GraphTensorSpec, tf.TensorSpec]]:
+) -> Dict[str, Union[GraphTensor.Spec, tf.TensorSpec]]:
     with open(path) as in_file:
         specs = json.load(in_file)
     return {k: _deserialize_spec(v) for (k, v) in specs.items()}

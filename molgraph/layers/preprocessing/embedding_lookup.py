@@ -29,60 +29,39 @@ class EmbeddingLookup(layers.StringLookup):
     Instead of specifying `feature`, ``NodeEmbeddingLookup(...)`` or 
     ``EdgeEmbeddingLookup(...)`` can be used instead.
 
-    **Examples:**
-
-    Adapt layer on ``GraphTensor`` directly:
+    Example usage:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             'Sym:C', 'Sym:C', 'Sym:C', 'Sym:O', 'Sym:N',
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=['Sym:C', 'Sym:C', 'Sym:C', 'Sym:O', 'Sym:N'],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
-    >>> # Initialize layer
     >>> embedding = molgraph.layers.EmbeddingLookup(
     ...    feature='node_feature', output_dim=4)
-    >>> # Adapt layer to graph_tensor
     >>> embedding.adapt(graph_tensor)
-    >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     embedding,
-    ... ])
+    >>> model = tf.keras.Sequential([embedding])
     >>> graph_tensor = model(graph_tensor)
     >>> graph_tensor.node_feature.shape
     TensorShape([5, 4])
 
-    Adapt layer on dataset, constructed from ``GraphTensor``:
+    Adapt layer on a tf.data.Dataset:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [3, 4, 2, 4, 3, 2]],
-    ...         'edge_dst': [[0, 1], [2, 2, 3, 3, 4, 4]],
-    ...         'node_feature': [
-    ...             ['Sym:C', 'Sym:C'], ['Sym:C', 'Sym:O', 'Sym:N'],
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=['Sym:C', 'Sym:C', 'Sym:C', 'Sym:O', 'Sym:N'],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
-    >>> # Obtain dataset
     >>> ds = tf.data.Dataset.from_tensor_slices(graph_tensor).batch(2)
-    >>> # Initialize layer
     >>> embedding = molgraph.layers.EmbeddingLookup(
     ...    feature='node_feature', output_dim=4)
-    >>> # Adapt layer to graph_tensor
     >>> embedding.adapt(ds)
-    >>> # Build model
-    >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     embedding,
-    ... ])
-    >>> # Predict (obtain new GraphTensor)
+    >>> model = tf.keras.Sequential([embedding])
     >>> output = model.predict(ds, verbose=0)
     >>> output.node_feature.shape
-    TensorShape([2, None, 4])
+    TensorShape([5, 4])
+
 
     Args:
         output_dim (int):
@@ -165,23 +144,20 @@ class EmbeddingLookup(layers.StringLookup):
                 The number of steps of adaption. If None, the number of
                 samples divided by the batch_size is used. Default to None.
         '''
+
         if not isinstance(data, GraphTensor):
             data = data.map(
                 lambda x: getattr(x, self.feature))
+            for x in data.take(1):
+                super().build(x.shape)
         else:
             data = getattr(data, self.feature)
+            super().build(data.shape)
+
         super().adapt(data, batch_size=batch_size, steps=steps)
 
-        self.embeddings = self.add_weight(
-            shape=(self.vocabulary_size(), self.output_dim),
-            dtype=tf.float32,
-            initializer=self.embeddings_initializer,
-            name='embeddings',
-            regularizer=self.embeddings_regularizer,
-            constraint=self.embeddings_constraint,
-            experimental_autocast=False
-        )
-        
+        self._add_embedding()
+
     def call(self, tensor: GraphTensor) -> GraphTensor:
         '''Defines the computation from inputs to outputs.
 
@@ -199,6 +175,10 @@ class EmbeddingLookup(layers.StringLookup):
                 ``node_feature`` component or the ``edge_feature``
                 component (of the ``GraphTensor``) are updated.
         '''
+        if not hasattr(self, 'embeddings'):
+            with tf.init_scope():
+                self._add_embedding()
+
         tensor = tensor.update({
             self.feature: super().call(getattr(tensor, self.feature))
         })
@@ -206,20 +186,6 @@ class EmbeddingLookup(layers.StringLookup):
             self.feature: tf.nn.embedding_lookup(
                 self.embeddings, getattr(tensor, self.feature))
         })
-    
-    def build(self, input_shape):
-        super().build(input_shape)
-        if not hasattr(self, 'embeddings'):
-            with tf.init_scope():
-                self.embeddings = self.add_weight(
-                    shape=(self.vocabulary_size(), self.output_dim),
-                    dtype=tf.float32,
-                    initializer=self.embeddings_initializer,
-                    name='embeddings',
-                    regularizer=self.embeddings_regularizer,
-                    constraint=self.embeddings_constraint,
-                    experimental_autocast=False
-                )
 
     def compute_output_shape(
         self, 
@@ -241,6 +207,16 @@ class EmbeddingLookup(layers.StringLookup):
         })
         return base_config
 
+    def _add_embedding(self) -> None:
+        self.embeddings = self.add_weight(
+            shape=(self.vocabulary_size(), self.output_dim),
+            dtype=tf.float32,
+            initializer=self.embeddings_initializer,
+            name='embeddings',
+            regularizer=self.embeddings_regularizer,
+            constraint=self.embeddings_constraint,
+            experimental_autocast=False
+        )
 
 @register_keras_serializable(package='molgraph')
 class NodeEmbeddingLookup(EmbeddingLookup):

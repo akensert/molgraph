@@ -22,44 +22,27 @@ class AttentiveFPReadout(tf.keras.layers.Layer):
 
     The implementation is based on Xiong et al. (2020) [#]_.
 
-    **Examples:**
+    Example usage:
 
     Create a complete AttentiveFP model:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...         'edge_feature': [
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_feature=[[1., 0.], [0., 1.], [0., 1.], [0., 1.], 
+    ...                   [1., 0.], [0., 1.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
     >>> # Build a model with AttentiveFPConv
     >>> attentive_fp = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
     ...     molgraph.layers.AttentiveFPConv(16, apply_initial_node_projection=True),
     ...     molgraph.layers.AttentiveFPConv(16),
     ...     # ... 
     ...     molgraph.layers.AttentiveFPReadout(steps=4),
     ... ])
-    >>> attentive_fp(graph_tensor).shape.as_list()
-    [2, 16]
+    >>> attentive_fp(graph_tensor).shape
+    TensorShape([2, 16])
 
     Args:
         steps (int):

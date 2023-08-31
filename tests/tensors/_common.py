@@ -19,19 +19,19 @@ bond_encoder = Featurizer([
 encoder = MolecularGraphEncoder(atom_encoder, bond_encoder)
 
 graph_tensor_1 = encoder([
-    'OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N', '[Na+].[O-]c1ccccc1'])
+    'OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N', '[Na+].[O-]c1ccccc1']).separate()
 graph_tensor_2 = encoder([
-    'C'])
+    'C']).separate()
 graph_tensor_3 = encoder([
-    'CC', 'C', 'CC'])
+    'CC', 'C', 'CC']).separate()
 graph_tensor_4 = encoder([
     'OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N', '[Na+].[O-]c1ccccc1'],
-    index_dtype='int64')
+    index_dtype='int64').separate()
 graph_tensor_5 = encoder([
-    'CCC', '[Na+].[O-]c1ccccc1', 'C'])
+    'CCC', '[Na+].[O-]c1ccccc1', 'C']).separate()
 
 graph_tensor_1_12 = encoder([
-    'C(C(=O)O)N', '[Na+].[O-]c1ccccc1'])
+    'C(C(=O)O)N', '[Na+].[O-]c1ccccc1']).separate()
 
 graph_tensor_123 = encoder([
     'OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 
@@ -41,4 +41,4 @@ graph_tensor_123 = encoder([
     'CC', 
     'C', 
     'CC'
-])
+]).separate()

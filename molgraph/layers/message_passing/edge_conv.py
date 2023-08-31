@@ -27,51 +27,24 @@ class EdgeConv(tf.keras.layers.Layer):
     of molecules with a single atom, please add self loops: 
     ``molgraph.chemistry.MolecularGraphEncoder(..., self_loops=True)``
 
-    **Examples:**
-
-    Build a DGIN model. Note that the DGIN model below differs from `molgraph.models.DGIN` in some
-    ways. For instance, it uses the very previous edge states (in `molgraph.layers.EdgeConv`) and 
-    node states (in `molgraph.layers.GINConv`) as residual ("skip connections") rather than the very 
-    initial edge states and node states respectively. Furthermore, this implementation also allows us to use
-    GRU as the update function, though default is to use a Dense layer. 
+    Example usage:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...         'edge_feature': [
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_feature=[[1., 0.], [0., 1.], [0., 1.], [0., 1.], 
+    ...                   [1., 0.], [0., 1.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
-    >>> # Build a DGIN model for binary classificaton
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.EdgeConv(16),                           # will produce 'edge_state' component
-    ...     molgraph.layers.EdgeConv(16),                           # will produce 'edge_state' component
-    ...     molgraph.layers.NodeReadout(target='edge_state'),       # target='edge_state' is default
-    ...     molgraph.layers.GINConv(32),
-    ...     molgraph.layers.GINConv(32),
+    ...     molgraph.layers.EdgeConv(16),                      # will produce 'edge_state' component
+    ...     molgraph.layers.EdgeConv(16),                      # will produce 'edge_state' component
+    ...     molgraph.layers.NodeReadout(target='edge_state'),  # target='edge_state' is default
     ...     molgraph.layers.Readout(),
-    ...     tf.keras.layers.Dense(1, activation='sigmoid')
     ... ])
-    >>> gnn_model.output_shape
-    (None, 1)
+    >>> gnn_model(graph_tensor).shape
+    TensorShape([2, 16])
 
     Args:
         units (int, None):

@@ -17,7 +17,7 @@ class TestSavedModelAPI(unittest.TestCase):
 
     def test_saved_model(self):
         model = tf.keras.Sequential([
-            tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+            tf.keras.layers.Input(type_spec=graph_tensor.spec),
             gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.attentional.gt_conv.GTConv(128),
@@ -38,7 +38,7 @@ class TestSavedModelAPI(unittest.TestCase):
 
     def test_saved_model_keras(self):
         model = tf.keras.Sequential([
-            tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
+            tf.keras.layers.Input(type_spec=graph_tensor.spec),
             gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.attentional.gt_conv.GTConv(128),
@@ -61,7 +61,7 @@ class TestSavedModelAPI(unittest.TestCase):
     def test_saved_model_merged_graph_tensor(self):
         
         model = tf.keras.Sequential([
-            tf.keras.layers.Input(type_spec=graph_tensor_merged.unspecific_spec),
+            tf.keras.layers.Input(type_spec=graph_tensor_merged.spec),
             gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.attentional.gt_conv.GTConv(128),
@@ -79,6 +79,29 @@ class TestSavedModelAPI(unittest.TestCase):
         shutil.rmtree(filename)
 
         test = np.all(output_before.numpy().round(5) == output_after.numpy().round(5))
+        self.assertTrue(test)
+
+    def test_saved_model_merged_graph_tensor_no_excplit_spec_and_different_size(self):
+        
+        model = tf.keras.Sequential([
+          #  tf.keras.layers.Input(type_spec=graph_tensor_merged.spec),
+            gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
+            gnn_layers.attentional.gt_conv.GTConv(128),
+            gnn_layers.attentional.gt_conv.GTConv(128),
+            gnn_layers.readout.segment_pool.SegmentPoolingReadout(),
+            tf.keras.layers.Dense(1),
+        ])
+        output_before = model(graph_tensor_merged)
+        file = tempfile.NamedTemporaryFile()
+        filename = file.name
+        file.close()
+        tf.saved_model.save(model, filename)
+        loaded_model = tf.saved_model.load(filename)
+        output_after = loaded_model(graph_tensor_merged[:1])
+
+        shutil.rmtree(filename)
+
+        test = np.all(output_before[:1].numpy().round(5) == output_after.numpy().round(5))
         self.assertTrue(test)
 
 

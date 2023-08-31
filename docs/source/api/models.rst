@@ -3,8 +3,14 @@ Models
 ###########################
 
 ***************************
-Message passing
+Modeling
 ***************************
+
+GIN
+===========================
+.. autoclass:: molgraph.models.GIN(tensorflow.keras.layers.Layer)
+  :members: call, build, get_config, from_config
+  :member-order: bysource
 
 MPNN
 ===========================
@@ -15,12 +21,6 @@ MPNN
 DMPNN
 ===========================
 .. autoclass:: molgraph.models.DMPNN(tensorflow.keras.layers.Layer)
-  :members: call, build, get_config, from_config
-  :member-order: bysource
-
-DGIN
-===========================
-.. autoclass:: molgraph.models.DGIN(tensorflow.keras.layers.Layer)
   :members: call, build, get_config, from_config
   :member-order: bysource
 

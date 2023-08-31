@@ -30,104 +30,44 @@ class MPNNConv(gnn_layer.GNNLayer):
     update function, here, a simple fully-connected (dense) layer can be used too.
     Though default is GRU. 
 
-    **Examples:**
-
-    Inputs a ``GraphTensor`` encoding (two) subgraphs:
+    Example usage:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
-    ...         'node_feature': [
-    ...             [[1.0, 0.0], [1.0, 0.0]],
-    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
-    ...         ],
-    ...         'edge_feature': [
-    ...             [[1.0, 0.0], [0.0, 1.0]],
-    ...             [[0.0, 1.0], [0.0, 1.0], [1.0, 0.0],
-    ...              [0.0, 1.0], [1.0, 0.0], [0.0, 1.0]]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_feature=[[1., 0.], [0., 1.], [0., 1.], [0., 1.], 
+    ...                   [1., 0.], [0., 1.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
-    >>> # Build a model with MPNNConv
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.MPNNConv(16, activation='relu'),
-    ...     molgraph.layers.MPNNConv(16, activation='relu')
+    ...     molgraph.layers.MPNNConv(units=16),
+    ...     molgraph.layers.MPNNConv(units=16),
+    ...     molgraph.layers.MPNNConv(units=16),
+    ...     molgraph.layers.Readout(),
     ... ])
-    >>> gnn_model.output_shape
-    (None, None, 16)
-
-    Inputs a ``GraphTensor`` encoding a single disjoint graph:
-
-    >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...         'edge_feature': [
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...     }
-    ... )
-    >>> # Build a model with MPNNConv
-    >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.MPNNConv(16, activation='relu'),
-    ...     molgraph.layers.MPNNConv(16, activation='relu')
-    ... ])
-    >>> gnn_model.output_shape
-    (None, 16)
+    >>> gnn_model(graph_tensor).shape
+    TensorShape([2, 16])
 
     Pass the same GRU cell to each layer to perform weight sharing:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...         'edge_feature': [
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_feature=[[1., 0.], [0., 1.], [0., 1.], [0., 1.], 
+    ...                   [1., 0.], [0., 1.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
-    >>> gru_cell = tf.keras.layers.GRUCell(16) # same units as MPNNConv
-    >>> # Build a model with MPNNConv
+    >>> gru_cell = tf.keras.layers.GRUCell(16)
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.MPNNConv(16, update_fn=gru_cell),
-    ...     molgraph.layers.MPNNConv(16, update_fn=gru_cell)
+    ...     molgraph.layers.MPNNConv(units=16, update_fn=gru_cell),
+    ...     molgraph.layers.MPNNConv(units=16, update_fn=gru_cell),
+    ...     molgraph.layers.MPNNConv(units=16, update_fn=gru_cell),
+    ...     molgraph.layers.Readout(),
     ... ])
-    >>> gnn_model.output_shape
-    (None, 16)
+    >>> gnn_model(graph_tensor).shape
+    TensorShape([2, 16])
 
     Args:
         units (int, None):
@@ -142,7 +82,7 @@ class MPNNConv(gnn_layer.GNNLayer):
             Whether to apply self projection. Default to True.
         normalization: (None, str, bool):
             Whether to apply layer normalization to the output. If batch 
-            normalization is desired, pass 'batch_norm'. Default to True.
+            normalization is desired, pass 'batch_norm'. Default to None.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -193,7 +133,7 @@ class MPNNConv(gnn_layer.GNNLayer):
         update_fn: Optional[Union[
             keras.layers.GRUCell, keras.layers.Dense]] = None,
         self_projection: bool = True,
-        normalization: Union[None, str, bool] = 'layer_norm',
+        normalization: Union[None, str, bool] = None,
         residual: bool = True,
         dropout: Optional[float] = None,
         update_activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = None,

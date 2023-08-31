@@ -53,9 +53,8 @@ Now run your first program with **MolGraph**:
 
     # Build model via Keras API
     gnn_model = keras.Sequential([
-        keras.layers.Input(type_spec=x_train.spec),
-        layers.GATConv(name='gat_conv_1'),
-        layers.GATConv(name='gat_conv_2'),
+        layers.GATConv(units=32, name='gat_conv_1'),
+        layers.GATConv(units=32, name='gat_conv_2'),
         layers.Readout(),
         keras.layers.Dense(units=1024, activation='relu'),
         keras.layers.Dense(units=y_train.shape[-1])
@@ -70,4 +69,4 @@ Now run your first program with **MolGraph**:
     gam_model = models.GradientActivationMapping(
         model=gnn_model, layer_names=['gat_conv_1', 'gat_conv_2'])
 
-    maps = gam_model(x_train)
+    maps = gam_model(x_train.separate())

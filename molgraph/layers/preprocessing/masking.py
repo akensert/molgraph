@@ -20,46 +20,31 @@ class FeatureMasking(keras.layers.Layer):
     **Example:**
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...    data={
-    ...        'edge_src': [1, 4, 0, 2, 3, 1, 1, 0],
-    ...        'edge_dst': [0, 0, 1, 1, 1, 2, 3, 4],
-    ...        'node_feature': [
-    ...            'Sym:C|Hyb:SP3', 
-    ...            'Sym:C|Hyb:SP2', 
-    ...            'Sym:O|Hyb:SP2',
-    ...            'Sym:O|Hyb:SP2', 
-    ...            'Sym:N|Hyb:SP3'
-    ...        ],
-    ...        'edge_feature': [
-    ...            'BonTyp:SINGLE|Rot:1', 
-    ...            'BonTyp:SINGLE|Rot:0',
-    ...            'BonTyp:SINGLE|Rot:1', 
-    ...            'BonTyp:DOUBLE|Rot:0',
-    ...            'BonTyp:SINGLE|Rot:0', 
-    ...            'BonTyp:DOUBLE|Rot:0',
-    ...            'BonTyp:SINGLE|Rot:0', 
-    ...            'BonTyp:SINGLE|Rot:0'
-    ...        ],
-    ...        'graph_indicator': [0, 0, 0, 0, 0],
-    ...    }
+    ...     sizes=[5],
+    ...     edge_src=[1, 4, 0, 2, 3, 1, 1, 0],
+    ...     edge_dst=[0, 0, 1, 1, 1, 2, 3, 4],
+    ...     node_feature=['Sym:C|Hyb:SP3', 'Sym:C|Hyb:SP2', 'Sym:O|Hyb:SP2',
+    ...                   'Sym:O|Hyb:SP2', 'Sym:N|Hyb:SP3'],
+    ...     edge_feature=['BonTyp:SINGLE|Rot:1', 'BonTyp:SINGLE|Rot:0',
+    ...                   'BonTyp:SINGLE|Rot:1', 'BonTyp:DOUBLE|Rot:0',
+    ...                   'BonTyp:SINGLE|Rot:0', 'BonTyp:DOUBLE|Rot:0',
+    ...                   'BonTyp:SINGLE|Rot:0', 'BonTyp:SINGLE|Rot:0'],
     ... )
     >>> node_embedding = molgraph.layers.NodeEmbeddingLookup(
-    ...    32, mask_token='[MASK]'
-    ... )
+    ...    32, mask_token='[MASK]')
     >>> edge_embedding = molgraph.layers.EdgeEmbeddingLookup(
-    ...    32, mask_token='[MASK]'
-    ... )
+    ...    32, mask_token='[MASK]')
     >>> node_embedding.adapt(graph_tensor)
     >>> edge_embedding.adapt(graph_tensor)
     >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
     ...     molgraph.layers.NodeFeatureMasking(rate=0.15, mask_token='[MASK]'),
     ...     node_embedding,
     ...     molgraph.layers.EdgeFeatureMasking(rate=0.15, mask_token='[MASK]'),
     ...     edge_embedding,
     ... ])
-    >>> model(graph_tensor).shape
-    TensorShape([5, 32])
+    >>> output = model(graph_tensor)
+    >>> output.node_feature.shape, output.edge_feature.shape
+    (TensorShape([5, 32]), TensorShape([8, 32]))
 
     Args:
         rate (float):

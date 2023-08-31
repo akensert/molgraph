@@ -31,9 +31,9 @@ class TestSaliency(unittest.TestCase):
         
         if merge:
             inputs = inputs.merge()
-            input_spec = inputs.unspecific_spec
+            input_spec = inputs.spec
         else:
-            input_spec = inputs.unspecific_spec
+            input_spec = inputs.spec
         
         sequential_model = tf.keras.Sequential([
             tf.keras.layers.Input(type_spec=input_spec),
@@ -147,9 +147,9 @@ class TestGradientActivation(unittest.TestCase):
         
         if merge:
             inputs = inputs.merge()
-            input_spec = inputs.unspecific_spec
+            input_spec = inputs.spec
         else:
-            input_spec = inputs.unspecific_spec
+            input_spec = inputs.spec
 
         sequential_model = tf.keras.Sequential([
             tf.keras.layers.Input(type_spec=input_spec),

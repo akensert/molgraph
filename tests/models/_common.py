@@ -24,7 +24,7 @@ encoder = MolecularGraphEncoder(atom_encoder, bond_encoder)
 
 # Typical graph, with nested ragged tensors
 graph_tensor = encoder([
-    'OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N', '[Na+].[O-]c1ccccc1'])
+    'OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N', '[Na+].[O-]c1ccccc1']).separate()
 
 graph_tensor_merged = graph_tensor.merge()
 
@@ -46,4 +46,4 @@ encoder = MolecularGraphEncoder(atom_encoder, bond_encoder)
 
 graph_tensor_2 = encoder([
     'OCC1OC(C(C1O)O)n1cnc2c1ncnc2N', 'C(C(=O)O)N', '[Na+].[O-]c1ccccc1',
-    'C(C(=O)O)N', '[Na+].[O-]c1ccccc1'])
+    'C(C(=O)O)N', '[Na+].[O-]c1ccccc1']).separate()

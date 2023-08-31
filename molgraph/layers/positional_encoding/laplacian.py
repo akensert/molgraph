@@ -22,25 +22,16 @@ class LaplacianPositionalEncoding(layers.Layer):
 
     Implementation based on Dwivedi et al. (2021) [#]_ and Belkin et al. (2003) [#]_.
 
-    **Example:**
+    Example usage:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [1.0, 1.0],
-    ...             [1.0, 1.0],
-    ...             [1.0, 1.0],
-    ...             [1.0, 1.0],
-    ...             [1.0, 1.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
     >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.LaplacianPositionalEncoding(16)
+    ...     molgraph.layers.LaplacianPositionalEncoding(16),
     ... ])
     >>> graph_tensor = model(graph_tensor)
     >>> graph_tensor.node_feature != 1.0
@@ -225,7 +216,8 @@ class LaplacianPositionalEncoding(layers.Layer):
 
 
 def compute_normalized_laplacian(adjacency, num_nodes):
-    degree = tf.math.bincount(adjacency[:, 1])
+    degree = tf.math.bincount(
+        tf.cast(adjacency[:, 1], tf.int32), dtype=adjacency.dtype)
     degree = tf.gather(degree, adjacency)
     adjacency_norm = tf.reduce_prod(tf.cast(degree, tf.float32), 1) ** -0.5
     laplacian_norm = tf.scatter_nd(

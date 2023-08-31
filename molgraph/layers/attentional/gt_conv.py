@@ -28,74 +28,45 @@ class GTConv(gnn_layer.GNNLayer):
 
     Alias: ``GraphTransformerConv``
 
-    **Examples:**
-
-    Inputs a ``GraphTensor`` encoding (two) subgraphs:
+    Example usage:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
-    ...         'node_feature': [
-    ...             [[1.0, 0.0], [1.0, 0.0]],
-    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
-    ...         ],
-    ...         'edge_feature': [
-    ...             [[1.0, 0.0], [0.0, 1.0]],
-    ...             [[0.0, 1.0], [0.0, 1.0], [1.0, 0.0],
-    ...              [0.0, 1.0], [1.0, 0.0], [0.0, 1.0]]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
-    >>> # Build a model with GTConv
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.GTConv(16, activation='relu'),
-    ...     molgraph.layers.GTConv(16, activation='relu')
+    ...     molgraph.layers.GTConv(units=16),
+    ...     molgraph.layers.GTConv(units=16),
+    ...     molgraph.layers.GTConv(units=16),
+    ...     molgraph.layers.Readout(),
     ... ])
-    >>> gnn_model.output_shape
-    (None, None, 16)
-
-    Inputs a ``GraphTensor`` encoding a single disjoint graph:
+    >>> gnn_model(graph_tensor).shape
+    TensorShape([2, 16])
+    
+    Including edge features:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...         'edge_feature': [
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_feature=[[1., 0.], [0., 1.], [0., 1.], [0., 1.], 
+    ...                   [1., 0.], [0., 1.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
-    >>> # Build a model with GTConv
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.GTConv(16, activation='relu'),
-    ...     molgraph.layers.GTConv(16, activation='relu')
+    ...     molgraph.layers.GTConv(units=16, use_edge_features=True),
+    ...     molgraph.layers.GTConv(units=16, use_edge_features=True),
+    ...     molgraph.layers.GTConv(units=16, use_edge_features=True),
     ... ])
-    >>> gnn_model.output_shape
-    (None, 16)
+    >>> output = gnn_model(graph_tensor)
+    >>> output.node_feature.shape, output.edge_feature.shape
+    (TensorShape([5, 16]), TensorShape([8, 16]))
 
     Args:
         units (int, None):
             Number of output units.
-        use_edge_features (bool):
-            Whether or not to use edge features. Default to True.
         num_heads (int):
             Number of attention heads. Default to 8.
         merge_mode (str):

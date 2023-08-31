@@ -16,7 +16,7 @@ class GradientActivationMapping(SaliencyMapping):
 
     Alias: ``GradientActivation``
 
-    **Example:**
+    Example usage:
 
     >>> encoder = molgraph.chemistry.MolecularGraphEncoder(
     ...     atom_encoder=molgraph.chemistry.Featurizer([
@@ -29,7 +29,6 @@ class GradientActivationMapping(SaliencyMapping):
     >>> esol['test']['x'] = encoder(esol['test']['x'])
     ...
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=esol['train']['x'].spec),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_1'),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_2'),
     ...     molgraph.layers.GCNConv(units=128, name='gcn_conv_3'),
@@ -47,7 +46,7 @@ class GradientActivationMapping(SaliencyMapping):
     ...     layer_names=['gcn_conv_1', 'gcn_conv_2', 'gcn_conv_3'],
     ...     discard_negative_values=False,
     ... )
-    >>> maps = gam_model(esol['test']['x'])
+    >>> maps = gam_model(esol['test']['x'].separate())
 
     References:
         .. [#] Pope et al. https://ieeexplore.ieee.org/document/8954227

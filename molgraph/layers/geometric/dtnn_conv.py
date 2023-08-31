@@ -26,57 +26,24 @@ class DTNNConv(gnn_layer.GNNLayer):
 
     Implementation is based on Schütt et al. (2017a) [#]_.
 
-    **Examples:**
-
-    Inputs a ``GraphTensor`` encoding (two) subgraphs:
+    Example usage:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
-    ...         'node_feature': [
-    ...             [[1.0, 0.0], [1.0, 0.0]],
-    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
-    ...         ],
-    ...         # edge_feature encodes distances between edge_src and edge_dst
-    ...         'edge_feature': [[0.3, 0.3], [0.1, 0.2, 0.1, 0.4, 0.4, 0.2]],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
+    ...     # edge_feature encodes e.g. distances between edge_src and edge_dst
+    ...     edge_feature=[0.3, 0.3, 0.1, 0.2, 0.1, 0.4, 0.4, 0.2],
     ... )
-    >>> # Build a model with DTNNConv
     >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.DTNNConv(16, activation='relu'),
-    ...     molgraph.layers.DTNNConv(16, activation='relu')
+    ...     molgraph.layers.DTNNConv(units=16),
+    ...     molgraph.layers.DTNNConv(units=16),
+    ...     molgraph.layers.DTNNConv(units=16),
+    ...     molgraph.layers.Readout(),
     ... ])
-    >>> gnn_model.output_shape
-    (None, None, 16)
-
-    Inputs a ``GraphTensor`` encoding a single disjoint graph:
-
-    >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [1.0, 0.0],
-    ...             [0.0, 1.0]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...         # edge_feature encodes distances between edge_src and edge_dst
-    ...         'edge_feature': [0.3, 0.3, 0.1, 0.2, 0.1, 0.4, 0.4, 0.2],
-    ...     }
-    ... )
-    >>> # Build a model with DTNNConv
-    >>> gnn_model = tf.keras.Sequential([
-    ...     tf.keras.Input(type_spec=graph_tensor.unspecific_spec),
-    ...     molgraph.layers.DTNNConv(16, activation='relu'),
-    ...     molgraph.layers.DTNNConv(16, activation='relu')
-    ... ])
-    >>> gnn_model.output_shape
-    (None, 16)
+    >>> gnn_model(graph_tensor).shape
+    TensorShape([2, 16])
 
     Args:
         units (int, None):
@@ -103,7 +70,7 @@ class DTNNConv(gnn_layer.GNNLayer):
             Whether to apply self projection. Default to True.
         normalization: (None, str, bool):
             Whether to apply layer normalization to the output. If batch 
-            normalization is desired, pass 'batch_norm'. Default to True.
+            normalization is desired, pass 'batch_norm'. Default to None.
         residual: (bool)
             Whether to add skip connection to the output. Default to True.
         dropout: (float, None):
@@ -152,7 +119,7 @@ class DTNNConv(gnn_layer.GNNLayer):
         distance_granularity: float = 0.1,
         rbf_stddev: Optional[Union[float, str]] = 'auto',
         self_projection: bool = True,
-        normalization: Union[None, str, bool] = 'layer_norm',
+        normalization: Union[None, str, bool] = None,
         residual: bool = True,
         dropout: Optional[float] = None,
         activation: Union[None, str, Callable[[tf.Tensor], tf.Tensor]] = None,

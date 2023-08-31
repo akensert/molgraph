@@ -8,10 +8,9 @@ It is built with, and aims to be highly compatible with,
 `TensorFlow <https://www.tensorflow.org/api_docs/python/tf>`_ and
 `Keras <https://keras.io/>`_.
 
-**Why MolGraph?** As it integrates well with TensorFlow and Keras, it allows for easy and flexible
-implementations of GNNs. Furthermore, the focus is specifically, and exclusively,
-on small molecules, with a dedicated chemistry module for customizing the molecular
-graph.
+**Why MolGraph?** As it integrates well with TensorFlow and Keras APIs, 
+it allows for easy, flexible and efficient implementations of GNNs, targeting a wide audience. 
+Furthermore, a chemistry module is implemented to generate highly customizable molecular graphs.
 
 
 .. toctree::

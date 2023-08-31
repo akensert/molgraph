@@ -36,45 +36,27 @@ class GraphMasking(keras.Model):
     though it could be implemented by e.g. creating random vectors for each 
     masked node/edge.
     
-    **Example:**
+    Example usage:
 
     >>> # Replace this graph_tensor with a large dataset of graphs
     >>> graph_tensor = molgraph.GraphTensor(
-    ...    data={
-    ...        'edge_src': [1, 4, 0, 2, 3, 1, 1, 0],
-    ...        'edge_dst': [0, 0, 1, 1, 1, 2, 3, 4],
-    ...        'node_feature': [
-    ...            'Sym:C|Hyb:SP3', 
-    ...            'Sym:C|Hyb:SP2', 
-    ...            'Sym:O|Hyb:SP2',
-    ...            'Sym:O|Hyb:SP2', 
-    ...            'Sym:N|Hyb:SP3'
-    ...        ],
-    ...        'edge_feature': [
-    ...            'BonTyp:SINGLE|Rot:1', 
-    ...            'BonTyp:SINGLE|Rot:0',
-    ...            'BonTyp:SINGLE|Rot:1', 
-    ...            'BonTyp:DOUBLE|Rot:0',
-    ...            'BonTyp:SINGLE|Rot:0', 
-    ...            'BonTyp:DOUBLE|Rot:0',
-    ...            'BonTyp:SINGLE|Rot:0', 
-    ...            'BonTyp:SINGLE|Rot:0'
-    ...        ],
-    ...        'graph_indicator': [0, 0, 0, 0, 0],
-    ...    }
+    ...     sizes=[5],
+    ...     edge_src=[1, 4, 0, 2, 3, 1, 1, 0],
+    ...     edge_dst=[0, 0, 1, 1, 1, 2, 3, 4],
+    ...     node_feature=['Sym:C|Hyb:SP3', 'Sym:C|Hyb:SP2', 'Sym:O|Hyb:SP2',
+    ...                   'Sym:O|Hyb:SP2', 'Sym:N|Hyb:SP3'],
+    ...     edge_feature=['BonTyp:SINGLE|Rot:1', 'BonTyp:SINGLE|Rot:0',
+    ...                   'BonTyp:SINGLE|Rot:1', 'BonTyp:DOUBLE|Rot:0',
+    ...                   'BonTyp:SINGLE|Rot:0', 'BonTyp:DOUBLE|Rot:0',
+    ...                   'BonTyp:SINGLE|Rot:0', 'BonTyp:SINGLE|Rot:0'],
     ... )
-    >>> graph_tensor = graph_tensor.separate()
     >>> node_embedding = molgraph.layers.NodeEmbeddingLookup(
-    ...    32, mask_token='[MASK]'
-    ... )
+    ...    32, mask_token='[MASK]')
     >>> edge_embedding = molgraph.layers.EdgeEmbeddingLookup(
-    ...    32, mask_token='[MASK]'
-    ... )
+    ...    32, mask_token='[MASK]')
     >>> node_embedding.adapt(graph_tensor)
     >>> edge_embedding.adapt(graph_tensor)
-    ...
     >>> graph_transformer_encoder = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.spec),
     ...     node_embedding,
     ...     edge_embedding,
     ...     molgraph.layers.GTConv(units=32),
@@ -226,10 +208,10 @@ class GraphMasking(keras.Model):
             new_data['edge_feature_mask'] = edge_feature_mask 
             new_data['edge_feature_label'] = self.lookup_edge_feature_label(
                 edge_feature) - 1
-        
-        tensor = tensor.update(new_data)
 
-        return self(tensor, training=training)
+        tensor = self(tensor, training=training)
+
+        return tensor.update(new_data)
     
     def train_step(self, tensor: GraphTensor) -> dict:
         
@@ -511,9 +493,9 @@ class GraphMasking(keras.Model):
         config = super().get_config()
         config.update({
             'encoder': layers.serialize(self.encoder),
-            'node_feature_decoder': layers.serialize(self.decoder['node']),
-            'edge_feature_decoder': layers.serialize(self.decoder['edge']),
-            'node_masking_rate': self.masking_rate['node'],
-            'edge_masking_rate': self.masking_rate['edge'],
+            'node_feature_decoder': layers.serialize(self.node_feature_decoder),
+            'edge_feature_decoder': layers.serialize(self.edge_feature_decoder),
+            'node_feature_masking_rate': self.node_feature_masking_rate,
+            'edge_feature_masking_rate': self.edge_feature_masking_rate,
         })
         return config

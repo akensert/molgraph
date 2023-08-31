@@ -10,33 +10,24 @@ from molgraph.tensors.graph_tensor import GraphTensor
 class ExtractField(keras.layers.Layer):
     '''Extract specific field of ``GraphTensor``.
 
-    **Example:**
+    Example usage:
 
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [1, 0, 3, 4, 2, 4, 3, 2],
-    ...         'edge_dst': [0, 1, 2, 2, 3, 3, 4, 4],
-    ...         'node_feature': [
-    ...             [1., 0.],
-    ...             [2., 0.],
-    ...             [3., 0.],
-    ...             [4., 0.],
-    ...             [0., 5.]
-    ...         ],
-    ...         'graph_indicator': [0, 0, 1, 1, 1],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
     >>> model = tf.keras.Sequential([
-    ...     tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec),
     ...     molgraph.layers.ExtractField('node_feature')
     ... ])
     >>> model(graph_tensor)
     <tf.Tensor: shape=(5, 2), dtype=float32, numpy=
     array([[1., 0.],
-           [2., 0.],
-           [3., 0.],
-           [4., 0.],
-           [0., 5.]], dtype=float32)>
+           [1., 0.],
+           [1., 0.],
+           [1., 0.],
+           [0., 1.]], dtype=float32)>
 
     Args:
         field (str):
