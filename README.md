@@ -71,7 +71,7 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 For a detailed list of changes, see the [CHANGELOG.md](https://github.com/akensert/molgraph/blob/main/CHANGELOG.md).
 
 ## Requirements/dependencies
-- **Python** (version >= 3.6 recommended)
+- **Python** (version >= 3.10 recommended)
     - **TensorFlow** (version >= 2.13.0 recommended)
     - **RDKit** (version >= 2022.3.5 recommended)
     - **Pandas** (version >= 1.0.3 recommended)

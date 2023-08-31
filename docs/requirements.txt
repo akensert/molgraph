@@ -2,6 +2,7 @@ tensorflow>=2.13.0
 pandas>=1.0.3
 rdkit>=2022.3.5
 ipython==8.12.0
+matplotlib>=3.7.1
 sphinx==5.1.1
 nbsphinx==0.8.9
 sphinx-gallery==0.11.0

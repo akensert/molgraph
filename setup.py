@@ -37,7 +37,7 @@ setuptools.setup(
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS"
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.10",
     keywords=[
         'graph-neural-networks',
         'deep-learning',
