@@ -15,27 +15,21 @@ class MPNN(keras.layers.Layer):
 
     '''Message passing neural network (MPNN) with weight tying.
 
-    Implementation is based on Gilmer et al. (2017) [#]_. In contrast to
-    ``MPNNConv``, which performs a single step of message passing, ``MPNN``
-    performs n-steps of message passing. Furthermore, the weights are shared
-    by default between the message functions of the different steps. 
-    And the update functions correspond to a single GRU by default.
+    Implementation is based on Gilmer et al. (2017) [#]_. 
 
-    **Example:**
+    Example usage:
 
     >>> # Obtain GraphTensor
     >>> graph_tensor = molgraph.GraphTensor(
-    ...     data={
-    ...         'edge_src': [[1, 0], [1, 2, 0, 2, 1, 0]],
-    ...         'edge_dst': [[0, 1], [0, 0, 1, 1, 2, 2]],
-    ...         'node_feature': [
-    ...             [[1.0, 0.0], [1.0, 0.0]],
-    ...             [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
-    ...         ],
-    ...     }
+    ...     sizes=[2, 3],
+    ...     node_feature=[[1., 0.], [1., 0.], [1., 0.], [1., 0.], [0., 1.]],
+    ...     edge_feature=[[1., 0.], [0., 1.], [0., 1.], [0., 1.], 
+    ...                   [1., 0.], [0., 1.], [1., 0.], [0., 1.]],
+    ...     edge_src=[1, 0, 3, 4, 2, 4, 3, 2],
+    ...     edge_dst=[0, 1, 2, 2, 3, 3, 4, 4],
     ... )
     >>> # Build Functional model
-    >>> inputs = tf.keras.layers.Input(type_spec=graph_tensor.unspecific_spec)
+    >>> inputs = tf.keras.layers.Input(type_spec=graph_tensor.spec)
     >>> x = molgraph.models.MPNN(units=32, steps=4, name='mpnn')(inputs)
     >>> x = molgraph.layers.SetGatherReadout(name='readout')(x)
     >>> outputs = tf.keras.layers.Dense(10, activation='sigmoid')(x)
@@ -75,8 +69,8 @@ class MPNN(keras.layers.Layer):
 
     def __init__(
         self,
-        units: Optional[int] = None,
         steps: int = 4,
+        units: Optional[int] = None,
         residual: bool = True,
         dropout: Optional[float] = None,
         message_kwargs: Optional[dict] = None,
