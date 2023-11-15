@@ -1,8 +1,14 @@
-# MolGraph: Graph Neural Networks for Molecular Machine Learning
+# MolGraph
 
-*This is an early release; things are still being updated, added and experimented with. Hence, API compatibility may break in the future. Any feedback is welcomed!*
+**Graph Neural Networks** with **TensorFlow** and **Keras**. Focused on **Molecular Machine Learning**.
 
-**Important update**: The `GraphTensor` is now a [tf.experimental.ExtensionType](https://www.tensorflow.org/guide/extension_type) (as of version 0.6.0). Although user code will likely break when updating to 0.6.0, the new `GraphTensor` was implemented to avoid this as much as possible. See [GraphTensor documentation](https://molgraph.readthedocs.io/en/latest/api/tensors.html) and [GraphTensor walk through](https://molgraph.readthedocs.io/en/latest/examples/walk_through/01_graph-tensor.html) for more information on how to use it. Old features will for most part raise depracation warnings (though in the near future they will raise errors). **Likely cause of breakage:** the `GraphTensor` is now by default in its "non-ragged" state when obtained from the `chemistry.MolecularGraphEncoder`. The non-ragged `GraphTensor` can now be batched; i.e., a disjoint molecular graph, encoded by nested `tf.Tensor` values, can now be passed to a `tf.data.Dataset` and subsequently batched, unbatched, etc. There is no need to separate the `GraphTensor` beforehand and then merge it again. Finally, there is no need to pass an input type_spec to keras.Sequential model, making it even easier to code up and use a GNN models:
+> This is an early release and a work in progress; so be aware of breaking changes.
+
+<img src="https://github.com/akensert/molgraph/blob/main/media/molgraph.jpg" alt="molgraph" width="800">
+
+## Highlights
+
+Build a Graph Neural Network with Keras' [Sequential](https://www.tensorflow.org/api_docs/python/tf/keras/Sequential) API:
 
 ```python
 from molgraph import GraphTensor
