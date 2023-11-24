@@ -1,10 +1,13 @@
+import numpy as np
+
 from rdkit import Chem
 from rdkit.Chem import rdDistGeom
-import numpy as np
+
+import logging
+
 from typing import Optional
 from typing import List
 from typing import Union
-import logging
 
 
 logger = logging.getLogger(__name__)

@@ -1,17 +1,18 @@
 import numpy as np
 import os
+
 from rdkit import Chem
+from rdkit.Chem.Draw import IPythonConsole
 from rdkit.Chem.Draw import SimilarityMaps
-import rdkit.Chem.Draw.IPythonConsole
-from typing import Optional
-from typing import Sequence
-from typing import Tuple
-from typing import List
-from typing import Union
-from typing import Dict
+
 from PIL.PngImagePlugin import PngImageFile
 from PIL import Image
 from io import BytesIO
+
+from typing import Optional
+from typing import Tuple
+from typing import List
+from typing import Union
 
 from molgraph.chemistry.ops import molecule_from_string
 

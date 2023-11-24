@@ -1,23 +1,24 @@
+import numpy as np
+
 from rdkit import Chem
 from rdkit.Chem.Scaffolds import MurckoScaffold
+
+import math
+import functools
+import multiprocessing
+import sys
+
+from abc import ABC
+from abc import abstractmethod
+from dataclasses import dataclass
+from collections import defaultdict
+
 from typing import List
 from typing import Optional
 from typing import Union
 from typing import Dict
 from typing import Tuple
-from typing import Callable
 from typing import Any
-from typing import Mapping
-import math
-import functools
-import multiprocessing
-import collections
-import sys
-import numpy as np
-from abc import ABC
-from abc import abstractmethod
-from dataclasses import dataclass
-from collections import defaultdict
 
 from molgraph.chemistry.ops import molecule_from_string
 

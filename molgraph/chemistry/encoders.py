@@ -1,19 +1,16 @@
 import numpy as np
+
 from rdkit import Chem
-from dataclasses import dataclass
-from dataclasses import field
+
+from abc import abstractmethod
+from abc import ABC
+
+import re
+import hashlib
+
 from typing import Union
 from typing import List
 from typing import Any
-from typing import Dict
-from typing import Tuple
-from rdkit import Chem
-from abc import abstractmethod
-from abc import ABC
-from warnings import warn
-import re
-import logging
-import hashlib
 
 from molgraph.chemistry.features import Feature
 
@@ -103,7 +100,7 @@ class Featurizer:
         Returns:
             np.ndarray: numerical encodings of atom(s) or bond(s).
         '''
-        if isinstance(inputs, (Chem.rdchem._ROAtomSeq, Chem.rdchem._ROBondSeq)):
+        if inputs is not None and not isinstance(inputs, (Chem.Atom, Chem.Bond)): 
             inputs = list(inputs)
 
         if not isinstance(inputs, (list, tuple, set, np.ndarray)):
@@ -218,7 +215,8 @@ class Tokenizer:
         Returns:
             np.ndarray: Token encoding of atom(s) or bond(s).
         '''
-        if isinstance(inputs, (Chem.rdchem._ROAtomSeq, Chem.rdchem._ROBondSeq)):
+        
+        if inputs is not None and not isinstance(inputs, (Chem.Atom, Chem.Bond)): 
             inputs = list(inputs)
 
         if not isinstance(inputs, (list, tuple, set, np.ndarray)):

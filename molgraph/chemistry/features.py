@@ -1,23 +1,21 @@
-import numpy as np
+import math
+
 from rdkit import Chem
+
 from rdkit.Chem import Lipinski
 from rdkit.Chem import Crippen
 from rdkit.Chem import rdMolDescriptors
 from rdkit.Chem import rdPartialCharges
-from functools import partial
-from functools import update_wrapper
-from dataclasses import dataclass
-from dataclasses import field
+
 from abc import ABC
 from abc import abstractmethod
-import math
+
 from typing import Union
 from typing import Any
 from typing import Callable
 from typing import List
 from typing import Sequence
 from typing import Optional
-from typing import NewType
 
 
 

@@ -1,15 +1,15 @@
 import numpy as np
 import pandas as pd
-import http
+
 import os
 import io
 import gzip
 import zipfile
 import tarfile
 from urllib import request
-import logging
-import multiprocessing
-import functools
+
+from abc import ABC
+from abc import abstractmethod
 
 from typing import Optional
 from typing import Tuple
@@ -17,8 +17,6 @@ from typing import List
 from typing import Callable
 from typing import Dict
 from typing import Any
-from abc import ABC
-from abc import abstractmethod
 
 from molgraph.chemistry.benchmark import configs
 from molgraph.chemistry.benchmark import splitters

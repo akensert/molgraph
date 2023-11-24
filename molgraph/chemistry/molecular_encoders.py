@@ -1,23 +1,29 @@
 import numpy as np
+
 from rdkit import Chem
+
 import tensorflow as tf
+
 from typing import Callable
 from typing import Union
 from typing import Optional
 from typing import List
-from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Tuple
 from typing import Sequence
-import multiprocessing
-from functools import partial
-import logging
-import collections
-import os
 
-from dataclasses import dataclass, field
-from abc import ABC, abstractmethod
+import multiprocessing
+
+from functools import partial
+
+import logging
+
+from dataclasses import dataclass
+from dataclasses import field
+
+from abc import ABC
+from abc import abstractmethod
 
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.chemistry.encoders import Featurizer

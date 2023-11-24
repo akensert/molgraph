@@ -1,7 +1,6 @@
 from rdkit import Chem
+
 from typing import Union
-from typing import Optional
-from typing import Tuple
 
 
 def molecule_from_string(
