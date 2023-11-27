@@ -1,4 +1,4 @@
-# MolGraph 0.6.1
+# MolGraph 0.6.2
 
 <!-- ## Version 0.6.2 (2023-XX-XX)
 
@@ -6,6 +6,13 @@
 - `molgraph.layers`
     - `molgraph.layers.EdgeConv` now inherits from the `molgraph.layers.GNNLayer`
     - `molgraph.layers.EdgeConv` now works with single node graphs (i.e. graphs without edges) -->
+
+
+## Version 0.6.2 (2023-11-27)
+
+### Bux fixes
+- `molgraph.tensors`
+    - `molgraph.tensors.graph_tensor` now accepts list of values, with sizes set to None.
 
 ## Version 0.6.1 (2023-11-27)
 

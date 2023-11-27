@@ -400,6 +400,8 @@ class GraphTensor(BatchableExtensionType):
         assert edge_dst is not None, ('`edge_dst` is a required field.')
 
         node_feature = _maybe_convert_to_tensor(node_feature)
+        edge_src = _maybe_convert_to_tensor(edge_src)
+        edge_dst = _maybe_convert_to_tensor(edge_dst)
         sizes = _maybe_convert_to_tensor(sizes)
 
         if sizes is None:
@@ -413,8 +415,8 @@ class GraphTensor(BatchableExtensionType):
                 
         self.sizes = sizes
         self.node_feature = node_feature
-        self.edge_src = _maybe_convert_to_tensor(edge_src)
-        self.edge_dst = _maybe_convert_to_tensor(edge_dst)
+        self.edge_src = edge_src
+        self.edge_dst = edge_dst
         self.edge_feature = _maybe_convert_to_tensor(edge_feature)
         self.edge_weight = _maybe_convert_to_tensor(edge_weight)
         self.node_position = _maybe_convert_to_tensor(node_position)
