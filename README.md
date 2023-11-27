@@ -83,6 +83,8 @@ For a detailed list of changes, see the [CHANGELOG.md](https://github.com/akense
     - **Pandas** (version >= 1.0.3 recommended)
     - **IPython** (version == 8.12.0 recommended)
 
+> MolGraph should work with the more recent TensorFlow and RDKit versions. If not, try installing earlier versions of TensorFlow and RDKit.
+
 ## Installation
 
 Install via **pip**:

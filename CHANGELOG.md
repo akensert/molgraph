@@ -1,11 +1,21 @@
-# MolGraph 0.6.0
+# MolGraph 0.6.1
 
-<!-- ## Version 0.6.1 (2023-XX-XX)
+<!-- ## Version 0.6.2 (2023-XX-XX)
 
 ### Minor features and improvements
 - `molgraph.layers`
     - `molgraph.layers.EdgeConv` now inherits from the `molgraph.layers.GNNLayer`
     - `molgraph.layers.EdgeConv` now works with single node graphs (i.e. graphs without edges) -->
+
+## Version 0.6.1 (2023-11-27)
+
+### Breaking changes
+- `molgraph.tensors` 
+    - `molgraph.tensors.graph_tensor` deprecates old features, attributes, etc. See documentation for how to use the GraphTensor.
+
+### Bug fixes
+- `molgraph.chemistry`
+    - `molgraph.chemistry.encoders` now compatible with latest RDKit version.
 
 
 ## Version 0.6.0 (2023-08-31)
