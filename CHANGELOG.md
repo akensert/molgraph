@@ -1,11 +1,18 @@
-# MolGraph 0.6.2
+# MolGraph 0.6.3
 
-<!-- ## Version 0.6.2 (2023-XX-XX)
+<!-- ## Version 0.6.4 (2023-XX-XX)
 
 ### Minor features and improvements
 - `molgraph.layers`
     - `molgraph.layers.EdgeConv` now inherits from the `molgraph.layers.GNNLayer`
     - `molgraph.layers.EdgeConv` now works with single node graphs (i.e. graphs without edges) -->
+
+
+## Version 0.6.3 (2023-11-27)
+
+### Breaking changes
+- `molgraph.tensors`
+    - `molgraph.tensors.graph_tensor` can no longer be stacked. To stack GraphTensor instances, perform `tf.concat` followed by `.separate()`.
 
 
 ## Version 0.6.2 (2023-11-27)

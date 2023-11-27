@@ -1854,25 +1854,6 @@ def graph_tensor_concat(
 
     return values
 
-@dispatch_for_api(tf.stack, {'values': typing.List[GraphTensor]})
-def graph_tensor_stack(
-    values,
-    axis = 0,
-    name = 'stack'
-):
-    _raise_migration_warnings(
-        (
-            'tf.stack will soon no longer work with GraphTensor instances. '
-            'To stack (non-ragged) GraphTensor values, simply use '
-            'tf.concat followed by .separate().'
-        ),
-        stacklevel=5
-    )
-    value = tf.concat(values, axis=0)
-    if not value.is_ragged():
-        return value.separate()
-    return value
-
 @dispatch_for_api(tf.split, {'value': GraphTensor})
 def graph_tensor_split(
     value, 
