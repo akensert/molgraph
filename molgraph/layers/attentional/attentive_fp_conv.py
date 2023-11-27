@@ -13,7 +13,6 @@ from typing import Union
 from molgraph.internal import register_keras_serializable 
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.tensors.graph_tensor import GraphTensorSpec
 
 from molgraph.layers.attentional.gat_conv import GATConv
 
@@ -202,7 +201,7 @@ class AttentiveFPConv(GATConv):
         self.gru_cell = gru_cell
         self._built = False
 
-    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
+    def _build(self, graph_tensor_spec: GraphTensor.Spec) -> None:
         
         node_feature_shape = graph_tensor_spec.node_feature.shape
         node_dim = node_feature_shape[-1]

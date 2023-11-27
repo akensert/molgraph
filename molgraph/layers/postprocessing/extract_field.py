@@ -52,7 +52,7 @@ class ExtractField(keras.layers.Layer):
             A ``tf.Tensor`` or `tf.RaggedTensor` based on the node_feature
             field of the inputted ``GraphTensor``.
         '''
-        return tensor[self.field]
+        return getattr(tensor, self.field)
 
     def get_config(self):
         base_config = super().get_config()

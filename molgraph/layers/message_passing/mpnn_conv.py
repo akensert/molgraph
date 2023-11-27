@@ -14,7 +14,6 @@ from typing import Union
 from molgraph.internal import register_keras_serializable 
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.tensors.graph_tensor import GraphTensorSpec
 
 from molgraph.layers import gnn_layer
 
@@ -176,7 +175,7 @@ class MPNNConv(gnn_layer.GNNLayer):
         else:
             self.update_activation = update_activation
 
-    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
+    def _build(self, graph_tensor_spec: GraphTensor.Spec) -> None:
      
         self.message_projection = self.get_dense(self.units * self.units)
 

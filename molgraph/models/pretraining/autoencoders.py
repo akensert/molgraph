@@ -603,7 +603,7 @@ class NaiveNegativeGraphSampler(layers.Layer):
         edge_dst = tf.repeat(tensor.edge_dst, self.k)
         edge_src = tf.repeat(tensor.edge_src, self.k)
         edge_dst = tf.random.shuffle(edge_dst)
-        data = tensor._data.copy()
+        data = tensor.data.copy()
         data['edge_dst'] = edge_dst
         data['edge_src'] = edge_src
         return tensor.__class__(**data)
@@ -665,7 +665,7 @@ class NegativeGraphSampler(NaiveNegativeGraphSampler):
         edge_src_neg = tf.gather(tensor.edge_src, edges[:, 0])
         edge_dst_neg = tf.gather(tensor.edge_dst, edges[:, 1])
         
-        data = tensor._data.copy()
+        data = tensor.data.copy()
         data['edge_src'] = edge_src_neg
         data['edge_dst'] = edge_dst_neg
 

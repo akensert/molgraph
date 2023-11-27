@@ -8,7 +8,6 @@ from molgraph import models
 from molgraph import chemistry
 
 from molgraph.tensors import GraphTensor
-from molgraph.tensors import GraphTensorSpec
 
 from . import _version
 

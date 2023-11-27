@@ -13,7 +13,6 @@ from typing import Union
 from molgraph.internal import register_keras_serializable 
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.tensors.graph_tensor import GraphTensorSpec
 
 from molgraph.layers import gnn_layer
 
@@ -162,7 +161,7 @@ class GatedGCNConv(gnn_layer.GNNLayer):
         self.gate_activation = activations.get('sigmoid')
         self.apply_self_projection = self_projection
 
-    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
+    def _build(self, graph_tensor_spec: GraphTensor.Spec) -> None:
 
         if self.use_edge_features:
             self.edge_gate_projection = self.get_dense(self.units)

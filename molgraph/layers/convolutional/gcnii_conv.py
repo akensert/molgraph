@@ -12,7 +12,6 @@ from typing import Union
 from molgraph.internal import register_keras_serializable 
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.tensors.graph_tensor import GraphTensorSpec
 
 from molgraph.layers import gnn_layer
 from molgraph.layers import gnn_ops
@@ -155,7 +154,7 @@ class GCNIIConv(gnn_layer.GNNLayer):
         self.apply_self_projection = self_projection
         self.residual = residual
 
-    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
+    def _build(self, graph_tensor_spec: GraphTensor.Spec) -> None:
 
         self.projection = self.get_dense(self.units)
 

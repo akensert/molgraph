@@ -14,7 +14,6 @@ from typing import Union
 from molgraph.internal import register_keras_serializable 
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.tensors.graph_tensor import GraphTensorSpec
 
 from molgraph.layers import gnn_layer
 from molgraph.layers import gnn_ops
@@ -159,7 +158,7 @@ class GINConv(gnn_layer.GNNLayer):
         self.apply_self_projection = self_projection
         self.apply_relu_activation = apply_relu_activation
 
-    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
+    def _build(self, graph_tensor_spec: GraphTensor.Spec) -> None:
 
         self.projection_1 = self.get_dense(self.units)
         self.projection_2 = self.get_dense(self.units)

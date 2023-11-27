@@ -20,7 +20,6 @@ from typing import Type
 from molgraph.internal import register_keras_serializable 
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.tensors.graph_tensor import GraphTensorSpec
 
 
 @register_keras_serializable(package='molgraph')
@@ -175,14 +174,14 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _build(
         self,
-        graph_tensor_spec: GraphTensorSpec,
+        graph_tensor_spec: GraphTensor.Spec,
     ) -> None:
         '''Builds the derived GNN layer.
         
         Wrapped in :meth:`~build_from_signature`.
 
         Args:
-            graph_tensor_spec (GraphTensorSpec):
+            graph_tensor_spec (GraphTensor.Spec):
                 The spec corresponding to a graph tensor instance.
         '''
 
@@ -224,12 +223,12 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
 
         '''Builds the layer based on 
         a :class:`~molgraph.tensors.GraphTensor` or 
-        a :class:`~molgraph.tensors.GraphTensorSpec`.
+        a :class:`~molgraph.tensors.GraphTensor.Spec`.
         
         Automatically invoked on first :meth:`~call`.
 
         Args:
-            graph_tensor (GraphTensor, GraphTensorSpec):
+            graph_tensor (GraphTensor, GraphTensor.Spec):
                 A graph tensor instance or a spec of a graph tensor instance.
         '''
 
@@ -450,16 +449,16 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
 
     def compute_output_signature(
         self,
-        input_signature: GraphTensorSpec,
-    ) -> GraphTensorSpec:
+        input_signature: GraphTensor.Spec,
+    ) -> GraphTensor.Spec:
         '''Computes the output signature of the layer based on an input signature.
         
         Args:
-            input_signature (GraphTensorSpec):
+            input_signature (GraphTensor.Spec):
                 The spec of a :class:`~molgraph.tensors.GraphTensor` instance.
         
         Returns:
-            GraphTensorSpec: The spec corrsponding to the outputted (updated)
+            GraphTensor.Spec: The spec corrsponding to the outputted (updated)
             :class:`~molgraph.tensors.GraphTensor` instance.
         '''
         def _update_spec(
@@ -503,7 +502,7 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
         if graph_tensor_spec is None:
             warn(
                 (
-                 'A GraphTensorSpec could not be obtained from the config, '
+                 'A GraphTensor.Spec could not be obtained from the config, '
                  'indicating that the layer from which the config was '
                  'previously obtained was not yet built. Proceeding to '
                  'initialize the layer without building it.'
@@ -663,10 +662,10 @@ class _DefaultUpdateStep(layers.Layer):
     
     
 def _get_spec_and_dims(
-    graph_tensor: Union[GraphTensor, GraphTensorSpec]
-) -> GraphTensorSpec:
+    graph_tensor: Union[GraphTensor, GraphTensor.Spec]
+) -> GraphTensor.Spec:
     graph_tensor_spec = (
-        graph_tensor if isinstance(graph_tensor, GraphTensorSpec) else
+        graph_tensor if isinstance(graph_tensor, GraphTensor.Spec) else
         graph_tensor.spec)
     node_feature_spec = graph_tensor_spec.node_feature
     edge_feature_spec = graph_tensor_spec.edge_feature

@@ -12,7 +12,6 @@ from typing import Union
 from molgraph.internal import register_keras_serializable 
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.tensors.graph_tensor import GraphTensorSpec
 
 from molgraph.layers import gnn_layer
 from molgraph.layers import gnn_ops
@@ -146,7 +145,7 @@ class GCNConv(gnn_layer.GNNLayer):
         self.apply_self_projection = self_projection
         self.use_bias = use_bias
 
-    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
+    def _build(self, graph_tensor_spec: GraphTensor.Spec) -> None:
 
         kernel_shape = [self.node_dim, self.units]
         bias_shape = [self.units]

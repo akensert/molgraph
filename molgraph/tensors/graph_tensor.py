@@ -61,15 +61,6 @@ TensorOrTensorSpec = typing.Union[Tensor, TensorSpec]
 TensorSpecOrShape = typing.Union[TensorSpec, tf.TensorShape]
 
 
-class ExtensionTypeMigrationWarning(DeprecationWarning):
-    pass
-
-
-def _raise_migration_warnings(message, stacklevel):
-    warnings.warn(
-        message, ExtensionTypeMigrationWarning, stacklevel=stacklevel)
-
-
 class GraphBatchEncoder(ExtensionTypeBatchEncoder):
 
     '''A custom batch encoder for the :class:`~GraphTensor` class.
@@ -394,101 +385,36 @@ class GraphTensor(BatchableExtensionType):
     
     def __init__(
         self,
-        sizes: typing.Optional[tf.Tensor] = None,           # Non-optional in the near future
-        node_feature: typing.Optional[Tensor] = None,       # Non-optional and no default value in the near future
-        edge_src: typing.Optional[Tensor] = None,           # Non-optional and no default value in the near future
-        edge_dst: typing.Optional[Tensor] = None,           # Non-optional and no default value in the near future
+        sizes: typing.Optional[tf.Tensor] = None,
+        node_feature: Tensor = None,
+        edge_src: Tensor = None,  
+        edge_dst: Tensor = None,  
         edge_feature: typing.Optional[Tensor] = None,
         edge_weight: typing.Optional[Tensor] = None,
         node_position: typing.Optional[Tensor] = None,
         **auxiliary: Tensor
     ) -> None:
-        # If statement below can be omitted in the near future.
-        if 'data_spec' in auxiliary:
-            _raise_migration_warnings(
-                ('Passing a `data_spec` dictionary is deprecated. Passing ' 
-                 'it is no longer needed.'), stacklevel=4)
-            auxiliary.pop('data_spec')
 
-        # If statement below can be omitted in the near future.
-        if isinstance(node_feature, typing.Mapping) and 'edge_src' in node_feature:
-            auxiliary['data'] = node_feature
-
-        # If-else statement below can be omitted in the near future.
-        if 'data' in auxiliary:
-            _raise_migration_warnings(
-                ('Passing a `data` dictionary is deprecated. Please pass '
-                 'data fields as keyword arguments, e.g.: '
-                 '`GraphTensor(node_feature=..., ...)`. \n\nFor now, '
-                 'creating attributes from the (key, value) pairs ...\n'
-                 ), stacklevel=4)
-            data = auxiliary.pop('data')
-            self.node_feature = _maybe_convert_to_tensor(
-                data.pop('node_feature', None))
-            self.edge_src = _maybe_convert_to_tensor(
-                data.pop('edge_src', None))
-            self.edge_dst = _maybe_convert_to_tensor(
-                data.pop('edge_dst', None))
-            graph_indicator = _maybe_convert_to_tensor(
-                data.pop('graph_indicator', None))
-            if graph_indicator is None:
-                self.sizes = tf.cast(
-                    self.node_feature.row_lengths(), self.edge_src.dtype)
-            else:
-                _raise_migration_warnings(
-                    ('`graph_indicator` input is deprecated. Please input '
-                    '`sizes` instead, which specifies the size of each subgraph. '
-                    '\n\nFor now converting `graph_indicator` to `sizes` ...'),
-                    stacklevel=4
-                )
-                self.sizes = _sizes_from_graph_indicator(graph_indicator)
-            self.edge_feature = _maybe_convert_to_tensor(
-                data.pop('edge_feature', None))
-            self.edge_weight = _maybe_convert_to_tensor(
-                data.pop('edge_weight', None))
-            self.node_position = _maybe_convert_to_tensor(
-                data.pop('node_position', None))
-            self.auxiliary = {
-                key: _maybe_convert_to_tensor(value) 
-                for (key, value) in data.items()}
-            return 
-        else:
-            assert node_feature is not None, ('`node_feature` is a required field.')
-            assert edge_src is not None, ('`edge_src` is a required field.')
-            assert edge_dst is not None, ('`edge_dst` is a required field.')
-
-        graph_indicator = auxiliary.pop('graph_indicator', None)
+        assert node_feature is not None, ('`node_feature` is a required field.')
+        assert edge_src is not None, ('`edge_src` is a required field.')
+        assert edge_dst is not None, ('`edge_dst` is a required field.')
 
         node_feature = _maybe_convert_to_tensor(node_feature)
-        edge_src = _maybe_convert_to_tensor(edge_src)
-        edge_dst = _maybe_convert_to_tensor(edge_dst)
+        sizes = _maybe_convert_to_tensor(sizes)
 
-        # if statement below can be omitted in the near future
-        if graph_indicator is not None:
-            _raise_migration_warnings(
-                ('`graph_indicator` input is deprecated. Please input '
-                '`sizes` instead, which specifies the size of each subgraph. '
-                '\n\nFor now converting `graph_indicator` to `sizes` ...'),
-                stacklevel=4
-            )
-            graph_indicator = _maybe_convert_to_tensor(graph_indicator)
-            self.sizes = _sizes_from_graph_indicator(graph_indicator)
-        else:
-            sizes = _maybe_convert_to_tensor(sizes)
-            if sizes is None:
-                if hasattr(node_feature, 'row_lengths'):
-                    # sizes can be inferred if ragged GraphTensor
-                    sizes = tf.cast(
-                        node_feature.row_lengths(), dtype=edge_src.dtype)
-                else:
-                    sizes = tf.shape(
-                        node_feature, out_type=edge_src.dtype)[0]
-                    
-            self.sizes = sizes
-
+        if sizes is None:
+            if hasattr(node_feature, 'row_lengths'):
+                # sizes can be inferred if ragged GraphTensor
+                sizes = tf.cast(
+                    node_feature.row_lengths(), dtype=edge_src.dtype)
+            else:
+                sizes = tf.shape(
+                    node_feature, out_type=edge_src.dtype)[0]
+                
+        self.sizes = sizes
         self.node_feature = node_feature
-        self.edge_src = edge_src
-        self.edge_dst = edge_dst
+        self.edge_src = _maybe_convert_to_tensor(edge_src)
+        self.edge_dst = _maybe_convert_to_tensor(edge_dst)
         self.edge_feature = _maybe_convert_to_tensor(edge_feature)
         self.edge_weight = _maybe_convert_to_tensor(edge_weight)
         self.node_position = _maybe_convert_to_tensor(node_position)
@@ -862,19 +788,6 @@ class GraphTensor(BatchableExtensionType):
         '''
 
         obj = self if other is None else other
-
-        # TODO: Omit if statement in the near future
-        if not self.is_ragged():
-            _raise_migration_warnings(
-                ('GraphTensor instance is already in its non-ragged state. '
-                 'Likely cause for this warning: `MolecularGraphEncoder '
-                 'now produces a non-ragged GraphTensor (disjoint graph) '
-                 'instead of a ragged GraphTensor. In the near future, '
-                 'instead of raising a warning, this will raise an error. '
-                 'Note: a non-ragged GraphTensor can now be batched. '),
-                 stacklevel=3
-            )
-            return obj
         
         if not obj.is_ragged():
             raise ValueError(f'{obj} is already in its non-ragged state.')
@@ -1222,13 +1135,7 @@ class GraphTensor(BatchableExtensionType):
             the :class:`~GraphTensor`.
         '''
 
-        if name == 'unspecific_spec':
-            _raise_migration_warnings(
-                ('The property `unspecify_spec` is deprecated, '
-                 'please use the property `spec` instead. \n\nFor now, '
-                 'accessing `spec` ...\n'), stacklevel=3)
-            return self.spec
-        elif name in self.__dict__:
+        if name in self.__dict__:
             return self.__dict__[name]
             
         if name in object.__getattribute__(self, 'auxiliary'):
@@ -1255,15 +1162,6 @@ class GraphTensor(BatchableExtensionType):
             tf.errors.InvalidArgumentError: if `index` (int, list[int]) is out 
             of range.
         '''
-
-        if isinstance(index, str):
-            _raise_migration_warnings(
-                ('Accessing data fields via `__getitem__` is deprecated. '
-                 'Please access data fields via attribute lookup instead. '
-                 f'\n\nFor now, performing attribute lookup on `{index}` ...\n'),
-                 stacklevel=3)
-            
-            return self.__getattr__(index)
         
         if isinstance(index, slice):
             index = _slice_to_tensor(index, self.num_subgraphs)
@@ -1309,16 +1207,6 @@ class GraphTensor(BatchableExtensionType):
             raise ValueError(
                 'Can only iterate over a `GraphTensor` instance in eager mode.')
         return _GraphTensorIterator(self, limit=self.num_subgraphs)
-
-    @property
-    def _data(self):
-        _raise_migration_warnings(
-            ('_data is deprecated, instead use `data` to access '
-             'the dictionary of data. \n\nFor now, '
-             'accessing and returning `data` ...\n'),
-             stacklevel=3
-        )
-        return self.data
 
     class Spec:
 
@@ -1402,22 +1290,12 @@ class GraphTensor(BatchableExtensionType):
             edge_src = _get_spec(edge_src, DEFAULT_INDEX_DTYPE, 1, force_shape)
             edge_dst = _get_spec(edge_dst, DEFAULT_INDEX_DTYPE, 1, force_shape)
 
-            graph_indicator = auxiliary.pop('graph_indicator', None)
-            if graph_indicator is not None:
-                _raise_migration_warnings(
-                    ('`graph_indicator` input spec is deprecated. Please input '
-                    '`sizes` spec instead, which specifies the size of each subgraph. '
-                    '\n\nFor now converting `graph_indicator` spec to `sizes` spec ...'),
-                    stacklevel=4
-                )
-                self.sizes = tf.TensorSpec([None], graph_indicator.dtype)
+            sizes_dtype = (
+                edge_src.dtype if sizes is None else sizes.dtype)
+            if sizes is None or sizes.shape.rank > 0:
+                self.sizes = tf.TensorSpec([None], sizes_dtype)
             else:
-                sizes_dtype = (
-                    edge_src.dtype if sizes is None else sizes.dtype)
-                if sizes is None or sizes.shape.rank > 0:
-                    self.sizes = tf.TensorSpec([None], sizes_dtype)
-                else:
-                    self.sizes = tf.TensorSpec([], sizes_dtype)
+                self.sizes = tf.TensorSpec([], sizes_dtype)
 
             self.node_feature = node_feature
             self.edge_src = edge_src
@@ -1548,28 +1426,6 @@ class GraphTensor(BatchableExtensionType):
                 node_position=self.node_position,
                 **self.auxiliary)
         
-        @property
-        def _data_spec(self):
-            _raise_migration_warnings(
-                ('_data_spec is deprecated, instead use `data_spec` to access '
-                'the dictionary of data specs. \n\nFor now, '
-                'accessing and returning `data` ...\n'),
-                stacklevel=3
-            )
-            return self.data_spec
-
-
-class GraphTensorSpec:
-
-    def __new__(cls, data_spec=None, shape=None, dtype=None):
-        _raise_migration_warnings(
-            ('`GraphTensorSpec` is deprecated. Please use `GraphTensor.Spec` '
-             'instead. \n\nFor now, returning a `GraphTensor.Spec` '
-             'instance ...\n'), 
-             stacklevel=3)
-        assert isinstance(data_spec, dict), '`data_spec` should be a `dict`.'
-        return GraphTensor.Spec(**data_spec)
-
 
 class _GraphTensorIterator:
 
@@ -2116,17 +1972,6 @@ def graph_tensor_boolean_mask(tensor, mask, axis=None):
         GraphTensor: Masked instance of a GraphTensor.
 
     '''
-
-    warnings.warn(
-        (
-            'tf.boolean_mask now also allows masking of whole subgraphs. '
-            'From now on, axis=0, axis="graph" or axis=None specifies that '
-            'subgraphs should be masked; axis=1 or axis="node" specifies that '
-            'nodes should be masked; and axis=2 or axis="edge" specifies that '
-            'edges should be masked.'
-        ),
-        stacklevel=4,
-    )
 
     if axis is None or axis == 0 or axis == 'graph':
         return _mask_subgraphs(tensor, mask)

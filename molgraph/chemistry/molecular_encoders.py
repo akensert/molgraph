@@ -147,8 +147,7 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     ... )
     >>> # Encode two molecules as a GraphTensor
     >>> graph_tensor = encoder(['CCC', 'CCO'])
-    >>> # Merge subgraphs into a single disjoint graph
-    >>> graph_tensor.merge()
+    >>> graph_tensor
     GraphTensor(
       sizes=<tf.Tensor: shape=(2,), dtype=int32>,
       node_feature=<tf.Tensor: shape=(6, 119), dtype=float32>,
@@ -179,8 +178,7 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     ... )
     >>> # Encode two molecules as a GraphTensor
     >>> graph_tensor = encoder(['CCC', 'CCO'])
-    >>> # Merge subgraphs into a single disjoint graph
-    >>> graph_tensor.merge()
+    >>> graph_tensor
     GraphTensor(
       sizes=<tf.Tensor: shape=(2,), dtype=int32>,
       node_feature=<tf.Tensor: shape=(6,), dtype=string>,
@@ -211,8 +209,6 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
     ... )
     >>> # Encode two molecules as a GraphTensor
     >>> graph_tensor = encoder(['CCC', 'CCO'])
-    >>> # Merge subgraphs into a single disjoint graph
-    >>> graph_tensor = graph_tensor.merge()
     >>> # Define embedding layers
     >>> node_embedding = molgraph.layers.EmbeddingLookup(
     ...    feature='node_feature', output_dim=16)
@@ -344,8 +340,6 @@ class MolecularGraphEncoder3D(BaseMolecularGraphEncoder):
     ... )
     >>> # Encode two molecules as a GraphTensor
     >>> graph_tensor = encoder(['CCC', 'CCO'])
-    >>> # Merge subgraphs into a single disjoint graph.
-    >>> graph_tensor = graph_tensor.merge()
     >>> # The main difference between the 2d and 3d encoder is
     >>> # the edge_feature field. Here, in contains coulomb values,
     >>> # which mimics electrostatic interactions between nuclei

@@ -13,7 +13,6 @@ from typing import Union
 from molgraph.internal import register_keras_serializable 
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.tensors.graph_tensor import GraphTensorSpec
 
 from molgraph.layers import gnn_layer
 from molgraph.layers import gnn_ops 
@@ -177,7 +176,7 @@ class GATConv(gnn_layer.GNNLayer):
         self.activation = activations.get('elu')
         self.attention_activation = activations.get(attention_activation)
 
-    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
+    def _build(self, graph_tensor_spec: GraphTensor.Spec) -> None:
 
         if self.merge_mode == 'concat':
             if not self.units or (self.units % self.num_heads != 0):

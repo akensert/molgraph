@@ -14,7 +14,6 @@ from typing import Union
 from molgraph.internal import register_keras_serializable 
 
 from molgraph.tensors.graph_tensor import GraphTensor
-from molgraph.tensors.graph_tensor import GraphTensorSpec
 
 from molgraph.layers import gnn_layer
 
@@ -170,7 +169,7 @@ class GCFConv(gnn_layer.GNNLayer):
             self.rbf_stddev
         )
 
-    def _build(self, graph_tensor_spec: GraphTensorSpec) -> None:
+    def _build(self, graph_tensor_spec: GraphTensor.Spec) -> None:
 
         self.filter_generator_1 = self.get_dense(self.units, self.activation)
         self.filter_generator_2 = self.get_dense(self.units, self.activation)
