@@ -1,11 +1,18 @@
-# MolGraph 0.6.3
+# MolGraph 0.6.4
 
-<!-- ## Version 0.6.4 (2023-XX-XX)
+<!-- ## Version 0.6.5 (2023-XX-XX)
 
 ### Minor features and improvements
 - `molgraph.layers`
     - `molgraph.layers.EdgeConv` now inherits from the `molgraph.layers.GNNLayer`
     - `molgraph.layers.EdgeConv` now works with single node graphs (i.e. graphs without edges) -->
+
+
+## Version 0.6.4 (2023-11-30)
+
+### Major features and improvements
+- `molgraph.models`
+    - `molgraph.models.gin` now considers initial node features (which has been subject to a linear transformation) in its output.
 
 
 ## Version 0.6.3 (2023-11-27)
