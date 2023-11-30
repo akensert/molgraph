@@ -138,6 +138,8 @@ class GIN(keras.layers.Layer):
         if not self.units:
             self.units = input_shape[-1]
 
+        self.initial_projection = self._get_dense()
+
         self.gin_convs = [
             self._get_gin_conv() for _ in range(self.steps)]
 
@@ -164,8 +166,12 @@ class GIN(keras.layers.Layer):
         if isinstance(tensor.node_feature, tf.RaggedTensor):
             tensor = tensor.merge()
         
-        node_features = []
-        x = tensor
+        tensor = tensor.update({
+            'node_feature': self.initial_projection(tensor.node_feature)})
+        
+        x = tensor 
+
+        node_features = [x.node_feature]
         for gin_conv in self.gin_convs:
             x = gin_conv(x)
             node_features.append(x.node_feature)
@@ -236,7 +242,6 @@ class GIN(keras.layers.Layer):
         gin_kwargs["bias_initializer"] = bias_initializer
         return GINConv(**gin_kwargs)
     
-    # TODO: Currently unused (no prediction head).
     def _get_dense(self):
         common_kwargs = dict(
             units=self.units,
