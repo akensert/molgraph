@@ -42,7 +42,7 @@ class GIN(keras.layers.Layer):
     >>> gin_model = tf.keras.Model(inputs, outputs)
     >>> graph_embeddings = gin_model.predict(graph_tensor, verbose=0)
     >>> graph_embeddings.shape
-    (2, 4, 32)
+    (2, 5, 32)
  
     Args:
         steps (int):

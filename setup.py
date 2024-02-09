@@ -12,24 +12,28 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 install_requires = [
-    "tensorflow>=2.13.0",
-    "rdkit>=2022.3.5",
+    "tensorflow",
+    "rdkit",
     "pandas>=1.0.3",
     "ipython==8.12.0",
 ]
+extras_require = {
+   'gpu': ['tensorflow[and-cuda]']
+}
 
 setuptools.setup(
     name='molgraph',
     version=get_version(),
     author="Alexander Kensert",
     author_email="alexander.kensert@gmail.com",
-    description="Implementations of graph neural networks for molecular machine learning",
+    description="Graph Neural Networks for Molecular Machine Learning",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
     url="https://github.com/akensert/molgraph",
     packages=setuptools.find_packages(include=["molgraph*"]),
     install_requires=install_requires,
+    extras_require=extras_require,
     classifiers=[
         "Programming Language :: Python :: 3",
         "Intended Audience :: Science/Research",
@@ -44,7 +48,12 @@ setuptools.setup(
         'machine-learning',
         'molecular-machine-learning',
         'molecular-graphs',
+        'graphs',
         'cheminformatics',
+        'chemometrics',
         'bioinformatics',
+        'chemistry',
+        'biology',
+        'biochemistry',
     ]
 )

@@ -2,8 +2,6 @@
 
 **Graph Neural Networks** with **TensorFlow** and **Keras**. Focused on **Molecular Machine Learning**.
 
-> This is an early release and a work in progress; so be aware of breaking changes.
-
 <img src="https://github.com/akensert/molgraph/blob/main/media/molgraph.jpg" alt="molgraph" width="800">
 
 ## Highlights
@@ -36,11 +34,11 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 
 - **Graph tensor** ([GraphTensor](http://github.com/akensert/molgraph/tree/main/molgraph/tensors/graph_tensor.py))
     - A composite tensor holding graph data.
-    - Has a ragged (multiple graphs) and a non-ragged state (single disjoint graph)
-    - Can conveniently go between both states (merge(), separate())
-    - Can propagate node information (features) based on edges (propagate())
-    - Can add, update and remove graph data (update(), remove())
-    - As it is now implemented with the TF's ExtensionType API, it is now compatible with TensorFlow's APIs (including Keras). For instance, graph data (encoded as a GraphTensor) can now seamlessly be used with keras.Sequential, keras.Functional, tf.data.Dataset, and tf.saved_model APIs.
+    - Has a ragged state (multiple graphs) and a non-ragged state (single disjoint graph).
+    - Can conveniently go between both states (merge(), separate()).
+    - Can propagate node states (features) based on edges (propagate()).
+    - Can add, update and remove graph data (update(), remove()).
+    - Compatible with TensorFlow's APIs (including Keras). For instance, graph data (encoded as a GraphTensor) can now seamlessly be used with keras.Sequential, keras.Functional, tf.data.Dataset, and tf.saved_model APIs.
 - **Layers**
     - **Convolutional**
         - GCNConv ([GCNConv](http://github.com/akensert/molgraph/tree/main/molgraph/layers/convolutional/gcn_conv.py))
@@ -73,33 +71,25 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
         - **SmoothGradSaliencyMapping**
         - **GradientActivationMapping** (Recommended)
 
-## Changelog
-For a detailed list of changes, see the [CHANGELOG.md](https://github.com/akensert/molgraph/blob/main/CHANGELOG.md).
-
 ## Requirements/dependencies
-- **Python** (version >= 3.10 recommended)
-    - **TensorFlow** (version >= 2.13.0 recommended)
-    - **RDKit** (version >= 2022.3.5 recommended)
-    - **Pandas** (version >= 1.0.3 recommended)
-    - **IPython** (version == 8.12.0 recommended)
+- **Python** (version ~= 3.10)
+    - **TensorFlow** (version ~= 2.15.0)
+    - **RDKit** (version ~= 2022.3.5)
+    - **Pandas** (version ~= 1.0.3)
+    - **IPython** (version ~= 8.12.0)
 
 > MolGraph should work with the more recent TensorFlow and RDKit versions. If not, try installing earlier versions of TensorFlow and RDKit.
 
 ## Installation
 
-Install via **pip**:
-
+For **GPU** users:
 <pre>
-pip install molgraph
+pip install molgraph[gpu]
 </pre>
 
-Install via **docker**:
-
+For **CPU** users:
 <pre>
-git clone https://github.com/akensert/molgraph.git
-cd molgraph/docker
-docker build -t molgraph-tf[-gpu][-jupyter]/molgraph:0.0 molgraph-tf[-gpu][-jupyter]/
-docker run -it <b>[-p 8888:8888]</b> molgraph-tf[-gpu]<b>[-jupyter]</b>/molgraph:0.0
+pip install molgraph
 </pre>
 
 Now run your first program with **MolGraph**:
@@ -154,3 +144,6 @@ gam_model = models.GradientActivationMapping(
 
 maps = gam_model(x_train.separate())
 ```
+
+## Changelog
+For a detailed list of changes, see the [CHANGELOG.md](https://github.com/akensert/molgraph/blob/main/CHANGELOG.md).

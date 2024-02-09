@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:2.9.1
+FROM tensorflow/tensorflow:2.15.0
 
 FROM git clone https://github.com/akensert/molgraph.git && \
      cd molgraph && \

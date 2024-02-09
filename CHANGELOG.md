@@ -1,12 +1,15 @@
-# MolGraph 0.6.4
+# MolGraph 0.6.5
 
-<!-- ## Version 0.6.5 (2023-XX-XX)
+<!-- ## Version 0.6.6 (2023-XX-XX)
 
 ### Minor features and improvements
 - `molgraph.layers`
     - `molgraph.layers.EdgeConv` now inherits from the `molgraph.layers.GNNLayer`
     - `molgraph.layers.EdgeConv` now works with single node graphs (i.e. graphs without edges) -->
 
+## Version 0.6.5 (2024-01-03)
+
+MolGraph can now be installed (via pip) for GPU and CPU users: `pip install molgraph[gpu]` and `pip install molgraph`, respectively.
 
 ## Version 0.6.4 (2023-11-30)
 
