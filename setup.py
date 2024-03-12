@@ -12,13 +12,13 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 install_requires = [
-    "tensorflow",
-    "rdkit",
+    "tensorflow==2.15.*",
+    "rdkit==2023.9.5",
     "pandas>=1.0.3",
     "ipython==8.12.0",
 ]
 extras_require = {
-   'gpu': ['tensorflow[and-cuda]']
+   'gpu': ['tensorflow[and-cuda]==2.15.*']
 }
 
 setuptools.setup(
@@ -43,12 +43,12 @@ setuptools.setup(
     ],
     python_requires=">=3.10",
     keywords=[
-        'graph-neural-networks',
-        'deep-learning',
         'machine-learning',
+        'deep-learning',
+        'graph-neural-networks',
+        'graphs',
         'molecular-machine-learning',
         'molecular-graphs',
-        'graphs',
         'cheminformatics',
         'chemometrics',
         'bioinformatics',

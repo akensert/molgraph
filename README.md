@@ -2,7 +2,7 @@
 
 **Graph Neural Networks** with **TensorFlow** and **Keras**. Focused on **Molecular Machine Learning**.
 
-<img src="https://github.com/akensert/molgraph/blob/main/media/molgraph.jpg" alt="molgraph" width="800">
+<img src="https://github.com/akensert/molgraph/blob/main/media/molgraph.jpg" alt="molgraph" width="820">
 
 ## Highlights
 
@@ -72,7 +72,7 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
         - **GradientActivationMapping** (Recommended)
 
 ## Requirements/dependencies
-- **Python** (version ~= 3.10)
+- **Python** (version ~= 3.10.0)
     - **TensorFlow** (version ~= 2.15.0)
     - **RDKit** (version ~= 2022.3.5)
     - **Pandas** (version ~= 1.0.3)
@@ -101,7 +101,7 @@ from molgraph import layers
 from molgraph import models
 
 # Obtain dataset, specifically ESOL
-qm7 = chemistry.datasets.get('esol')
+esol = chemistry.datasets.get('esol')
 
 # Define molecular graph encoder
 atom_encoder = chemistry.Featurizer([
@@ -118,11 +118,11 @@ bond_encoder = chemistry.Featurizer([
 encoder = chemistry.MolecularGraphEncoder(atom_encoder, bond_encoder)
 
 # Obtain graphs and associated labels
-x_train = encoder(qm7['train']['x'])
-y_train = qm7['train']['y']
+x_train = encoder(esol['train']['x'])
+y_train = esol['train']['y']
 
-x_test = encoder(qm7['test']['x'])
-y_test = qm7['test']['y']
+x_test = encoder(esol['test']['x'])
+y_test = esol['test']['y']
 
 # Build model via Keras API
 gnn_model = keras.Sequential([
@@ -144,6 +144,3 @@ gam_model = models.GradientActivationMapping(
 
 maps = gam_model(x_train.separate())
 ```
-
-## Changelog
-For a detailed list of changes, see the [CHANGELOG.md](https://github.com/akensert/molgraph/blob/main/CHANGELOG.md).

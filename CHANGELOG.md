@@ -1,11 +1,9 @@
-# MolGraph 0.6.5
+# MolGraph 0.6.6
 
-<!-- ## Version 0.6.6 (2023-XX-XX)
+## Version 0.6.6 (2024-03-12)
 
-### Minor features and improvements
-- `molgraph.layers`
-    - `molgraph.layers.EdgeConv` now inherits from the `molgraph.layers.GNNLayer`
-    - `molgraph.layers.EdgeConv` now works with single node graphs (i.e. graphs without edges) -->
+### Bug fixes
+- MolGraph should now install appropriate tensorflow version.
 
 ## Version 0.6.5 (2024-01-03)
 
