@@ -124,7 +124,7 @@ y_test = esol['test']['y']
 
 # Build model via Keras API
 gnn_model = keras.Sequential([
-    layers.Input(type_spec=x_train.spec),
+    keras.layers.Input(type_spec=x_train.spec),
     layers.GATConv(units=32, name='gat_conv_1'),
     layers.GATConv(units=32, name='gat_conv_2'),
     layers.Readout(),
