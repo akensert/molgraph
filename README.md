@@ -78,8 +78,6 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
     - **Pandas**
     - **IPython**
 
-> MolGraph should work with the more recent TensorFlow and RDKit versions. If not, try installing earlier versions of TensorFlow and RDKit.
-
 ## Installation
 
 For **CPU** users:
