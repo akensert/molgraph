@@ -72,24 +72,24 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
         - **GradientActivationMapping** (Recommended)
 
 ## Requirements/dependencies
-- **Python** (version ~= 3.10.0)
-    - **TensorFlow** (version ~= 2.15.0)
-    - **RDKit** (version ~= 2022.3.5)
-    - **Pandas** (version ~= 1.0.3)
-    - **IPython** (version ~= 8.12.0)
+- **Python** (version >= 3.10)
+    - **TensorFlow** (version 2.15.*)
+    - **RDKit** (version 2023.9.*)
+    - **Pandas**
+    - **IPython**
 
 > MolGraph should work with the more recent TensorFlow and RDKit versions. If not, try installing earlier versions of TensorFlow and RDKit.
 
 ## Installation
 
-For **GPU** users:
-<pre>
-pip install molgraph[gpu]
-</pre>
-
 For **CPU** users:
 <pre>
 pip install molgraph
+</pre>
+
+For **GPU** users:
+<pre>
+pip install molgraph[gpu]
 </pre>
 
 Now run your first program with **MolGraph**:
@@ -126,6 +126,7 @@ y_test = esol['test']['y']
 
 # Build model via Keras API
 gnn_model = keras.Sequential([
+    layers.Input(type_spec=x_train.spec),
     layers.GATConv(units=32, name='gat_conv_1'),
     layers.GATConv(units=32, name='gat_conv_2'),
     layers.Readout(),
