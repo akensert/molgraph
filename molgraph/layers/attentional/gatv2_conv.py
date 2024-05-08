@@ -182,19 +182,16 @@ class GATv2Conv(gnn_layer.GNNLayer):
             self.units //= self.num_heads
 
         if self.use_edge_features:
-
-            self.edge_projection = self.get_einsum_dense(
-                'ij,jkh->ihk', (self.num_heads, self.units))
-
             if self.update_edge_features:
                 self.edge_out_projection = self.get_einsum_dense(
                     'ihj,jkh->ihk', (self.num_heads, self.units))
 
-        # Future implementation: Allow for non-shared weights?
-        # I.e., implement node_projection_dst and node_projection_src
-        self.node_projection = self.get_einsum_dense(
+        self.projection = self.get_einsum_dense(
             'ij,jkh->ihk', (self.num_heads, self.units))
 
+        self.node_projection = self.get_einsum_dense(
+            'ij,jkh->ihk', (self.num_heads, self.units))
+        
         if self.apply_self_projection:
             self.self_projection = self.get_einsum_dense(
                 'ij,jkh->ihk', (self.num_heads, self.units))
@@ -212,27 +209,31 @@ class GATv2Conv(gnn_layer.GNNLayer):
         else:
             node_feature_residual = None
 
+        # GAT v. GATv2: Concatenation before linear projection
+        if not self.use_edge_features:
+            attention_feature = tf.concat([
+                tf.gather(tensor.node_feature, tensor.edge_dst),
+                tf.gather(tensor.node_feature, tensor.edge_src)], axis=-1)
+        else:
+            attention_feature = tf.concat([
+                tf.gather(tensor.node_feature, tensor.edge_dst),
+                tf.gather(tensor.node_feature, tensor.edge_src),
+                tensor.edge_feature], axis=-1)
+        
         node_feature = self.node_projection(tensor.node_feature)
-        # Add dst and src node features, instead of concatenating them
-        attention_feature = (
-            tf.gather(node_feature, tensor.edge_dst) +
-            tf.gather(node_feature, tensor.edge_src)
-        )
-        if self.use_edge_features:
-            edge_feature = self.edge_projection(tensor.edge_feature)
-            # Similarily, add associated edge features, instead of concatenating them
-            attention_feature += edge_feature
 
+        attention_feature = self.projection(attention_feature)
+
+        if self.use_edge_features:
             if self.update_edge_features:
                 edge_feature = self.edge_out_projection(attention_feature)
                 edge_feature = gnn_ops.reduce_features(
                     feature=edge_feature,
                     mode=self.merge_mode,
                     output_units=self.units)
-
                 tensor = tensor.update({'edge_feature': edge_feature})
 
-        # Apply activation before attention projection
+        # GAT v. GATv2: Activation before linear projection
         edge_weights = self.attention_activation(attention_feature)
         edge_weights = self.attention_projection(edge_weights)
 

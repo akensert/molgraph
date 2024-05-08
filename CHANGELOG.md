@@ -1,4 +1,9 @@
-# MolGraph 0.6.6
+# MolGraph 0.6.7
+
+## Version 0.6.7 (2024-05-08)
+
+### Fixes
+- `molgraph.layers.GATv2Conv` should now better correspond to the original GATv2 implementation. 
 
 ## Version 0.6.6 (2024-03-12)
 
