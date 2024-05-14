@@ -1,4 +1,4 @@
-.. image:: _static/molgraph-title4.png
+.. image:: _static/molgraph-logo4.png
 
 |
 
