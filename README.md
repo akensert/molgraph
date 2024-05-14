@@ -34,7 +34,7 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 
 ## Overview 
 
-<img src="https://github.com/akensert/molgraph/tree/main/docs/source/_static/molgraph-overview.png" alt="molgraph-overview">
+<img src="https://github.com/akensert/molgraph/blob/main/docs/source/_static/molgraph-overview.png" alt="molgraph-overview">
 
 ## Implementations
 
