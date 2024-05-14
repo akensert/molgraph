@@ -1,8 +1,8 @@
-# MolGraph
+<img src="https://github.com/akensert/molgraph/tree/main/docs/source/_static/molgraph-title.png" alt="molgraph-title" width="85%">
 
 **Graph Neural Networks** with **TensorFlow** and **Keras**. Focused on **Molecular Machine Learning**.
 
-<img src="https://github.com/akensert/molgraph/blob/main/media/molgraph.jpg" alt="molgraph" width="820">
+> Currently, Keras 3 does not support extension types. As soon as it does, it is hoped that MolGraph will migrate to Keras 3.
 
 ## Highlights
 
@@ -13,15 +13,16 @@ from molgraph import GraphTensor
 from molgraph import layers
 from tensorflow import keras
 
+g = GraphTensor(node_feature=[[4.], [2.]], edge_src=[0], edge_dst=[1])
+
 model = keras.Sequential([
+    keras.layers.Input(type_spec=g.spec),
     layers.GINConv(units=32),
     layers.GINConv(units=32),
     layers.Readout(),
     keras.layers.Dense(units=1),
 ])
-output = model(
-    GraphTensor(node_feature=[[4.], [2.]], edge_src=[0], edge_dst=[1])
-)
+output = model(g)
 ```
 
 ## Paper
@@ -29,6 +30,10 @@ See [arXiv](https://arxiv.org/abs/2208.09944)
 
 ## Documentation
 See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
+
+## Overview 
+
+<img src="https://github.com/akensert/molgraph/tree/main/docs/source/_static/molgraph-overview.png" alt="molgraph-overview" width="85%">
 
 ## Implementations
 
