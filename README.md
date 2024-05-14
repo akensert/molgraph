@@ -1,4 +1,4 @@
-<img src="https://github.com/akensert/molgraph/blob/main/docs/source/_static/molgraph-title4.png" alt="molgraph-title">
+<img src="https://github.com/akensert/molgraph/blob/main/docs/source/_static/molgraph-title4.png" alt="molgraph-title" width="80%">
 
 **Graph Neural Networks** with **TensorFlow** and **Keras**. Focused on **Molecular Machine Learning**.
 
@@ -34,7 +34,7 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 
 ## Overview 
 
-<img src="https://github.com/akensert/molgraph/blob/main/docs/source/_static/molgraph-overview.png" alt="molgraph-overview">
+<img src="https://github.com/akensert/molgraph/blob/main/docs/source/_static/molgraph-overview.png" alt="molgraph-overview" width="90%">
 
 ## Implementations
 
