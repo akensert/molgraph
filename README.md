@@ -1,4 +1,4 @@
-<img src="https://github.com/akensert/molgraph/tree/main/docs/source/_static/molgraph-title.png" alt="molgraph-title" width="85%">
+<img src="https://github.com/akensert/molgraph/blob/main/docs/source/_static/molgraph-title.png" alt="molgraph-title">
 
 **Graph Neural Networks** with **TensorFlow** and **Keras**. Focused on **Molecular Machine Learning**.
 
@@ -22,7 +22,8 @@ model = keras.Sequential([
     layers.Readout(),
     keras.layers.Dense(units=1),
 ])
-output = model(g)
+
+pred = model(g)
 ```
 
 ## Paper
@@ -33,7 +34,7 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 
 ## Overview 
 
-<img src="https://github.com/akensert/molgraph/tree/main/docs/source/_static/molgraph-overview.png" alt="molgraph-overview" width="85%">
+<img src="https://github.com/akensert/molgraph/tree/main/docs/source/_static/molgraph-overview.png" alt="molgraph-overview">
 
 ## Implementations
 
