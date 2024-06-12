@@ -70,7 +70,7 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-html_logo = '_static/molgraph-logo4.png'
+html_logo = '_static/molgraph-logo-pixel.png'
 
 html_theme_options = {}
 

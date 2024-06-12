@@ -2,7 +2,7 @@
 Home
 =====
 
-.. image:: _static/molgraph-logo4.png
+.. image:: _static/molgraph-logo-pixel.png
 
 |
 
