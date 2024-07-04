@@ -17,13 +17,19 @@ g = GraphTensor(node_feature=[[4.], [2.]], edge_src=[0], edge_dst=[1])
 
 model = keras.Sequential([
     layers.GNNInput(type_spec=g.spec),
-    layers.GINConv(units=32),
-    layers.GINConv(units=32),
+    layers.GATv2Conv(units=32),
+    layers.GATv2Conv(units=32),
     layers.Readout(),
     keras.layers.Dense(units=1),
 ])
 
 pred = model(g)
+
+# Save and load Keras model
+model.save('/tmp/gatv2_model.keras')
+loaded_model = keras.models.load_model('/tmp/gatv2_model.keras')
+loaded_pred = loaded_model(g)
+assert pred == loaded_pred
 ```
 
 ## Paper
