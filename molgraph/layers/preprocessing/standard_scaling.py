@@ -215,17 +215,15 @@ class StandardScaling(PreprocessingLayer):
                 initializer=initializers.Constant(True),
                 trainable=False)
 
+        self.count = self.add_weight(
+            name='count',
+            shape=(),
+            dtype=tf.int64,
+            initializer='zeros',
+            trainable=False)
+            
         if self.input_mean is None:
-
-            self.count = self.add_weight(
-                name='count',
-                shape=(),
-                dtype=tf.int64,
-                initializer='zeros',
-                trainable=False)
-
             self.finalize_state()
-
         else:
             self.adapt_mean.assign(self.input_mean)
             self.adapt_variance.assign(self.input_variance)

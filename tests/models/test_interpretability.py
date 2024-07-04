@@ -36,7 +36,7 @@ class TestSaliency(unittest.TestCase):
             input_spec = inputs.spec
         
         sequential_model = tf.keras.Sequential([
-            tf.keras.layers.Input(type_spec=input_spec),
+            molgraph.layers.GNNInputLayer(type_spec=input_spec),
             GTConv(32, name='conv_1'),
             GTConv(32, name='conv_2'),
             Readout(),
@@ -152,7 +152,7 @@ class TestGradientActivation(unittest.TestCase):
             input_spec = inputs.spec
 
         sequential_model = tf.keras.Sequential([
-            tf.keras.layers.Input(type_spec=input_spec),
+            molgraph.layers.GNNInputLayer(type_spec=input_spec),
             GTConv(32, name='conv_1'),
             GTConv(32, name='conv_2'),
             Readout(),

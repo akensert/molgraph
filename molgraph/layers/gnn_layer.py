@@ -494,7 +494,7 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
         Returns:
             A layer instance.
         '''
-        graph_tensor_spec = config.pop('graph_tensor_spec', None)
+        graph_tensor_spec = config.pop('_graph_tensor_spec', None)
         update_step = config.pop('update_step')
         config['update_step'] = (
             None if update_step is None else layers.deserialize(update_step))
@@ -511,6 +511,11 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
                 stacklevel=2
             )
         else:
+            graph_tensor_spec = keras.saving.deserialize_keras_object(
+                graph_tensor_spec)
+            auxiliary_spec = graph_tensor_spec.pop('auxiliary')
+            graph_tensor_spec = {**graph_tensor_spec, **auxiliary_spec}
+            graph_tensor_spec = GraphTensor.Spec(**graph_tensor_spec)
             layer.build_from_signature(graph_tensor_spec)
         return layer
 
@@ -522,6 +527,9 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
             initialize and build another layer instance (of the same class), 
             via ``from_config()``.
         '''
+        # Temporary fix to allow graph tensor spec to be serializable:
+        graph_tensor_spec = self._graph_tensor_spec.__dict__
+        graph_tensor_spec['auxiliary'] = dict(graph_tensor_spec['auxiliary'])
         config = super().get_config()
         config.update({
             'units': self.units,
@@ -550,8 +558,8 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
                 constraints.serialize(self._kernel_constraint),
             'bias_constraint':
                 constraints.serialize(self._bias_constraint),
-            'graph_tensor_spec':
-                self._graph_tensor_spec,
+            '_graph_tensor_spec':
+                graph_tensor_spec,
         })
         return config
 

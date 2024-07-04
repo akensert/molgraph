@@ -16,7 +16,7 @@ from tensorflow import keras
 g = GraphTensor(node_feature=[[4.], [2.]], edge_src=[0], edge_dst=[1])
 
 model = keras.Sequential([
-    keras.layers.Input(type_spec=g.spec),
+    layers.GNNInput(type_spec=g.spec),
     layers.GINConv(units=32),
     layers.GINConv(units=32),
     layers.Readout(),
@@ -130,7 +130,7 @@ y_test = esol['test']['y']
 
 # Build model via Keras API
 gnn_model = keras.Sequential([
-    keras.layers.Input(type_spec=x_train.spec),
+    layers.GNNInputLayer(type_spec=x_train.spec),
     layers.GATConv(units=32, name='gat_conv_1'),
     layers.GATConv(units=32, name='gat_conv_2'),
     layers.Readout(),

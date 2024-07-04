@@ -172,17 +172,15 @@ class CenterScaling(PreprocessingLayer):
             initializer='zeros',
             trainable=False)
 
+        self.count = self.add_weight(
+            name='count',
+            shape=(),
+            dtype=tf.int64,
+            initializer='zeros',
+            trainable=False)
+        
         if self.input_mean is None:
-
-            self.count = self.add_weight(
-                name='count',
-                shape=(),
-                dtype=tf.int64,
-                initializer='zeros',
-                trainable=False)
-
             self.finalize_state()
-
         else:
             self.adapt_mean.assign(self.input_mean)
             self.mean = self.adapt_mean

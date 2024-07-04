@@ -248,7 +248,7 @@ class Tokenizer:
         for bond in inputs:
             _check_bond(bond)
             if bond is None:
-                bond_tokens.append(np.array(['[SELF_LOOP]']))
+                bond_tokens.append(np.array('[SELF_LOOP]'))
             else:
                 bond_tokens.append(self(bond))
         return np.asarray(bond_tokens)

@@ -1,4 +1,15 @@
-# MolGraph 0.6.7
+# MolGraph 0.6.8
+
+## Version 0.6.8 (2024-07-04)
+
+### Bug fixes
+
+- `molgraph.layers`
+    - `molgraph.layers.GNNLayer`'s get_config and from_config methods are updated to allow for serialization of GNN models. 
+    - `molgraph.layers.GNNInputLayer` and `molgraph.layers.GNNInput` were added to allow for serialization of GNN models.
+    - `molgraph.layers.StandardScaling`, `molgraph.layers.Threshold` and `molgraph.layers.CenterScaling` can now be loaded.
+- `molgraph.chemistry`
+    - `molgraph.chemistry.Tokenizer` now appropriately adds self loops (if specified).
 
 ## Version 0.6.7 (2024-05-08)
 
