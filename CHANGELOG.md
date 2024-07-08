@@ -1,4 +1,18 @@
-# MolGraph 0.6.8
+# MolGraph 0.6.9
+
+## Version 0.6.9 (2024-07-08)
+
+### Bug fixes
+
+- `molgraph.models`
+    - `molgraph.models.interpretability` models now work with multi-label data, as it was supposed to.
+    - `molgraph.models.interpretability.GradientActivationMapping` now computes alpha correctly, namely, computed for each subgraph separately (based on the graph indicator).
+
+### Minor features and improvements
+
+- `molgraph.models`
+    - `molgraph.models.interpretability` models are now simplified and are not by default wrapped in tf.function; if desirable, the user may wrap it in tf.function themselves.
+
 
 ## Version 0.6.8 (2024-07-04)
 

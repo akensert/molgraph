@@ -8,18 +8,6 @@ from typing import Callable
 from molgraph.tensors.graph_tensor import GraphTensor
 
 
-def automatically_infer_input_signature(func):
-    def call(
-        self: 'SaliencyMapping', 
-        x: GraphTensor, 
-        y: Optional[tf.Tensor] = None
-    ) -> Union[tf.Tensor, tf.RaggedTensor]:
-        if not self._built:
-            self.build(x, y)
-        return func(self, x, y)
-    return call
-
-
 class SaliencyMapping(tf.Module):
     '''Vanilla saliency mapping.
 
@@ -65,19 +53,6 @@ class SaliencyMapping(tf.Module):
         super().__init__(**kwargs)
         self._model = model
         self._activation = keras.activations.get(output_activation)
-        self._built = False
-
-    def __init__(
-        self,
-        model: keras.Model,
-        output_activation: Optional[str] = None,
-        **kwargs
-    ) -> None:
-        self.random_seed = kwargs.pop('random_seed', None)
-        super().__init__(**kwargs)
-        self._model = model
-        self._activation = keras.activations.get(output_activation)
-        self._built = False
 
     def compute_saliency(
         self, 
@@ -100,7 +75,6 @@ class SaliencyMapping(tf.Module):
             predictions = self._process_predictions(predictions, y)
         return tape.gradient(predictions, x.node_feature)
 
-    @automatically_infer_input_signature
     def __call__(
         self, 
         x: GraphTensor, 
@@ -113,51 +87,16 @@ class SaliencyMapping(tf.Module):
         saliency = self.compute_saliency(x, y)
         return x_orig.update(node_feature=saliency).node_feature
 
-    def build(
-        self, 
-        x: GraphTensor, 
-        y: Optional[tf.Tensor],
-    ) -> None:
-
-        input_signature = [x.spec]
-        if y is not None:
-            y_signature = tf.TensorSpec(
-                shape=tf.TensorShape([None]).concatenate(y.shape[1:]), 
-                dtype=y.dtype)
-            input_signature.append(y_signature)
-            
-        self.__call__ = tf.function(
-            self.__call__, input_signature=input_signature)         
-        
-        self._built = True
-
     @staticmethod
     def _process_predictions(
         pred: tf.Tensor, 
         y: Optional[tf.Tensor],
     ) -> tf.Tensor:
         'Helper method to extract relevant predictions.'
-
-        if y is None:
+        if y is None or len(y.shape) < 2:
             return pred
-        
-        y = tf.cond(
-            tf.rank(y) < 2,
-            lambda: tf.expand_dims(y, -1),
-            lambda: y)
-        
-        # If multi-label or multi-class, extract relevant preds.
-        pred = tf.cond(
-            tf.shape(y)[-1] > 1,
-            lambda: tf.gather_nd(
-                pred,
-                tf.stack([
-                    tf.range(tf.shape(y)[0], dtype=tf.int64),
-                    tf.argmax(y, axis=-1)
-                ], axis=1)
-            ),
-            lambda: pred)
-
+        indices = tf.where(y == 1)
+        pred = tf.gather_nd(pred, indices)
         return pred
 
 

@@ -80,33 +80,36 @@ class GradientActivationMapping(SaliencyMapping):
         y: Optional[tf.Tensor]
     ) -> tf.Tensor:
 
+        graph_indicator = None
         features = []
         with tf.GradientTape() as tape:
 
             for layer in self._model.layers:
                 x = layer(x)
                 if layer.name in self._layer_names:
-                    node_feature = x.node_feature
-                    if isinstance(x.node_feature, tf.RaggedTensor):
-                        node_feature = node_feature.flat_values
+                    x_merged = (
+                        x.merge() if isinstance(x.node_feature, tf.RaggedTensor) 
+                        else x)
+                    node_feature = x_merged.node_feature 
+                    if graph_indicator is None:
+                        graph_indicator = x_merged.graph_indicator
                     features.append(node_feature)
 
             predictions = self._activation(x)
             predictions = self._process_predictions(predictions, y)
 
         gradients = tape.gradient(predictions, features)
-        features = tf.stack(features, axis=0)
-        gradients = tf.stack(gradients, axis=0)
+        features = tf.concat(features, axis=-1)
+        gradients = tf.concat(gradients, axis=-1)
 
-        alpha = tf.reduce_mean(gradients, axis=1, keepdims=True)
+        alpha = tf.math.segment_mean(gradients, graph_indicator)
+        alpha = tf.gather(alpha, graph_indicator)
 
         activation_maps = tf.where(gradients != 0, alpha * features, gradients)
         activation_maps = tf.reduce_mean(activation_maps, axis=-1)
-
+        
         if self._discard_negative_values:
             activation_maps = tf.nn.relu(activation_maps)
-
-        activation_maps = tf.reduce_mean(activation_maps, axis=0)
 
         return activation_maps
 

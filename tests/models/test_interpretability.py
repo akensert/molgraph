@@ -49,11 +49,25 @@ class TestSaliency(unittest.TestCase):
             activation,
             random_seed=42,
         )
+
+        if label is None:
+            input_signature = [input_spec]
+        else:
+            input_signature = [
+                input_spec, 
+                tf.TensorSpec(tf.TensorShape([None]).concatenate(label.shape[1:]))]
+
+        saliency_model.__call__ = tf.function(
+            saliency_model.__call__, input_signature=input_signature
+        )
+
         maps_1 = saliency_model(inputs, label)
 
         file = tempfile.NamedTemporaryFile()
         filename = file.name
         file.close()
+
+
         tf.saved_model.save(saliency_model, filename)
         saliency_model_loaded = tf.saved_model.load(filename)
         shutil.rmtree(filename)
@@ -165,6 +179,17 @@ class TestGradientActivation(unittest.TestCase):
             layer_names=['conv_1', 'conv_2'],
             output_activation=activation,
             random_seed=42,
+        )
+
+        if label is None:
+            input_signature = [input_spec]
+        else:
+            input_signature = [
+                input_spec, 
+                tf.TensorSpec(tf.TensorShape([None]).concatenate(label.shape[1:]))]
+
+        saliency_model.__call__ = tf.function(
+            saliency_model.__call__, input_signature=input_signature
         )
 
         maps_1 = saliency_model(inputs, label)
