@@ -249,7 +249,8 @@ class GraphBatchEncoder(ExtensionTypeBatchEncoder):
 
         # No need to pass along `sizes` as it can be inferred:
         # encoded graph tensor is either ragged or scalar
-        encoded_data_spec = tf.nest.map_structure(encode_fields, spec.data_spec)
+        encoded_data_spec = {k: encode_fields(v) if not k.startswith('_') else v 
+            for (k, v) in spec.data_spec.items()}
         return list(encoded_data_spec.values())
     
     def decode(

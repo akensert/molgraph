@@ -1,4 +1,10 @@
-# MolGraph 0.6.9
+# MolGraph 0.6.10
+
+## Version 0.6.10 (2024-08-23)
+
+### Bug fixes
+- `molgraph.tensors`
+    - `GraphTensor` can now add field with prepended underscore in the input pipeline (after batching etc.) 
 
 ## Version 0.6.9 (2024-07-08)
 
