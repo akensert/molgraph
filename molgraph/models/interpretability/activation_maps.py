@@ -1,5 +1,7 @@
 import tensorflow as tf
 
+import warnings 
+
 from typing import List
 from typing import Optional
 
@@ -55,24 +57,23 @@ class GradientActivationMapping(SaliencyMapping):
     def __init__(
         self,
         model,
-        layer_names: List[str] = None,
+        layer_names: List[str] | None = None,
         output_activation: Optional[str] = None,
         discard_negative_values: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(model, output_activation, **kwargs)
-        if layer_names is not None:
-            self._layer_names = layer_names
-        else:
-            layer_names = []
-            for layer in model.layers:
-                if isinstance(layer, GNNLayer):
-                    layer_names.append(layer.name)
-            if not layer_names:
-                raise ValueError(
-                    'Could not obtain GNN layer(s).')
-            self._layer_names = layer_names
         self._discard_negative_values = discard_negative_values
+        if layer_names is not None:
+            warnings.warn(
+                (
+                    "`layer_names` is deprecated. All node features will be "
+                    "considered by default."
+                ),
+                DeprecationWarning,
+                stacklevel=2
+            )
+        self._layer_names = layer_names
 
     def compute_saliency(
         self,
@@ -85,8 +86,9 @@ class GradientActivationMapping(SaliencyMapping):
         with tf.GradientTape() as tape:
 
             for layer in self._model.layers:
-                x = layer(x)
-                if layer.name in self._layer_names:
+
+                if isinstance(x, GraphTensor):
+                    tape.watch(x.node_feature)
                     x_merged = (
                         x.merge() if isinstance(x.node_feature, tf.RaggedTensor) 
                         else x)
@@ -94,6 +96,8 @@ class GradientActivationMapping(SaliencyMapping):
                     if graph_indicator is None:
                         graph_indicator = x_merged.graph_indicator
                     features.append(node_feature)
+
+                x = layer(x)
 
             predictions = self._activation(x)
             predictions = self._process_predictions(predictions, y)

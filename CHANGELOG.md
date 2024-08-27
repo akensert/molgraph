@@ -1,4 +1,11 @@
-# MolGraph 0.6.10
+# MolGraph 0.6.11
+
+## Version 0.6.11 (2024-08-27)
+
+### Minor features and improvements
+
+- `molgraph.models.interpretability`
+    - `GradientActivationMapping` deprecates `layer_names` and will be default watch the node features of all graph tensors. 
 
 ## Version 0.6.10 (2024-08-23)
 

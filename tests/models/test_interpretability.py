@@ -236,6 +236,91 @@ class TestGradientActivation(unittest.TestCase):
         self._test_gradient_activation(graph_tensor, label, True, 3, 'softmax')
         self._test_gradient_activation(graph_tensor, label, False, 3, 'softmax')
 
+    def _test_gradient_activation_without_layer_names(
+        self,
+        inputs, 
+        label, 
+        merge,
+        output_units, 
+        activation,
+    ):
+        
+        if merge:
+            inputs = inputs.merge()
+            input_spec = inputs.spec
+        else:
+            input_spec = inputs.spec
+
+        sequential_model = tf.keras.Sequential([
+            molgraph.layers.GNNInputLayer(type_spec=input_spec),
+            GTConv(32, name='conv_1'),
+            GTConv(32, name='conv_2'),
+            Readout(),
+            tf.keras.layers.Dense(64),
+            tf.keras.layers.Dense(output_units)
+        ])
+
+        saliency_model = GradientActivationMapping(
+            sequential_model, 
+            output_activation=activation,
+            random_seed=42,
+        )
+
+        if label is None:
+            input_signature = [input_spec]
+        else:
+            input_signature = [
+                input_spec, 
+                tf.TensorSpec(tf.TensorShape([None]).concatenate(label.shape[1:]))]
+
+        saliency_model.__call__ = tf.function(
+            saliency_model.__call__, input_signature=input_signature
+        )
+
+        maps_1 = saliency_model(inputs, label)
+
+        file = tempfile.NamedTemporaryFile()
+        filename = file.name
+        file.close()
+        tf.saved_model.save(saliency_model, filename)
+        saliency_model_loaded = tf.saved_model.load(filename)
+        shutil.rmtree(filename)
+
+        if label is not None:
+            maps_2 = saliency_model_loaded(inputs, label)
+        else:
+            maps_2 = saliency_model_loaded(inputs)
+        
+        if merge:
+            test1 = all(
+                maps_1.numpy().round(3) ==  maps_2.numpy().round(3))
+        else:
+            test1 = all(
+                maps_1.flat_values.numpy().round(3) == 
+                maps_2.flat_values.numpy().round(3))
+            
+        self.assertTrue(test1)
+
+    def test_gradient_activation_without_layer_names(self):
+        self._test_gradient_activation_without_layer_names(graph_tensor, None, True, 1, 'linear')
+        self._test_gradient_activation_without_layer_names(graph_tensor, None, False, 1, 'linear')
+
+    def test_gradient_activation_with_label_and_without_layer_names(self):
+        label = tf.constant([1., 2., 3., 4., 5.])
+        self._test_gradient_activation_without_layer_names(graph_tensor, label, True, 1, 'linear')
+        self._test_gradient_activation_without_layer_names(graph_tensor, label, False, 1, 'linear')
+    
+    def test_gradient_activation_with_onehot_label_and_without_layer_names(self):
+        label = tf.constant([
+            [0., 1., 0.],
+            [0., 1., 0.],
+            [0., 0., 1.],
+            [1., 0., 0.],
+            [0., 1., 0.],
+        ])
+        self._test_gradient_activation_without_layer_names(graph_tensor, label, True, 3, 'softmax')
+        self._test_gradient_activation_without_layer_names(graph_tensor, label, False, 3, 'softmax')
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -137,8 +137,8 @@ y_test = esol['test']['y']
 # Build model via Keras API
 gnn_model = keras.Sequential([
     layers.GNNInputLayer(type_spec=x_train.spec),
-    layers.GATConv(units=32, name='gat_conv_1'),
-    layers.GATConv(units=32, name='gat_conv_2'),
+    layers.GATConv(units=32),
+    layers.GATConv(units=32),
     layers.Readout(),
     keras.layers.Dense(units=1024, activation='relu'),
     keras.layers.Dense(units=y_train.shape[-1])
@@ -150,8 +150,7 @@ gnn_model.fit(x_train, y_train, epochs=50)
 scores = gnn_model.evaluate(x_test, y_test)
 
 # Compute gradient activation maps
-gam_model = models.GradientActivationMapping(
-    model=gnn_model, layer_names=['gat_conv_1', 'gat_conv_2'])
+gam_model = models.GradientActivationMapping(gnn_model)
 
 maps = gam_model(x_train.separate())
 ```
