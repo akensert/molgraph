@@ -32,6 +32,25 @@ loaded_pred = loaded_model(g)
 assert pred == loaded_pred
 ```
 
+Combine outputs of GNN layers to improve predictive performance:
+
+```python
+model = keras.Sequential([
+    layers.GNNInput(type_spec=g.spec),
+    layers.GNN([
+        layers.FeatureProjection(units=32),
+        layers.GINConv(units=32),
+        layers.GINConv(units=32),
+        layers.GINConv(units=32),
+    ]),
+    layers.Readout(),
+    keras.layers.Dense(units=128),
+    keras.layers.Dense(units=1),
+])
+
+model.summary()
+```
+
 ## Paper
 See [arXiv](https://arxiv.org/abs/2208.09944)
 
