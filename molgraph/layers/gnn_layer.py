@@ -131,7 +131,7 @@ class GNNLayer(layers.Layer, metaclass=abc.ABCMeta):
         self.units = units
         self._use_bias = use_bias
         if kernel_initializer is None:
-            kernel_initializer = initializers.TruncatedNormal(stddev=0.005)
+            kernel_initializer = 'glorot_uniform'
         self._kernel_initializer = initializers.get(kernel_initializer)
         if bias_initializer is None:
             bias_initializer = initializers.Constant(0.)

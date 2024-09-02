@@ -1,4 +1,11 @@
-# MolGraph 0.6.12
+# MolGraph 0.6.13
+
+## Version 0.6.13 (2024-09-02)
+
+### Major features and improvements
+- `molgraph.layers`
+    - The default kernel initializer is now again 'glorot_uniform'. This is the default kernel initializer for `keras.layers.Dense` and seems to work well for the GNN layers as well. To use set the previous default kernel initializer, specify `kernel_initializer=keras.initializers.TruncatedNormal(stddev=0.005)`.
+
 
 ## Version 0.6.12 (2024-09-02)
 
