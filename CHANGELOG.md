@@ -1,4 +1,12 @@
-# MolGraph 0.6.13
+# MolGraph 0.6.14
+
+
+## Version 0.6.14 (2024-09-02)
+
+### Bug fixes
+- `molgraph.models.interpretability` and `molgraph.layers.gnn`
+    - `GradientActivationMapping` now behaves as expected, when using `GNN`. A private method was implemented that "watches" the intermediate inputs.
+
 
 ## Version 0.6.13 (2024-09-02)
 

@@ -33,3 +33,27 @@ class GNN(tf.keras.layers.Layer):
         config['layers'] = [
             keras.layers.deserialize(layer) for layer in config['layers']]
         return super().from_config(config)
+
+    def _taped_call(
+        self,
+        tensor: GraphTensor,
+        tape: tf.GradientTape,
+    ) -> tuple[GraphTensor, list[tf.Tensor]]:
+        x = tensor
+        node_feature_taped = []
+        node_feature_list = []
+        for layer in self._graph_layers:
+            tape.watch(x.node_feature)
+            node_feature_taped.append(_get_flat_node_feature(x))
+            x = layer(x)
+            node_feature_list.append(x.node_feature)
+        tensor = tensor.update({
+            'node_feature': tf.concat(node_feature_list, axis=-1)})
+        return tensor, node_feature_taped
+
+
+def _get_flat_node_feature(x: GraphTensor):
+    node_feature = x.node_feature 
+    if isinstance(node_feature, tf.RaggedTensor):
+        node_feature = node_feature.flat_values
+    return node_feature

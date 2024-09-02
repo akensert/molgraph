@@ -45,7 +45,6 @@ class GradientActivationMapping(SaliencyMapping):
     ...
     >>> gam_model = molgraph.models.GradientActivationMapping(
     ...     model=gnn_model,
-    ...     layer_names=['gcn_conv_1', 'gcn_conv_2', 'gcn_conv_3'],
     ...     discard_negative_values=False,
     ... )
     >>> maps = gam_model(esol['test']['x'].separate())
@@ -86,19 +85,22 @@ class GradientActivationMapping(SaliencyMapping):
         with tf.GradientTape() as tape:
 
             for layer in self._model.layers:
+                
+                if not isinstance(x, GraphTensor):
+                    x = layer(x)
+                    continue 
 
-                if isinstance(x, GraphTensor):
+                if graph_indicator is None:
+                    graph_indicator = x.graph_indicator
+
+                if hasattr(layer, '_taped_call'):
+                    x, taped_features = layer._taped_call(x, tape)
+                    features.extend(taped_features)
+                else:
                     tape.watch(x.node_feature)
-                    x_merged = (
-                        x.merge() if isinstance(x.node_feature, tf.RaggedTensor) 
-                        else x)
-                    node_feature = x_merged.node_feature 
-                    if graph_indicator is None:
-                        graph_indicator = x_merged.graph_indicator
-                    features.append(node_feature)
-
-                x = layer(x)
-
+                    features.append(x.node_feature)
+                    x = layer(x)
+        
             predictions = self._activation(x)
             predictions = self._process_predictions(predictions, y)
 
