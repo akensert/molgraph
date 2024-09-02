@@ -60,6 +60,31 @@ class TestSavedModelAPI(unittest.TestCase):
         test = tf.reduce_all(weights_before == weights_after).numpy()
         self.assertTrue(test)
 
+    def test_saved_model_keras_3(self):
+        model = tf.keras.Sequential([
+            gnn_layers.GNNInputLayer(type_spec=graph_tensor.spec),
+            gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
+            gnn_layers.GNN([
+                gnn_layers.preprocessing.projection.NodeFeatureProjection(128),
+                gnn_layers.attentional.gt_conv.GTConv(128),
+                gnn_layers.attentional.gt_conv.GTConv(128),
+            ]),
+            gnn_layers.readout.segment_pool.SegmentPoolingReadout(),
+            tf.keras.layers.Dense(1),
+        ])
+        _ = model(graph_tensor)
+        weights_before = model.trainable_weights[0]
+        file = tempfile.NamedTemporaryFile()
+        filename = file.name
+        file.close()
+        model.save(filename + '.keras')
+        loaded_model = tf.keras.models.load_model(filename + '.keras')
+        weights_after = loaded_model.trainable_weights[0]
+        
+        os.remove(filename + '.keras')
+        test = tf.reduce_all(weights_before == weights_after).numpy()
+        self.assertTrue(test)
+
     def test_saved_model(self):
         model = tf.keras.Sequential([
             gnn_layers.GNNInputLayer(type_spec=graph_tensor.spec),

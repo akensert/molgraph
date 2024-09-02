@@ -2,6 +2,7 @@
 from molgraph.layers.gnn_layer import GNNLayer
 from molgraph.layers.gnn_input_layer import GNNInputLayer
 from molgraph.layers.gnn_input import GNNInput
+from molgraph.layers.gnn import GNN
 
 from molgraph.layers.attentional.gatv2_conv import GATv2Conv
 from molgraph.layers.attentional.gat_conv import GATConv

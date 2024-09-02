@@ -1,4 +1,13 @@
-# MolGraph 0.6.11
+# MolGraph 0.6.12
+
+## Version 0.6.12 (2024-09-02)
+
+### Major features and improvements
+
+- `molgraph.layers`
+    - A GNN layer ("`GNN`") is implemented to combine the output of the last GNN layer as well as all the intermediate GNN layers. Simply pass a list of GNN layers to `GNN`: (`GNN([..., GINConv(128), GINConv(128), ...])`) and pass it
+    as a layer to e.g. `keras.Sequential`. 
+
 
 ## Version 0.6.11 (2024-08-27)
 
