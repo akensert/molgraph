@@ -28,6 +28,7 @@ from molgraph.layers.readout.set_gather import SetGatherReadout
 from molgraph.layers.readout.transformer_encoder import TransformerEncoderReadout
 from molgraph.layers.readout.node_readout import NodeReadout
 from molgraph.layers.readout.attentive_fp_readout import AttentiveFPReadout
+from molgraph.layers.readout.super_node_readout import SuperNodeReadout
 
 # positional encoding
 from molgraph.layers.positional_encoding.laplacian import LaplacianPositionalEncoding

@@ -51,6 +51,25 @@ class TestReadout(unittest.TestCase):
             test = y.node_feature.shape == expected_shape
             self.assertTrue(test)
 
+    def test_super_node_readout(self):
+        x = inputs[1]
+
+        i = tf.random.uniform(x.node_feature.shape[:1], 0, 2, tf.dtypes.int32)
+        x1 = x.update({'node_super_indicator': i})
+        x2 = x1.separate()
+
+        y1 = readout.super_node_readout.SuperNodeReadout('node_super_indicator')(x1)
+        y2 = readout.super_node_readout.SuperNodeReadout('node_super_indicator')(x2)
+
+        n_super = int(tf.math.reduce_max(tf.reduce_sum(x2.node_super_indicator, axis=1)))
+
+        test1 = y1.shape == (2, n_super, 12)
+        test2 = y2.shape == (2, n_super, 12)
+
+        self.assertTrue(test1)
+        self.assertTrue(test2)
+
+
 
 if __name__ == "__main__":
     unittest.main()

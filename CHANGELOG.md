@@ -1,5 +1,11 @@
-# MolGraph 0.6.14
+# MolGraph 0.6.15
 
+## Version 0.6.15 (2024-09-03)
+
+### Major features and improvements
+
+- `molgraph.layers`
+    - `SuperNodeReadout` added. This layer extracts "super node" features based on an indicator field. Basically, it performs a boolean_mask on node features resulting in a `tf.Tensor` of shape (n_subgraphs, n_supernodes, n_features). This tensor can then be inputted to a sequence model such as an RNN.
 
 ## Version 0.6.14 (2024-09-02)
 
