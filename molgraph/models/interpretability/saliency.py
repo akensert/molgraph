@@ -47,12 +47,14 @@ class SaliencyMapping(tf.Module):
         self,
         model: keras.Model,
         output_activation: Optional[str] = None,
+        absolute: bool = False,
         **kwargs
     ) -> None:
         self.random_seed = kwargs.pop('random_seed', None)
         super().__init__(**kwargs)
         self._model = model
         self._activation = keras.activations.get(output_activation)
+        self._absolute = absolute
 
     def compute_saliency(
         self, 
@@ -60,8 +62,9 @@ class SaliencyMapping(tf.Module):
         y: Optional[tf.Tensor],
     ) -> tf.Tensor:
         gradients = self.compute_gradients(x, y)
-        gradients = tf.abs(gradients)
-        return tf.reduce_sum(gradients, axis=1)
+        if self._absolute:
+            gradients = tf.abs(gradients)
+        return tf.reduce_sum(gradients, axis=-1)
     
     def compute_gradients(
         self, 
@@ -139,12 +142,14 @@ class IntegratedSaliencyMapping(SaliencyMapping):
         model: keras.Model,
         output_activation: Union[
             None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
+        absolute: bool = False,
         steps: int = 20,
         **kwargs,
     ) -> None:
         super().__init__(
             model=model,
             output_activation=output_activation,
+            absolute=absolute,
             **kwargs)
         self.steps = steps
 
@@ -182,7 +187,10 @@ class IntegratedSaliencyMapping(SaliencyMapping):
 
         integrated_gradients = (original - baseline) * integrated_gradients
 
-        return tf.reduce_sum(tf.abs(integrated_gradients), axis=1)
+        if self._absolute:
+            integrated_gradients = tf.abs(integrated_gradients)
+
+        return tf.reduce_sum(integrated_gradients, axis=-1)
 
 
 class SmoothGradSaliencyMapping(SaliencyMapping):
@@ -223,6 +231,7 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
         model: keras.Model,
         output_activation: Union[
             None, str, Callable[[tf.Tensor], tf.Tensor]] = None,
+        absolute: bool = False,
         steps: int = 50,
         noise: float = 0.1,
         **kwargs,
@@ -230,6 +239,7 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
         super().__init__(
             model=model,
             output_activation=output_activation,
+            absolute=absolute,
             **kwargs)
         self.steps = steps
         self.noise = noise
@@ -254,7 +264,9 @@ class SmoothGradSaliencyMapping(SaliencyMapping):
             )
             x = x.update({'node_feature': noisy})
             gradients = self.compute_gradients(x, y)
-            gradients_batch = gradients_batch.write(i, tf.abs(gradients))
+            if self._absolute:
+                gradients = tf.abs(gradients)
+            gradients_batch = gradients_batch.write(i, gradients)
             return x, gradients_batch, tf.add(i, 1)
 
         i = tf.constant(0)

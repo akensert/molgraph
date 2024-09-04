@@ -1,4 +1,12 @@
-# MolGraph 0.6.15
+# MolGraph 0.6.16
+
+## Version 0.6.16 (2024-09-04)
+
+### Minor features and improvements
+
+- `molgraph.models.interpretability`
+    - `Saliency` takes a new argument, `absolute` (True/False), which decides whether the gradients should be absolute or not. Namely, if `absolute=False` (which is default), saliency values will be both negative and positive.
+    
 
 ## Version 0.6.15 (2024-09-03)
 
