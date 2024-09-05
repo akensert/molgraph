@@ -13,13 +13,16 @@ molgraph/tensors/_[a-z]*
 *.csv
 *.gz
 *.xlsx
-*.json
+# *.json
 *variables.data*
 *.index
 *.pb
 _old*
 docs/source/examples/_*.ipynb
 docs/source/examples/tutorials/_*.ipynb
+
+# vscode
+.vscode
 
 # jupyter
 MANIFEST

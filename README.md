@@ -100,7 +100,7 @@ See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
         - **SaliencyMapping**
         - **IntegratedSaliencyMapping**
         - **SmoothGradSaliencyMapping**
-        - **GradientActivationMapping** (Recommended)
+        - **GradientActivationMapping**
 
 ## Requirements/dependencies
 - **Python** (version >= 3.10)

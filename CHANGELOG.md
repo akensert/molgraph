@@ -1,4 +1,9 @@
-# MolGraph 0.6.16
+# MolGraph 0.7.0
+
+## Version 0.7.0 (2024-09-05)
+- `molgraph.applications`
+    - Adding an application (`proteomics`). Applications are somewhat experimental to begin with and thus potentially subject to changes. See application README for updates.
+
 
 ## Version 0.6.16 (2024-09-04)
 
