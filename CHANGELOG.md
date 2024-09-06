@@ -1,6 +1,14 @@
-# MolGraph 0.7.0
+# MolGraph 0.7.1
+
+## Version 0.7.1 (2024-09-06)
+
+## Bug fixes
+- `molgraph.applications.proteomics`
+    - Fix import issue.
 
 ## Version 0.7.0 (2024-09-05)
+
+## Major features and improvements
 - `molgraph.applications`
     - Adding an application (`proteomics`). Applications are somewhat experimental to begin with and thus potentially subject to changes. See application README for updates.
 
