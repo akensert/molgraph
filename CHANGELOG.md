@@ -1,4 +1,9 @@
-# MolGraph 0.7.1
+# MolGraph 0.7.2
+
+## Version 0.7.2 (2024-09-06)
+
+## Bug fixes
+- add `MANIFEST.in` and modify `setup.py` to include json files.
 
 ## Version 0.7.1 (2024-09-06)
 

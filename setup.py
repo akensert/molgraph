@@ -32,6 +32,7 @@ setuptools.setup(
     license="MIT",
     url="https://github.com/akensert/molgraph",
     packages=setuptools.find_packages(include=["molgraph*"]),
+    include_package_data=True,
     install_requires=install_requires,
     extras_require=extras_require,
     classifiers=[
