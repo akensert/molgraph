@@ -240,7 +240,7 @@ class MolecularGraphEncoder(BaseMolecularGraphEncoder):
         default_factory=lambda: partial(molecule_from_string, catch_errors=True),
         repr=False
     )
-    positional_encoding_dim: Optional[int] = 16
+    positional_encoding_dim: Optional[int] = None
     self_loops: bool = False
     auxiliary_encoders: Optional[Dict[str, Callable]] = field(
         default=None, repr=False)
