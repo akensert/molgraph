@@ -1,20 +1,30 @@
-# MolGraph 0.7.3
+# MolGraph 0.7.4
+
+## Version 0.7.4 (2024-09-20)
+
+## Bug fixes
+- `molgraph.applications.proteomics`
+    - Remove `keras.Sequential` wrapping around RNN and DNN of `PeptideGNN` to avoid 'graph disconnect' error.
+
 
 ## Version 0.7.3 (2024-09-18)
 
 ## Minor features and improvements
 - `chemistry.MolecularGraphEncoder` are now by default *not* computnig positional encoding. Pass an `integer` to `positional_encoding_dim` to compute positional encodings of dim `integer`.
 
+
 ## Version 0.7.2 (2024-09-06)
 
 ## Bug fixes
 - add `MANIFEST.in` and modify `setup.py` to include json files.
+
 
 ## Version 0.7.1 (2024-09-06)
 
 ## Bug fixes
 - `molgraph.applications.proteomics`
     - Fix import issue.
+
 
 ## Version 0.7.0 (2024-09-05)
 

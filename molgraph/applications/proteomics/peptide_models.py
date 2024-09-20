@@ -98,15 +98,7 @@ def PeptideGNN(config: dict = None, **kwargs) -> keras.Model:
         layers.GNNInputLayer(type_spec=spec),
         layers.GNN(graph_layers),
         layers.SuperNodeReadout('node_super_indicator'),
-        keras.Sequential(rnn_layers),
-        keras.Sequential(dense_layers),
+        *rnn_layers,
+        *dense_layers,
     ])
-
-
-# def PeptideEmbedding(model: keras.Sequential) -> keras.Sequential:
-#     return keras.Sequential([
-#         model.layers[0].input,
-#         model.layers[0], # GNN
-#         model.layers[1], # Readout
-#     ])
 

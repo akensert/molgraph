@@ -20,6 +20,8 @@ molgraph/tensors/_[a-z]*
 _old*
 docs/source/examples/_*.ipynb
 docs/source/examples/tutorials/_*.ipynb
+examples/*
+!examples/*.ipynb
 
 # vscode
 .vscode
