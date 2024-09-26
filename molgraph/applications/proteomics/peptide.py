@@ -53,6 +53,22 @@ class Peptide:
     def residue_indices(self) -> list[int]:
         return [_extract_residue_index(residue) for residue in self]
 
+    @staticmethod
+    def register_residue_smiles(
+        residue_smiles: dict[str, str], 
+        canonicalize: bool = False
+    ) -> None:
+        for residue, smiles in residue_smiles.items():
+            if not smiles.startswith('N') or not smiles.endswith('(=O)O'):
+                if canonicalize:
+                    smiles = Chem.MolToSmiles(Chem.MolFromSmiles(smiles))
+                else:
+                    raise ValueError(
+                        f"AA SMILES string {smiles!r} needs to be canonical: "
+                        "starting with 'N' and ending with '(=O)O'."
+                    )
+            _residue_smiles[residue] = smiles
+
 
 @functools.lru_cache(maxsize=4096)
 def _num_atoms(smiles: str) -> int:

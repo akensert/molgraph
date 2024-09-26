@@ -1,4 +1,12 @@
-# MolGraph 0.7.4
+# MolGraph 0.7.5
+
+## Version 0.7.5 (2024-09-26)
+
+## Major features and improvements
+- `molgraph.applications.proteomics`
+    - `PeptideSaliency` is now based on the gradient (class) activation mapping algorithm. It considers all node features, including intermediate ones. Based on preliminary experiments, the saliencies looks more reasonable now.
+    - Users are now able to add their own dictionary of AA/Residue SMILES, see README at `molgraph/applications/proteomics/`.
+
 
 ## Version 0.7.4 (2024-09-20)
 
