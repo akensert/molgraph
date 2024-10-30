@@ -59,6 +59,7 @@ class GradientActivationMapping(SaliencyMapping):
         layer_names: List[str] | None = None,
         output_activation: Optional[str] = None,
         discard_negative_values: bool = False,
+        reduce_features: bool = True,
         **kwargs,
     ) -> None:
         super().__init__(model, output_activation, **kwargs)
@@ -73,6 +74,7 @@ class GradientActivationMapping(SaliencyMapping):
                 stacklevel=2
             )
         self._layer_names = layer_names
+        self._reduce_features = reduce_features
 
     def compute_saliency(
         self,
@@ -112,7 +114,9 @@ class GradientActivationMapping(SaliencyMapping):
         alpha = tf.gather(alpha, graph_indicator)
 
         activation_maps = tf.where(gradients != 0, alpha * features, gradients)
-        activation_maps = tf.reduce_mean(activation_maps, axis=-1)
+
+        if self._reduce_features:
+            activation_maps = tf.reduce_mean(activation_maps, axis=-1)
         
         if self._discard_negative_values:
             activation_maps = tf.nn.relu(activation_maps)

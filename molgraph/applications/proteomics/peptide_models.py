@@ -2,17 +2,18 @@ import tensorflow as tf
 from tensorflow import keras
 
 from molgraph import layers
-
+from molgraph.applications.proteomics.peptide_layers import _ResidueReadout
+from molgraph.applications.proteomics.definitions import _residue_node_mask
 
 
 _default_model_config = {
     "gnn": {
-        "num_layers": 3,
+        "num_layers": 2,
         "layer_type": layers.GATv2Conv,
         "layer_kwargs": {
             "units": 128,
-            "normalization": "batch_norm",
-            "self_projection": False,
+            "normalization": None,
+            "self_projection": True,
         },
         "trainable": True,
     },
@@ -36,11 +37,13 @@ _default_model_config = {
 }
 
 
-def PeptideGNN(config: dict = None, **kwargs) -> keras.Model:
+def PeptideModel(config: dict = None, **kwargs) -> keras.Model:
     
     spec = kwargs.pop("spec", None)
     if spec is None:
         raise ValueError("A `GraphTensor.Spec` needs to be passed as `spec`.")
+
+    has_super_nodes = _residue_node_mask in spec.auxiliary
 
     if not config:
         config = _default_model_config
@@ -63,6 +66,11 @@ def PeptideGNN(config: dict = None, **kwargs) -> keras.Model:
     for layer in graph_layers[1:]:
         layer.trainable = config["gnn"]["trainable"] 
 
+    if has_super_nodes:
+        readout = layers.SuperNodeReadout(_residue_node_mask)
+    else:
+        readout = _ResidueReadout()
+        
     rnn_layer = config["rnn"]["layer_type"]
     if isinstance(rnn_layer, str):
         rnn_layer = getattr(keras.layers, rnn_layer)
@@ -71,13 +79,9 @@ def PeptideGNN(config: dict = None, **kwargs) -> keras.Model:
         keras.layers.Bidirectional(
             rnn_layer(**config["rnn"]["layer_kwargs"], return_sequences=True)
         )
-        for _ in range(config["rnn"]["num_layers"] - 1)
+        for _ in range(config["rnn"]["num_layers"])
     ]
-    rnn_layers += [
-        keras.layers.Bidirectional(
-            rnn_layer(**config["rnn"]["layer_kwargs"], return_sequences=False)
-        )
-    ]
+    rnn_layers += [keras.layers.GlobalAveragePooling1D()]
 
     dnn_layer = config["dnn"]["layer_type"]
     if isinstance(dnn_layer, str):
@@ -97,7 +101,7 @@ def PeptideGNN(config: dict = None, **kwargs) -> keras.Model:
     return tf.keras.Sequential([
         layers.GNNInputLayer(type_spec=spec),
         layers.GNN(graph_layers),
-        layers.SuperNodeReadout('node_super_indicator'),
+        readout,
         *rnn_layers,
         *dense_layers,
     ])

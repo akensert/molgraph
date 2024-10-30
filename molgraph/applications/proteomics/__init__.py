@@ -1,9 +1,9 @@
-from molgraph.applications.proteomics.peptide_models import PeptideGNN
-from molgraph.applications.proteomics.peptide_saliency import PeptideSaliency
+from molgraph.applications.proteomics.peptide import Peptide
 from molgraph.applications.proteomics.peptide_encoders import PeptideGraphEncoder
-from molgraph.applications.proteomics.peptide_encoders import Peptide
+from molgraph.applications.proteomics.peptide_models import PeptideModel
+
+from molgraph.models.interpretability.activation_maps import GradientActivationMapping
 
 
-PepGNN = PeptideGNN
-PepSaliency = PeptideSaliency
-PepGraphEncoder = PeptideGraphEncoder
+PepSaliency = PeptideSaliency = GradientActivationMapping
+PepGNN = PeptideGNN = PeptideModel

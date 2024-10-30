@@ -1,4 +1,11 @@
-# MolGraph 0.7.5
+# MolGraph 0.7.6
+
+## Version 0.7.6 (2024-10-30)
+- `molgraph.applications.proteomics`
+    - Two different types of peptide models now exist --- one with, and one without, virtual/super nodes. For inclusion of super nodes specify `super_nodes=True` for `PeptideGraphEncoder`, otherwise `False`. Depending on `super_nodes` parameter, `PeptideModel` (aliased `PeptideGNN` or `PepGNN`) will return a Keras Sequential model with an certain readout layer. 
+- `molgraph.models.interpretability`
+    - Add `reduce_features` argument (default True) to `GradientActivationMapping`. Specifies whether node feature dimension should be averaged.
+
 
 ## Version 0.7.5 (2024-09-26)
 

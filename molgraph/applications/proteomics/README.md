@@ -14,12 +14,12 @@ atom_encoder = chemistry.Featurizer([
 bond_encoder = chemistry.Featurizer([
     chemistry.features.BondType({'AROMATIC', 'TRIPLE', 'DOUBLE', 'SINGLE'}, oov_size=1),
 ])
-encoder = proteomics.PeptideGraphEncoder(atom_encoder, bond_encoder) 
+encoder = proteomics.PeptideGraphEncoder(atom_encoder, bond_encoder, super_nodes=True) 
 
 # Example input:
 peptide_graph = encoder(['CYIQNCPLG'])
 # Create model (keras.Sequential instance)
-model = proteomics.PepGNN(config=None, spec=peptide_graph.spec)
+model = proteomics.PeptideModel(config=None, spec=peptide_graph.spec)
 # Predict input
 prediction = model(peptide_graph)
 
@@ -28,7 +28,8 @@ prediction = model(peptide_graph)
 
 saliency = proteomics.PeptideSaliency(model)
 
-saliency_values = saliency(peptide_graph)
+# Will include saliency values of super nodes if `super_nodes=True`
+saliency_values = saliency(peptide_graph.separate())
 ```
 
 Add your own residue SMILES (within a session):
@@ -56,7 +57,8 @@ encoder = proteomics.PeptideGraphEncoder(
     ]),
     chemistry.Featurizer([
         chemistry.features.BondType({'AROMATIC', 'DOUBLE', 'SINGLE'}, oov_size=1),
-    ])
+    ]),
+    super_nodes=True
 ) 
 
 graph_tensor = encoder('AAAN[Deamidated]Q[Deamidated]GGG')
