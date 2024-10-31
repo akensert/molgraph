@@ -10,13 +10,12 @@ from molgraph.applications.proteomics.definitions import _residue_indicator
 class _ResidueReadout(keras.layers.Layer):
 
     def call(self, tensor: GraphTensor) -> tf.Tensor:
+        residue_indicator = getattr(tensor, _residue_indicator)
+        residue_sizes = tf.math.segment_max(
+            residue_indicator, tensor.graph_indicator) + 1
+        incr = tf.concat([[0], tf.cumsum(residue_sizes)[:-1]], axis=0)
+        residue_indicator += tf.repeat(incr, tensor.sizes)
         residue_feature = tf.math.segment_mean(
-            tensor.node_feature, getattr(tensor, _residue_indicator))
-        # Compute row_lengths (number of residues per peptide)
-        row_lengths = tf.math.segment_max(
-            getattr(tensor, _residue_indicator), tensor.graph_indicator)
-        row_lengths = tf.concat([[-1], row_lengths], axis=0)
-        row_lengths = row_lengths[1:] - row_lengths[:-1]
-        # Obtain a padded "rectangular" tensor for e.g. RNN
+            tensor.node_feature, residue_indicator)
         return tf.RaggedTensor.from_row_lengths(
-            residue_feature, row_lengths).to_tensor()
+            residue_feature, residue_sizes).to_tensor()

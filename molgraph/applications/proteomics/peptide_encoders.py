@@ -53,18 +53,6 @@ class PeptideGraphEncoder(MolecularGraphEncoder):
             data['edge_feature'][-num_super_edges:, -1:] = 1.0
         return GraphTensor(**data)
     
-    def __call__(self, inputs, **kwargs):
-        tensor = super().__call__(inputs, **kwargs)
-        if self.super_nodes:
-            return tensor 
-        # Increment residue indicator as the graph encode many peptides:
-        residue_sizes = tf.math.segment_max(
-            getattr(tensor, _residue_indicator), tensor.graph_indicator) + 1
-        incr = tf.repeat(
-            tf.concat([[0], tf.cumsum(residue_sizes)[:-1]], axis=0), tensor.sizes)
-        return tensor.update({
-            _residue_indicator: getattr(tensor, _residue_indicator) + incr})
-
 
 @dataclass
 class _BondlessPeptideGraphEncoder(MolecularGraphEncoder):

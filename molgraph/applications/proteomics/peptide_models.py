@@ -14,6 +14,7 @@ _default_model_config = {
             "units": 128,
             "normalization": None,
             "self_projection": True,
+            "kernel_regularizer": keras.regularizers.L2(1e-5)
         },
         "trainable": True,
     },
@@ -28,8 +29,9 @@ _default_model_config = {
         "num_layers": 2,
         "layer_type": keras.layers.Dense,
         "layer_kwargs": {
-            "units": 2048,
-            "activation": "elu",
+            "units": 1024,
+            "activation": "relu",
+            "kernel_regularizer": keras.regularizers.L2(1e-5),
         },
         "output_units": 1,
         "output_activation": "linear",
@@ -56,7 +58,8 @@ def PeptideModel(config: dict = None, **kwargs) -> keras.Model:
         
     graph_layers = [
         layers.NodeFeatureProjection(
-            units=config["gnn"]["layer_kwargs"]["units"]
+            units=config["gnn"]["layer_kwargs"].get("units"),
+            kernel_regularizer=config["gnn"]["layer_kwargs"].get("kernel_regularizer"),
         )
     ]
     graph_layers += [
