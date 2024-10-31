@@ -1,4 +1,8 @@
-# MolGraph 0.7.6
+# MolGraph 0.7.7
+
+## Version 0.7.7 (2024-10-31)
+- `molgraph.applications.proteomics`
+    - Fix some bugs, and update default config.
 
 ## Version 0.7.6 (2024-10-30)
 - `molgraph.applications.proteomics`
