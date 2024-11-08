@@ -1,10 +1,22 @@
-# MolGraph 0.7.7
+# MolGraph 0.7.8
+
+## Version 0.7.8 (2024-11-08)
+
+## Minor features and improvements
+- `molgraph.layers`
+    - Added layer `UpdateField`.
+
 
 ## Version 0.7.7 (2024-10-31)
+
+## Bug fixes
 - `molgraph.applications.proteomics`
     - Fix some bugs, and update default config.
 
+
 ## Version 0.7.6 (2024-10-30)
+
+## Minor features and improvements
 - `molgraph.applications.proteomics`
     - Two different types of peptide models now exist --- one with, and one without, virtual/super nodes. For inclusion of super nodes specify `super_nodes=True` for `PeptideGraphEncoder`, otherwise `False`. Depending on `super_nodes` parameter, `PeptideModel` (aliased `PeptideGNN` or `PepGNN`) will return a Keras Sequential model with an certain readout layer. 
 - `molgraph.models.interpretability`

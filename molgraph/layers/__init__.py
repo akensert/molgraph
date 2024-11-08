@@ -62,6 +62,7 @@ from molgraph.layers.preprocessing.dropout import EdgeDropout
 from molgraph.layers.preprocessing.masking import FeatureMasking
 from molgraph.layers.preprocessing.masking import NodeFeatureMasking
 from molgraph.layers.preprocessing.masking import EdgeFeatureMasking
+from molgraph.layers.preprocessing.update_field import UpdateField 
 
 # layer ops
 from molgraph.layers import gnn_ops as ops # alias
