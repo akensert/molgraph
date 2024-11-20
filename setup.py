@@ -42,7 +42,7 @@ setuptools.setup(
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS"
     ],
-    python_requires="==3.10",
+    python_requires="==3.10.*",
     keywords=[
         'machine-learning',
         'deep-learning',
