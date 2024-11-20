@@ -2,7 +2,8 @@
 
 **Graph Neural Networks** with **TensorFlow** and **Keras**. Focused on **Molecular Machine Learning**.
 
-> Currently, Keras 3 does not support extension types. As soon as it does, it is hoped that MolGraph will migrate to Keras 3.
+## Quick start
+Benchmark the performance of MolGraph [here](https://github.com/akensert/molgraph/blob/main/examples/GNN-Benchmarking.ipynb), and implement a complete model pipeline with MolGraph [here](https://github.com/akensert/molgraph/blob/main/examples/QSAR-GNN-Tutorial.ipynb). 
 
 
 ## Highlights

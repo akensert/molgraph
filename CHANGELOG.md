@@ -1,4 +1,8 @@
-# MolGraph 0.7.8
+# MolGraph 0.7.9
+
+## Version 0.7.9 (2024-11-20)
+- Make `Python 3.10` a requirement.
+- Add benchmarking notebook to `examples/`.
 
 ## Version 0.7.8 (2024-11-08)
 
