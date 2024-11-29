@@ -45,6 +45,10 @@ def PeptideModel(config: dict = None, **kwargs) -> keras.Model:
     if spec is None:
         raise ValueError("A `GraphTensor.Spec` needs to be passed as `spec`.")
 
+    preprocessing = kwargs.pop("preprocessing", [])
+    if not isinstance(preprocessing, (tuple, list)):
+        preprocessing = [preprocessing]
+
     has_super_nodes = _residue_node_mask in spec.auxiliary
 
     if not config:
@@ -103,6 +107,7 @@ def PeptideModel(config: dict = None, **kwargs) -> keras.Model:
     ]
     return tf.keras.Sequential([
         layers.GNNInputLayer(type_spec=spec),
+        *preprocessing,
         layers.GNN(graph_layers),
         readout,
         *rnn_layers,

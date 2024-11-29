@@ -1,4 +1,7 @@
-# MolGraph 0.7.10
+# MolGraph 0.7.11
+
+## Version 0.7.11 (2024-11-29)
+- Update `PeptideModel` of `molgraph.applications.proteomics`.
 
 
 ## Version 0.7.10 (2024-11-20)
