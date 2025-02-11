@@ -1888,44 +1888,86 @@ def graph_tensor_split(
         return [GraphTensor(**dict(zip(keys, d))).merge() for d in data]
     return [GraphTensor(**dict(zip(keys, d))) for d in data]
 
-@dispatch_for_api(tf.matmul, {
-    'a': typing.Union[GraphTensor, tf.Tensor], 
-    'b': typing.Union[GraphTensor, tf.Tensor]})
-def graph_tensor_matmul(
-    a,
-    b,
-    transpose_a=False,
-    transpose_b=False,
-    adjoint_a=False,
-    adjoint_b=False,
-    a_is_sparse=False,
-    b_is_sparse=False,
-    output_type=None
-):
-    '''Allows graph tensors to be matrix multiplied.
+try:
+    @dispatch_for_api(tf.matmul, {
+        'a': typing.Union[GraphTensor, tf.Tensor], 
+        'b': typing.Union[GraphTensor, tf.Tensor]})
+    def graph_tensor_matmul(
+        a,
+        b,
+        transpose_a=False,
+        transpose_b=False,
+        adjoint_a=False,
+        adjoint_b=False,
+        a_is_sparse=False,
+        b_is_sparse=False,
+        output_type=None,
+    ):
+        '''Allows graph tensors to be matrix multiplied.
 
-    Specifically, the `node_feature` field will be used for
-    the matrix multiplication. This implementation makes it
-    possible to pass graph tensors to `keras.layers.Dense`.
-    '''
-    if isinstance(a, GraphTensor):
-        if a.is_ragged():
-            a = a.merge()
-        a = a.node_feature
-    if isinstance(b, GraphTensor):
-        if b.is_ragged():
-            b = b.merge()
-        b = b.node_feature
-    return tf.matmul(
-        a=a, 
-        b=b,
-        transpose_a=transpose_a, 
-        transpose_b=transpose_b, 
-        adjoint_a=adjoint_a,
-        adjoint_b=adjoint_b, 
-        a_is_sparse=a_is_sparse, 
-        b_is_sparse=b_is_sparse, 
-        output_type=output_type)
+        Specifically, the `node_feature` field will be used for
+        the matrix multiplication. This implementation makes it
+        possible to pass graph tensors to `keras.layers.Dense`.
+        '''
+        if isinstance(a, GraphTensor):
+            if a.is_ragged():
+                a = a.merge()
+            a = a.node_feature
+        if isinstance(b, GraphTensor):
+            if b.is_ragged():
+                b = b.merge()
+            b = b.node_feature
+        return tf.matmul(
+            a=a, 
+            b=b,
+            transpose_a=transpose_a, 
+            transpose_b=transpose_b, 
+            adjoint_a=adjoint_a,
+            adjoint_b=adjoint_b, 
+            a_is_sparse=a_is_sparse, 
+            b_is_sparse=b_is_sparse, 
+            output_type=output_type)
+except:
+    @dispatch_for_api(tf.matmul, {
+        'a': typing.Union[GraphTensor, tf.Tensor], 
+        'b': typing.Union[GraphTensor, tf.Tensor]})
+    def graph_tensor_matmul(
+        a,
+        b,
+        transpose_a=False,
+        transpose_b=False,
+        adjoint_a=False,
+        adjoint_b=False,
+        a_is_sparse=False,
+        b_is_sparse=False,
+        output_type=None,
+        grad_a=False, 
+        grad_b=False,
+    ):
+        '''Allows graph tensors to be matrix multiplied.
+
+        Specifically, the `node_feature` field will be used for
+        the matrix multiplication. This implementation makes it
+        possible to pass graph tensors to `keras.layers.Dense`.
+        '''
+        if isinstance(a, GraphTensor):
+            if a.is_ragged():
+                a = a.merge()
+            a = a.node_feature
+        if isinstance(b, GraphTensor):
+            if b.is_ragged():
+                b = b.merge()
+            b = b.node_feature
+        return tf.matmul(
+            a=a, 
+            b=b,
+            transpose_a=transpose_a, 
+            transpose_b=transpose_b, 
+            adjoint_a=adjoint_a,
+            adjoint_b=adjoint_b, 
+            a_is_sparse=a_is_sparse, 
+            b_is_sparse=b_is_sparse, 
+            output_type=output_type)
 
 @dispatch_for_api(tf.boolean_mask, {'tensor': GraphTensor})
 def graph_tensor_boolean_mask(tensor, mask, axis=None):

@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "molgraph"
+dynamic = ["version"]
+description = "Graph Neural Networks for Molecular Machine Learning"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Alexander Kensert", email = "alexander.kensert@gmail.com" }
+]
+dependencies = [
+    "tensorflow>=2.15",
+    "tf-keras>=2.15",
+    "rdkit>=2023.9.5",
+    "pandas>=1.0.3",
+    "ipython==8.12.0"
+]
+keywords = [
+    "machine-learning",
+    "deep-learning",
+    "graph-neural-networks",
+    "molecular-machine-learning",
+    "molecular-graphs",
+    "computational-chemistry",
+    "computational-biology"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS"
+]
+
+[project.optional-dependencies]
+gpu = ["tensorflow[and-cuda]>=2.15"]
+
+[project.urls]
+Homepage = "https://github.com/akensert/molgraph"
+
+[tool.setuptools]
+packages = ["molgraph"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"molgraph.applications.proteomics" = ["*.json"]
+
+[tool.setuptools.dynamic]
+version = { attr = "molgraph.__version__" }

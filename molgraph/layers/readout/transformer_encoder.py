@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
-from keras import layers
-from keras import activations
+from tensorflow.keras import layers
+from tensorflow.keras import activations
 
 from typing import Union
 from typing import Callable

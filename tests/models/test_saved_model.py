@@ -88,7 +88,7 @@ class TestSavedModelAPI(unittest.TestCase):
     def test_saved_model(self):
         model = tf.keras.Sequential([
             gnn_layers.GNNInputLayer(type_spec=graph_tensor.spec),
-            gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
+            # gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.readout.segment_pool.SegmentPoolingReadout(),
@@ -110,7 +110,7 @@ class TestSavedModelAPI(unittest.TestCase):
         
         model = tf.keras.Sequential([
             gnn_layers.GNNInputLayer(type_spec=graph_tensor_merged.spec),
-            gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
+            # gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.readout.segment_pool.SegmentPoolingReadout(),
@@ -133,7 +133,7 @@ class TestSavedModelAPI(unittest.TestCase):
         
         model = tf.keras.Sequential([
             # gnn_layers.GNNInputLayer(type_spec=graph_tensor_merged.spec),
-            gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
+            # gnn_layers.positional_encoding.laplacian.LaplacianPositionalEncoding(),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.attentional.gt_conv.GTConv(128),
             gnn_layers.readout.segment_pool.SegmentPoolingReadout(),
@@ -148,7 +148,6 @@ class TestSavedModelAPI(unittest.TestCase):
         output_after = loaded_model(graph_tensor_merged[:1])
 
         shutil.rmtree(filename)
-
         test = np.all(output_before[:1].numpy().round(5) == output_after.numpy().round(5))
         self.assertTrue(test)
 

@@ -1,9 +1,9 @@
 import tensorflow as tf
 from tensorflow import keras
 
-from keras import initializers
-from keras import regularizers
-from keras import constraints
+from tensorflow.keras import initializers
+from tensorflow.keras import regularizers
+from tensorflow.keras import constraints
 
 import numpy as np
 

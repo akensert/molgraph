@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
-from keras import layers
+from tensorflow.keras import layers
 
 from molgraph.internal import register_keras_serializable 
 

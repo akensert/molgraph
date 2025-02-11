@@ -1,9 +1,9 @@
 import tensorflow as tf
 from tensorflow import keras
 
-from keras import regularizers
-from keras import initializers 
-from keras import constraints 
+from tensorflow.keras import regularizers
+from tensorflow.keras import initializers 
+from tensorflow.keras import constraints 
 
 from typing import Optional
 from typing import Union
@@ -14,7 +14,7 @@ from molgraph.internal import register_keras_serializable
 from molgraph.tensors.graph_tensor import GraphTensor
 from molgraph.layers.convolutional.gin_conv import GINConv
 
-
+    
 @register_keras_serializable(package='molgraph')
 class GIN(keras.layers.Layer):
 

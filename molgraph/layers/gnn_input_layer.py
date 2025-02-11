@@ -1,4 +1,4 @@
-import keras
+from tensorflow import keras
 
 from molgraph.internal import register_keras_serializable 
 from molgraph.tensors.graph_tensor import GraphTensor 

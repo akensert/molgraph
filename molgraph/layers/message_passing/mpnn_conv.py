@@ -1,9 +1,9 @@
 import tensorflow as tf
 from tensorflow import keras
 
-from keras import initializers
-from keras import regularizers
-from keras import constraints
+from tensorflow.keras import initializers
+from tensorflow.keras import regularizers
+from tensorflow.keras import constraints
 
 import math
 
@@ -250,6 +250,7 @@ def update_step(
 ) -> tf.Tensor:
     if self_projection:
         node_feature += self_projection(node_feature_prev)
+        
     if isinstance(update_projection, keras.layers.Dense):
         node_feature = update_projection(
             tf.concat([node_feature_prev, node_feature], axis=1))

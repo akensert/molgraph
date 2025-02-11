@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
-from keras import layers
+
+from tensorflow.keras import layers
 
 from typing import Optional
 from typing import Any

@@ -1,4 +1,10 @@
-# MolGraph 0.7.11
+# MolGraph 0.8.0
+
+
+## Version 0.8.0 (2025-02-11)
+- Make `molgraph` compatible with `Python>3.10` and `TensorFlow>2.15`.
+    - For `tensorflow>2.15` make sure to set `TF_USE_LEGACY_KERAS=1`.
+
 
 ## Version 0.7.11 (2024-11-29)
 - Update `PeptideModel` of `molgraph.applications.proteomics`.

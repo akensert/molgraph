@@ -1,10 +1,11 @@
 import tensorflow as tf
 from tensorflow import keras
-from keras import layers
-from keras import initializers
-from keras import regularizers
-from keras import constraints
-from keras import activations
+
+from tensorflow.keras import layers
+from tensorflow.keras import initializers
+from tensorflow.keras import regularizers
+from tensorflow.keras import constraints
+from tensorflow.keras import activations
 
 from typing import Union
 from typing import Callable
@@ -230,8 +231,7 @@ def compute_eigen_vectors(laplacian, target_dim):
     eig_vec = tf.math.real(eig_vec)
     pos_enc = eig_vec[:, 1: target_dim + 1]
     dim = tf.shape(pos_enc)[1]
-    if dim < target_dim:
-        pos_enc = tf.pad(pos_enc, [(0, 0), (0, target_dim - dim)])
+    pos_enc = tf.pad(pos_enc, [(0, 0), (0, tf.math.maximum(target_dim - dim, 0))])
     return pos_enc
 
 def compute_positional_encoding(tensor, target_dim):
@@ -247,8 +247,12 @@ def compute_positional_encoding(tensor, target_dim):
         tf.float32, size=0, dynamic_size=True, infer_shape=False,
         element_shape=tf.TensorShape((None, target_dim)))
 
-    for i in tf.range(tf.reduce_max(graph_indicator) + 1):
+    max_graph_id = tf.reduce_max(graph_indicator) + 1
 
+    def cond(i, _):
+        return i < max_graph_id
+    
+    def body(i, positional_encodings):
         indices = tf.where(graph_indicator == i)[:, 0]
 
         sliced_laplacian = tf.gather(tf.gather(
@@ -258,6 +262,12 @@ def compute_positional_encoding(tensor, target_dim):
             sliced_laplacian, target_dim)
 
         positional_encodings = positional_encodings.write(
-            positional_encodings.size(), positional_encoding)
+            positional_encodings.size(), positional_encoding)        
+        
+        return i + 1, positional_encodings
 
+    
+    i = tf.constant(0)
+    _, positional_encodings = tf.while_loop(cond, body, [i, positional_encodings])
     return positional_encodings.concat()
+

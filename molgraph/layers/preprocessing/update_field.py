@@ -1,4 +1,5 @@
 import tensorflow as tf
+
 from tensorflow import keras
 
 from molgraph.internal import register_keras_serializable 

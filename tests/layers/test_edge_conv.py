@@ -4,10 +4,10 @@ import unittest
 
 import tensorflow as tf
 
-from keras import initializers
-from keras import regularizers
-from keras import constraints
-from keras import layers
+from tensorflow.keras import initializers
+from tensorflow.keras import regularizers
+from tensorflow.keras import constraints
+from tensorflow.keras import layers
 
 from molgraph.layers.message_passing.edge_conv import EdgeConv
 from molgraph.layers.readout.node_readout import NodeReadout
