@@ -1,6 +1,7 @@
 import numpy as np
 
 from rdkit import Chem
+from collections import deque 
 
 import tensorflow as tf
 
@@ -526,41 +527,32 @@ def _compute_distance_between_atoms(
     return edge_length
 
 def _compute_distance_geometry(
-    molecule: Chem.Mol,
-    radius: Optional[int] = None,
+    mol: Chem.Mol, 
+    radius: Optional[int] = None, 
     unit: str = 'angstrom',
-    atom: Union[Chem.Atom, None] = None,
-    path: Union[List[int], None] = None,
-    data: Union[Dict[str, List[Union[int, float]]], None] = None,
+    self_loops: bool = False,
 ) -> Dict[str, List[Union[int, float]]]:
-
-    '''Recursively navigates paths (in molecule) up to a certain `radius` to
-    accumulate distance geometric information. If radius is None, the distance
-    between every atom in the molecule will be computed.
-    '''
-
-    if path is None:
-        data = {
-            'edge_length': [], 'edge_src': [], 'edge_dst': [], 'edge_order': []
-        }
-        for atom in molecule.GetAtoms():
-            path = _compute_distance_geometry(
-                molecule, radius, unit, atom, [atom.GetIdx()], data
-            )
-        return data
-    elif radius and len(path) > (radius + 1):
-        return path[:-1]
-    elif len(path) > 1:
-        data['edge_src'].append(path[0])
-        data['edge_dst'].append(path[-1])
-        data['edge_length'].append(
-            _compute_distance_between_atoms(molecule, path[0], path[-1], unit)
-        )
-        data['edge_order'].append(-1 + len(path))
-
-    for neighbor in atom.GetNeighbors():
-        if neighbor.GetIdx() not in path:
-            path.append(neighbor.GetIdx())
-            path = _compute_distance_geometry(
-                molecule, radius, unit, neighbor, path, data)
-    return path[:-1]
+    radius = radius if radius else 1_000_000
+    data = {
+        'edge_src': [], 
+        'edge_dst': [], 
+        'edge_length': [], 
+        'edge_order': [], 
+    }
+    for atom in mol.GetAtoms():
+        queue = deque([(atom, [atom.GetIdx()])])
+        visited = set([atom.GetIdx()])
+        while queue:
+            next_atom, path = queue.popleft()
+            if len(path) > (radius + 1):
+                continue
+            if self_loops or len(path) > 1:
+                data['edge_src'].append(path[0])
+                data['edge_dst'].append(path[-1])
+                data['edge_length'].append(_compute_distance_between_atoms(mol, path[0], path[-1], unit))
+                data['edge_order'].append(len(path) - 1)
+            for neighbor in next_atom.GetNeighbors():
+                if neighbor.GetIdx() not in visited:
+                    visited.add(neighbor.GetIdx())
+                    queue.append((neighbor, path + [neighbor.GetIdx()]))
+    return data
