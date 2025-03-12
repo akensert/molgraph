@@ -1,4 +1,7 @@
-# MolGraph 0.8.2
+# MolGraph 0.8.3
+
+## Version 0.8.3 (2025-03-12)
+- Fix imports.
 
 ## Version 0.8.2 (2025-03-12)
 - Fix imports in `__init__.py`

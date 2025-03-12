@@ -1,4 +1,4 @@
-__version__ = '0.8.2'
+__version__ = '0.8.3'
 
 import sys
 
@@ -29,8 +29,10 @@ from molgraph import _filter_warnings
 del _filter_warnings
 
 import molgraph.layers
+import molgraph.tensors
 import molgraph.losses
 import molgraph.metrics
 import molgraph.models
+import molgraph.chemistry
 
-from molgraph.tensors import GraphTensor
+from molgraph.tensors.graph_tensor import GraphTensor
