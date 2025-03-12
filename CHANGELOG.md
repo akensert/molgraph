@@ -1,10 +1,7 @@
-# MolGraph 0.8.3
+# MolGraph 0.8.4
 
-## Version 0.8.3 (2025-03-12)
+## Version 0.8.4 (2025-03-12)
 - Fix imports.
-
-## Version 0.8.2 (2025-03-12)
-- Fix imports in `__init__.py`
 
 ## Version 0.8.1 (2025-03-10)
 - `molgraph.chemistry.molecular_encoders`

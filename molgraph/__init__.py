@@ -1,4 +1,4 @@
-__version__ = '0.8.3'
+__version__ = '0.8.4'
 
 import sys
 
@@ -36,3 +36,10 @@ import molgraph.models
 import molgraph.chemistry
 
 from molgraph.tensors.graph_tensor import GraphTensor
+
+from molgraph import layers
+from molgraph import tensors
+from molgraph import losses
+from molgraph import metrics
+from molgraph import models
+from molgraph import chemistry
