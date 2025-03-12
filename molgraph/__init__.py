@@ -1,4 +1,4 @@
-__version__ = '0.8.1'
+__version__ = '0.8.2'
 
 import sys
 
@@ -28,10 +28,9 @@ os.environ['TF_USE_LEGACY_KERAS'] = '1'
 from molgraph import _filter_warnings
 del _filter_warnings
 
-from molgraph import layers
-from molgraph import losses
-from molgraph import metrics
-from molgraph import models
-from molgraph import chemistry
+import molgraph.layers
+import molgraph.losses
+import molgraph.metrics
+import molgraph.models
 
 from molgraph.tensors import GraphTensor
