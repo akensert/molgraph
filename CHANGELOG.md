@@ -1,7 +1,4 @@
-# MolGraph 0.8.4
-
-## Version 0.8.4 (2025-03-12)
-- Fix imports.
+# MolGraph 0.8.1
 
 ## Version 0.8.1 (2025-03-10)
 - `molgraph.chemistry.molecular_encoders`

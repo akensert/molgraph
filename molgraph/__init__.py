@@ -26,20 +26,13 @@ import os
 os.environ['TF_USE_LEGACY_KERAS'] = '1'
 
 from molgraph import _filter_warnings
+
 del _filter_warnings
 
-import molgraph.layers
-import molgraph.tensors
-import molgraph.losses
-import molgraph.metrics
-import molgraph.models
-import molgraph.chemistry
-
-from molgraph.tensors.graph_tensor import GraphTensor
-
 from molgraph import layers
-from molgraph import tensors
 from molgraph import losses
 from molgraph import metrics
 from molgraph import models
 from molgraph import chemistry
+
+from molgraph.tensors import GraphTensor
