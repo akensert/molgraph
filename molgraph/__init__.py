@@ -1,4 +1,4 @@
-__version__ = '0.8.1'
+__version__ = '0.9.0'
 
 import sys
 
@@ -24,6 +24,8 @@ if tf_module is not None:
 
 import os
 os.environ['TF_USE_LEGACY_KERAS'] = '1'
+
+import molgraph
 
 from molgraph import _filter_warnings
 

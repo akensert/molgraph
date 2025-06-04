@@ -1,6 +1,8 @@
-# MolGraph 0.8.1
+# MolGraph 0.9.0
 
-## Version 0.8.1 (2025-03-10)
+
+## Version 0.9.0 (2025-06-04)
+- Fix circular import bug.
 - `molgraph.chemistry.molecular_encoders`
     - Fix bug in `MolecularGraphEncoder3D`. Now uses BFS to find (a single) shortest path from node i to node j. Consequently, only one edge exist between node i and node j. Previous implementation did (1) not use the shortest path, and (2) added multiple edges between node i and node j to the `GraphTensor`.
 
