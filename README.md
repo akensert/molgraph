@@ -2,6 +2,10 @@
 
 **Graph Neural Networks** with **TensorFlow** and **Keras**. Focused on **Molecular Machine Learning**.
 
+> [!NOTE]
+> For compatability with Keras 3, see the more recent project [MolCraft](https://github.com/CompOmics/molcraft).
+> [MolCraft](https://github.com/CompOmics/molcraft) also provides improved featurization of molecules (including the addition of super nodes) and improved modules (including `models.GraphModel`, `layers.GraphLayer` and `tensors.GraphTensor`).
+
 ## Quick start
 Benchmark the performance of MolGraph [here](https://github.com/akensert/molgraph/blob/main/examples/GNN-Benchmarking.ipynb), and implement a complete model pipeline with MolGraph [here](https://github.com/akensert/molgraph/blob/main/examples/QSAR-GNN-Tutorial.ipynb). 
 
