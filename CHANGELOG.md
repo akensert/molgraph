@@ -1,5 +1,7 @@
-# MolGraph 0.9.0
+# MolGraph 0.9.1
 
+## Version 0.9.1 (2025-08-28)
+- Add bidirectional edges option to `PeptideGraphEncoder`.
 
 ## Version 0.9.0 (2025-06-04)
 - Fix circular import bug.
