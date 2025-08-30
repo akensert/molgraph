@@ -43,11 +43,11 @@ gpu = ["tensorflow[and-cuda]>=2.15"]
 Homepage = "https://github.com/akensert/molgraph"
 
 [tool.setuptools]
-packages = ["molgraph"]
+packages = { find = { where = ["."], include = ["molgraph*"] } }
 include-package-data = true
 
 [tool.setuptools.package-data]
-"molgraph.applications.proteomics" = ["*.json"]
+"molgraph.applications.proteomics.data" = ["*.json"]
 
 [tool.setuptools.dynamic]
 version = { attr = "molgraph.__version__" }

@@ -1,8 +1,8 @@
 # MolGraph 0.10.0
 
 
-## Version 0.10.0 (2025-09-XX)
-- Fix circular imports bug.
+## Version 0.10.0 (2025-08-30)
+- Fix "circular imports" bug.
 - `molgraph.applications.proteomics`
     - Add bidirectional edges option to `PeptideGraphEncoder`.
 - `molgraph.chemistry.molecular_encoders`
