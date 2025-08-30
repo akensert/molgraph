@@ -1,10 +1,10 @@
-# MolGraph 0.9.1
+# MolGraph 0.10.0
 
-## Version 0.9.1 (2025-08-28)
-- Add bidirectional edges option to `PeptideGraphEncoder`.
 
-## Version 0.9.0 (2025-06-04)
-- Fix circular import bug.
+## Version 0.10.0 (2025-09-XX)
+- Fix circular imports bug.
+- `molgraph.applications.proteomics`
+    - Add bidirectional edges option to `PeptideGraphEncoder`.
 - `molgraph.chemistry.molecular_encoders`
     - Fix bug in `MolecularGraphEncoder3D`. Now uses BFS to find (a single) shortest path from node i to node j. Consequently, only one edge exist between node i and node j. Previous implementation did (1) not use the shortest path, and (2) added multiple edges between node i and node j to the `GraphTensor`.
 
