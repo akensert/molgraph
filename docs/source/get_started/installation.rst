@@ -4,19 +4,17 @@ Installation
 
 Install via **pip**:
 
+For CPU users:
+
 .. code-block::
 
   pip install molgraph
 
-Or via **docker**:
+For GPU users:
 
 .. code-block::
 
-  git clone https://github.com/akensert/molgraph.git
-  cd molgraph/docker
-  docker build -t molgraph-tf[-gpu][-jupyter]/molgraph:0.0 molgraph-tf[-gpu][-jupyter]/
-  docker run -it [-p 8888:8888] molgraph-tf[-gpu][-jupyter]/molgraph:0.0
-
+  pip install molgraph[gpu]
 
 Now run your first program with **MolGraph**:
 
@@ -66,7 +64,6 @@ Now run your first program with **MolGraph**:
     scores = gnn_model.evaluate(x_test, y_test)
 
     # Compute gradient activation maps
-    gam_model = models.GradientActivationMapping(
-        model=gnn_model, layer_names=['gat_conv_1', 'gat_conv_2'])
+    gam_model = models.GradientActivationMapping(gnn_model)
 
     maps = gam_model(x_train.separate())

@@ -1,5 +1,8 @@
 # MolGraph docs
 
+> [!NOTE]
+> Documentation may not be up-to-date.
+
 ## Build the documentation
 
 ```

@@ -39,7 +39,6 @@ Furthermore, a chemistry module is implemented to generate highly customizable m
   api/tensors
   api/layers
   api/models
-  api/losses
   api/chemistry
 
 

@@ -30,7 +30,7 @@ copyright = '2022, Alexander Kensert'
 author = 'Alexander Kensert'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0'
+release = '0.10.0'
 
 
 # -- General configuration ---------------------------------------------------
