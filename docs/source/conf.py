@@ -26,7 +26,7 @@ tf.config.set_visible_devices([], 'GPU')'''
 # -- Project information -----------------------------------------------------
 
 project = 'MolGraph'
-copyright = '2022, Alexander Kensert'
+copyright = '2025, Alexander Kensert'
 author = 'Alexander Kensert'
 
 # The full version, including alpha/beta/rc tags
