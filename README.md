@@ -89,5 +89,5 @@ pip install molgraph[gpu]
 See [readthedocs](https://molgraph.readthedocs.io/en/latest/)
 
 ## Papers
-- [MolGraph: a Python package for the implementation of molecular graphs and graph neural networks with TensorFlow and Keras](https://doi.org/10.48550/arXiv.2208.09944)
-- [A hands-on tutorial on quantitative structure-activity relationships using fully expressive graph neural networks](https://doi.org/10.1016/j.aca.2024.343046)
+- [MolGraph: a Python package for the implementation of molecular graphs and graph neural networks with TensorFlow and Keras](https://doi.org/10.1007/s10822-024-00578-w). Pre-print [here](https://doi.org/10.48550/arXiv.2208.09944).
+- [A hands-on tutorial on quantitative structure-activity relationships using fully expressive graph neural networks](https://doi.org/10.1016/j.aca.2024.343046).
