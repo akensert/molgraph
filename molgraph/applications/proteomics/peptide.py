@@ -1,5 +1,6 @@
 import re
 import functools
+import warnings
 from rdkit import Chem
 
 from molgraph.applications.proteomics.definitions import _residue_smiles 
@@ -13,7 +14,7 @@ class Peptide:
         self._sequence = sequence
         self._split_sequence = _sequence_split(self._sequence) 
         self._num_residues = len(self._split_sequence)
-        _check_canonical(self)
+        _check_concatenatable(self)
 
     def __repr__(self) -> str:
         return f"<Peptide: {self._sequence!r} at {hex(id(self))}>"
@@ -59,14 +60,13 @@ class Peptide:
         canonicalize: bool = False
     ) -> None:
         for residue, smiles in residue_smiles.items():
+            if canonicalize:
+                smiles = Chem.MolToSmiles(Chem.MolFromSmiles(smiles))
             if not smiles.startswith('N') or not smiles.endswith('(=O)O'):
-                if canonicalize:
-                    smiles = Chem.MolToSmiles(Chem.MolFromSmiles(smiles))
-                else:
-                    raise ValueError(
-                        f"AA SMILES string {smiles!r} needs to be canonical: "
-                        "starting with 'N' and ending with '(=O)O'."
-                    )
+                warnings.warn(
+                    f"SMILES of {residue} ({smiles!r}) may not be concatenatable. For instance, "
+                    "the SMILES of a non-terminal AA should start with 'N' and end with '(=O)O'."
+                )
             _residue_smiles[residue] = smiles
 
 
@@ -74,15 +74,19 @@ class Peptide:
 def _num_atoms(smiles: str) -> int:
     return Chem.MolFromSmiles(smiles).GetNumAtoms()
 
-# TODO: Raise warning and canonicalize 
-def _check_canonical(peptide: Peptide) -> None:
-    for residue in peptide:
+def _check_concatenatable(peptide: Peptide) -> None:
+    error_message = "SMILES of AA needs to be concatenatable. Found SMILES of {} to be {}."
+    for i, residue in enumerate(peptide):
         smiles: str = _residue_smiles[residue]
-        if not smiles.startswith('N') or not smiles.endswith('(=O)O'):
-            raise ValueError(
-                f"AA SMILES string {smiles!r} needs to be canonical: "
-                "starting with 'N' and ending with '(=O)O'."
-            )
+        if i == 0:
+            if not smiles.endswith('(=O)O'):
+                raise ValueError(error_message.format(residue, smiles))
+        elif i == (len(peptide) - 1):
+            if not smiles.startswith('N'):
+                raise ValueError(error_message.format(residue, smiles))
+        else:
+            if not smiles.startswith('N') or not smiles.endswith('(=O)O'):
+                raise ValueError(error_message.format(residue, smiles))
 
 def _sequence_split(sequence: str) -> list[str]:
     patterns = [

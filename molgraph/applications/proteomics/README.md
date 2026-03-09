@@ -38,17 +38,11 @@ Add your own residue SMILES (within a session):
 from molgraph import chemistry
 from molgraph.applications import proteomics
 
-# Note: Arginine exists by default, and is only added below for 
-#       illustration. Inputted Arginine SMILES below is not acceptable 
-#       as it cannot be concatenated with other SMILES. Specifying 
-#       canonicalize=True, should make the Arginine SMILES concatenateable.
 proteomics.Peptide.register_residue_smiles(
     {
         "N[Deamidated]": "N[C@@H](CC(O)=O)C(=O)O",
         "Q[Deamidated]": "N[C@@H](CCC(=O)O)C(=O)O",
-        "R": "C(C[C@@H](C(=O)O)N)CN=C(N)N" 
     }, 
-    canonicalize=True
 )
 
 encoder = proteomics.PeptideGraphEncoder(
